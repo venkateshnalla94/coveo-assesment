@@ -65,7 +65,7 @@ npm run dev
 - CSR is used for the first implementation to prioritize a complete working search flow.
 - Facet fields are environment-driven because the assessment index fields are not known in this empty repo.
 - The token route supports both current and legacy Coveo search token paths to reduce setup risk across org configurations.
-- Production build uses `next build --webpack` because the current Turbopack build attempts to parse Coveo Headless package metadata as strict JSON.
+- Local and production commands use Webpack because the current Turbopack build attempts to parse Coveo Headless package metadata as strict JSON.
 
 ## More Time
 

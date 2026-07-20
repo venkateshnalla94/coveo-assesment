@@ -2,6 +2,12 @@
 
 Use these task lanes independently. Each lane has a clear owner boundary and validation target.
 
+Concrete triggerable agents live in `.codex/agents/`:
+
+- `commit-agent` reviews the tree before commits and coordinates validation.
+- `test-agent` creates focused tests for changed code.
+- `context-agent` updates docs only when architecture, setup, workflow, or reviewer-facing context changes.
+
 ## 1. Repo Steward
 
 Goal: keep the assessment readable for a cold reviewer.
@@ -13,6 +19,8 @@ Goal: keep the assessment readable for a cold reviewer.
 
 Done when: repo setup, scripts, docs, and git hygiene are correct.
 
+Trigger: use `.codex/agents/commit-agent.md` before every commit.
+
 ## 2. Coveo Auth Implementer
 
 Goal: prove the secure read path works before UI polish.
@@ -23,6 +31,8 @@ Goal: prove the secure read path works before UI polish.
 - Return no cached token responses.
 
 Done when: `/api/search-token` returns a token with valid env values and a safe error without them.
+
+Trigger: ask `commit-agent` to review changes before commit. It must trigger `test-agent` if this route changed and no relevant tests were updated.
 
 ## 3. Headless Engine Implementer
 
@@ -36,6 +46,8 @@ Goal: initialize Coveo Headless once and let the browser query Coveo directly.
 
 Done when: first search executes and controller state updates in the UI.
 
+Trigger: ask `commit-agent` to review changes before commit. It must trigger `context-agent` if the token-vs-direct-search boundary changed.
+
 ## 4. Search UI Implementer
 
 Goal: deliver the minimum complete product surface.
@@ -47,6 +59,8 @@ Goal: deliver the minimum complete product surface.
 
 Done when: search, suggestions, results, facets, pagination, and click-through work.
 
+Trigger: ask `commit-agent` to review changes before commit. It must trigger `test-agent` for non-trivial logic changes.
+
 ## 5. Assessment Narrator
 
 Goal: make the project story obvious in 15 minutes.
@@ -57,3 +71,5 @@ Goal: make the project story obvious in 15 minutes.
 - Keep the "more time" section business-relevant, not resume-driven.
 
 Done when: the repo can be reviewed cold without a live walkthrough.
+
+Trigger: use `.codex/agents/context-agent.md` when architecture, env vars, build commands, or workflow expectations change.

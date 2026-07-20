@@ -20,6 +20,12 @@ This repository is a Coveo TME take-home assessment: a secured Coveo Headless se
 
 Use `docs/agent-workflow.md` for independent task lanes: repo stewardship, Coveo auth, Headless engine, UI, and assessment narrative.
 
+Repo-local agent prompts live in `.codex/agents/`:
+
+- Trigger `commit-agent` before committing. It reviews the tree, checks architecture fit, runs validation, and coordinates other agents.
+- `commit-agent` must trigger `test-agent` when application code changed and tests have not been considered for the current diff.
+- `commit-agent` must trigger `context-agent` before commit when architecture, env vars, commands, workflow, or reviewer-facing documentation may need updates.
+
 ## Standards
 
 - Keep TypeScript strict.

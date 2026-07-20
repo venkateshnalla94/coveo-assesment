@@ -6,8 +6,12 @@ This repository is a Coveo TME take-home assessment: a secured Coveo Headless se
 
 - `npm run dev` - start local Next.js development server.
 - `npm run lint` - run ESLint.
+- `npm run test` - run Vitest unit tests.
+- `npm run test:coverage` - run Vitest with 80% coverage thresholds for testable app logic.
 - `npm run typecheck` - run TypeScript without emitting files.
 - `npm run build` - production build.
+- `npm run hooks:install` - configure Git to use committed hooks from `.githooks`.
+- `npm run workflow:check` - run the pre-commit workflow against the full dirty tree before staging.
 
 ## Architecture
 

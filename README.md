@@ -53,6 +53,27 @@ npm run dev
 
 5. Open `http://localhost:3000`.
 
+## Validation
+
+```bash
+npm run lint
+npm run test
+npm run test:coverage
+npm run typecheck
+npm run build
+npm run workflow:check
+```
+
+Run `npm run test` for focused Vitest coverage around token handling and result rendering logic. Run `npm run test:coverage` to enforce the current 80% coverage threshold for testable application logic.
+
+Install local Git hooks with:
+
+```bash
+npm run hooks:install
+```
+
+Run `npm run workflow:check` before staging when you want the same mechanical checks across the full dirty tree.
+
 ## Security Notes
 
 - `COVEO_PLATFORM_API_KEY` is server-side only and must never be prefixed with `NEXT_PUBLIC_`.
@@ -72,5 +93,5 @@ npm run dev
 - Add Headless SSR for first paint.
 - Add did-you-mean, sort, and deeper facet coverage after inspecting real fields.
 - Add a search hub switcher to demonstrate relevance context changes.
-- Add unit tests around config parsing and result field rendering.
+- Add DOM or browser-level tests for Headless-driven React components after real Coveo credentials are validated.
 - Deploy to Vercel and add the live URL here.

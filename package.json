@@ -5,8 +5,14 @@
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
+    "hooks:install": "node scripts/install-hooks.mjs",
     "start": "next start",
     "lint": "eslint .",
+    "prepare": "node scripts/install-hooks.mjs",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "workflow:check": "node scripts/pre-commit-check.mjs --all",
+    "workflow:precommit": "node scripts/pre-commit-check.mjs",
     "typecheck": "next typegen && tsc --noEmit"
   },
   "keywords": [],
@@ -29,8 +35,10 @@
     "@types/node": "^26.1.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "@vitest/coverage-v8": "^4.1.10",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.2.10",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.10"
   }
 }

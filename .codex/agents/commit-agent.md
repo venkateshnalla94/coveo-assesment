@@ -37,8 +37,10 @@ Protect the assessment from weak commits. Inspect the actual tree, compare the c
 
 3. Validation
    - Run or request the appropriate checks for the changed surface.
-   - Baseline checks are `npm run lint`, `npm run typecheck`, `npm run build`.
-   - Run unit tests when they exist.
+   - Baseline checks are `npm run lint`, `npm run test:coverage`, `npm run typecheck`, `npm run build`.
+   - Use `npm run test` for Vitest unit coverage around changed application logic.
+   - Use `npm run workflow:precommit` to match the committed Git hook before commit.
+   - Use `npm run workflow:check` when reviewing a dirty tree before files are staged.
    - If a check cannot run, record the reason directly in the final handoff.
 
 4. Agent coordination

@@ -14,12 +14,16 @@ Goal: keep the assessment readable for a cold reviewer.
 
 - Maintain small commits with direct messages.
 - Keep `.env.local` and generated build output out of git.
-- Keep `README.md`, `AGENTS.md`, and `CLAUDE.md` aligned with the actual app.
-- Validate with `npm run lint`, `npm run typecheck`, and `npm run build`.
+- Keep `README.md`, `AGENTS.md`, and `docs/agent-workflow.md` aligned with the actual app.
+- Validate with `npm run lint`, `npm run test:coverage`, `npm run typecheck`, and `npm run build`.
+- Keep `.githooks/pre-commit` and `scripts/pre-commit-check.mjs` aligned with the documented workflow.
+- Use `npm run workflow:check` to validate the full dirty tree before staging.
 
 Done when: repo setup, scripts, docs, and git hygiene are correct.
 
 Trigger: use `.codex/agents/commit-agent.md` before every commit.
+
+Hook: run `npm run hooks:install` once per clone so Git uses `.githooks/pre-commit`.
 
 ## 2. Coveo Auth Implementer
 
@@ -32,7 +36,7 @@ Goal: prove the secure read path works before UI polish.
 
 Done when: `/api/search-token` returns a token with valid env values and a safe error without them.
 
-Trigger: ask `commit-agent` to review changes before commit. It must trigger `test-agent` if this route changed and no relevant tests were updated.
+Trigger: ask `commit-agent` to review changes before commit. It must trigger `test-agent` if this route changed and no relevant tests were run or updated.
 
 ## 3. Headless Engine Implementer
 
@@ -59,7 +63,9 @@ Goal: deliver the minimum complete product surface.
 
 Done when: search, suggestions, results, facets, pagination, and click-through work.
 
-Trigger: ask `commit-agent` to review changes before commit. It must trigger `test-agent` for non-trivial logic changes.
+Trigger: ask `commit-agent` to review changes before commit. It must trigger `test-agent` for non-trivial logic changes that need focused Vitest coverage.
+
+Coverage: current 80% thresholds are enforced for token handling and result-field logic. See `docs/testing.md` for UI paths not covered by unit tests yet.
 
 ## 5. Assessment Narrator
 
@@ -72,4 +78,4 @@ Goal: make the project story obvious in 15 minutes.
 
 Done when: the repo can be reviewed cold without a live walkthrough.
 
-Trigger: use `.codex/agents/context-agent.md` when architecture, env vars, build commands, or workflow expectations change.
+Trigger: use `.codex/agents/context-agent.md` when architecture, env vars, validation commands, or workflow expectations change.

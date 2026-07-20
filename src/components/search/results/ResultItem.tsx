@@ -5,35 +5,7 @@ import { buildInteractiveResult, type Result, type SearchEngine } from "@coveo/h
 import { ExternalLink } from "lucide-react";
 import { useMemo } from "react";
 
-type RawValue = string | number | boolean | string[] | number[] | null | undefined;
-
-function getRawString(result: Result, keys: string[]) {
-  for (const key of keys) {
-    const value = result.raw[key] as RawValue;
-
-    if (typeof value === "string" && value.trim()) {
-      return value;
-    }
-
-    if (Array.isArray(value) && typeof value[0] === "string" && value[0].trim()) {
-      return value[0];
-    }
-  }
-
-  return undefined;
-}
-
-function getThumbnail(result: Result) {
-  return getRawString(result, ["thumbnailuri", "thumbnail", "image", "imageurl"]);
-}
-
-function getMeta(result: Result) {
-  return [
-    getRawString(result, ["source"]),
-    getRawString(result, ["filetype", "documenttype"]),
-    getRawString(result, ["author"]),
-  ].filter(Boolean);
-}
+import { getMeta, getThumbnail } from "@/components/search/results/result-fields";
 
 export function ResultItem({ engine, result }: { engine: SearchEngine; result: Result }) {
   const interactiveResult = useMemo(

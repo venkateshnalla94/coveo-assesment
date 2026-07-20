@@ -1,0 +1,65 @@
+"use client";
+
+import type { Facet } from "@coveo/headless";
+
+import { useControllerState } from "@/lib/coveo/use-controller-state";
+
+function labelFromField(field: string) {
+  return field
+    .replace(/^@/, "")
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+export function FacetPanel({ field, controller }: { field: string; controller: Facet }) {
+  const state = useControllerState(controller);
+
+  if (!state.enabled || (!state.isLoading && state.values.length === 0)) {
+    return null;
+  }
+
+  return (
+    <section className="facet-panel">
+      <div className="facet-header">
+        <h2>{labelFromField(field)}</h2>
+        {state.hasActiveValues ? (
+          <button className="link-button" onClick={() => controller.deselectAll()} type="button">
+            Clear
+          </button>
+        ) : null}
+      </div>
+
+      <div className="facet-values">
+        {state.values.map((value) => {
+          const isSelected = controller.isValueSelected(value);
+
+          return (
+            <button
+              aria-pressed={isSelected}
+              className="facet-value"
+              key={value.value}
+              onClick={() => controller.toggleSelect(value)}
+              type="button"
+            >
+              <span>{value.value}</span>
+              <span>{value.numberOfResults.toLocaleString()}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="facet-actions">
+        {state.canShowMoreValues ? (
+          <button className="link-button" onClick={() => controller.showMoreValues()} type="button">
+            More
+          </button>
+        ) : null}
+        {state.canShowLessValues ? (
+          <button className="link-button" onClick={() => controller.showLessValues()} type="button">
+            Less
+          </button>
+        ) : null}
+      </div>
+    </section>
+  );
+}

@@ -1,0 +1,106 @@
+{
+  "query": "digital transformation",
+  "totalCount": 1234,
+  "durationInSeconds": 0.09,
+  "firstResult": 1,
+  "lastResult": 5,
+  "searchHub": "assessment-search",
+  "facets": [
+    {
+      "field": "filetype",
+      "label": "Content Type",
+      "values": [
+        { "value": "All", "numberOfResults": 1234, "state": "selected" },
+        { "value": "PDF", "numberOfResults": 532, "state": "idle" },
+        { "value": "Web Page", "numberOfResults": 312, "state": "idle" },
+        { "value": "Word", "numberOfResults": 210, "state": "idle" },
+        { "value": "PowerPoint", "numberOfResults": 98, "state": "idle" },
+        { "value": "Excel", "numberOfResults": 82, "state": "idle" }
+      ]
+    },
+    {
+      "field": "source",
+      "label": "Source",
+      "values": [
+        { "value": "All", "numberOfResults": 1234, "state": "selected" },
+        { "value": "Coveo Website", "numberOfResults": 532, "state": "idle" },
+        { "value": "Knowledge Base", "numberOfResults": 312, "state": "idle" },
+        { "value": "Customer Portal", "numberOfResults": 210, "state": "idle" },
+        { "value": "Product Docs", "numberOfResults": 180, "state": "idle" }
+      ]
+    },
+    {
+      "field": "date",
+      "label": "Date",
+      "values": [
+        { "value": "Any time", "numberOfResults": 1234, "state": "selected" },
+        { "value": "Past 24 hours", "numberOfResults": 12, "state": "idle" },
+        { "value": "Past week", "numberOfResults": 73, "state": "idle" },
+        { "value": "Past month", "numberOfResults": 245, "state": "idle" },
+        { "value": "Past year", "numberOfResults": 904, "state": "idle" }
+      ]
+    }
+  ],
+  "results": [
+    {
+      "uniqueId": "sample-result-guide",
+      "title": "The Ultimate Guide to Digital Transformation",
+      "clickUri": "https://www.coveo.com/resources/guides/digital-transformation",
+      "printableUri": "www.coveo.com / resources/guides/digital-transformation",
+      "excerpt": "Digital transformation is no longer optional. Learn how leading organizations are leveraging modern technologies and data to drive business value.",
+      "filetype": "pdf",
+      "source": "Coveo Website",
+      "date": "2026-07-18T10:00:00Z",
+      "tags": ["Guide", "Digital Strategy"],
+      "thumbnail": ""
+    },
+    {
+      "uniqueId": "sample-result-solution",
+      "title": "Digital Transformation Solutions | Coveo",
+      "clickUri": "https://www.coveo.com/solutions/digital-transformation",
+      "printableUri": "www.coveo.com / solutions/digital-transformation",
+      "excerpt": "Coveo helps enterprises accelerate their digital transformation journey with AI-powered search, personalization, and unified experiences.",
+      "filetype": "html",
+      "source": "Coveo Website",
+      "date": "2026-07-13T10:00:00Z",
+      "tags": ["Solution", "AI"],
+      "thumbnail": ""
+    },
+    {
+      "uniqueId": "sample-result-playbook",
+      "title": "Digital Transformation Playbook.docx",
+      "clickUri": "https://example.com/sites/strategy/shared-documents/digital-transformation-playbook",
+      "printableUri": "SharePoint / sites/strategy/Shared Documents",
+      "excerpt": "This playbook provides a step-by-step framework for planning and executing digital transformation initiatives across your organization.",
+      "filetype": "docx",
+      "source": "SharePoint",
+      "date": "2024-05-12T10:00:00Z",
+      "tags": ["Playbook", "Strategy"],
+      "thumbnail": ""
+    },
+    {
+      "uniqueId": "sample-result-webinar",
+      "title": "Driving Change with Digital Transformation",
+      "clickUri": "https://example.com/presentation/digital-transformation",
+      "printableUri": "Knowledge Base / presentation/digital-transformation",
+      "excerpt": "Explore how digital transformation impacts teams, processes, and customer experiences in this webinar presentation.",
+      "filetype": "pptx",
+      "source": "Knowledge Base",
+      "date": "2024-04-28T10:00:00Z",
+      "tags": ["Presentation", "Webinar"],
+      "thumbnail": ""
+    },
+    {
+      "uniqueId": "sample-result-roi",
+      "title": "Digital Transformation ROI Analysis.xlsx",
+      "clickUri": "https://example.com/resources/roi/digital-transformation",
+      "printableUri": "Customer Portal / resources/roi/digital-transformation",
+      "excerpt": "Analyze the ROI of digital transformation projects with this detailed planning worksheet and benchmark model.",
+      "filetype": "xlsx",
+      "source": "Customer Portal",
+      "date": "2024-03-20T10:00:00Z",
+      "tags": ["ROI", "Worksheet"],
+      "thumbnail": ""
+    }
+  ]
+}

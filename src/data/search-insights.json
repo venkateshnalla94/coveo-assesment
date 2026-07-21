@@ -1,0 +1,27 @@
+{
+  "topic": {
+    "title": "About this topic",
+    "body": "Digital transformation refers to integrating digital technology into core business areas, changing how teams operate and deliver customer value.",
+    "actionLabel": "Learn more",
+    "href": "#"
+  },
+  "relatedQueries": {
+    "title": "Related queries",
+    "items": [
+      "digital transformation strategy",
+      "benefits of digital transformation",
+      "digital transformation examples",
+      "how to start digital transformation",
+      "digital transformation trends 2024"
+    ]
+  },
+  "popularContent": {
+    "title": "Popular content",
+    "items": [
+      { "title": "The Ultimate Guide to Digital Transformation", "metric": "2.3K views", "href": "#" },
+      { "title": "Digital Transformation Roadmap", "metric": "1.8K views", "href": "#" },
+      { "title": "AI and the Future of Work", "metric": "1.6K views", "href": "#" },
+      { "title": "Change Management Best Practices", "metric": "1.2K views", "href": "#" }
+    ]
+  }
+}

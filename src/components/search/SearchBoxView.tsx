@@ -4,6 +4,7 @@ import type { SearchBox } from "@coveo/headless";
 import { Search, X } from "lucide-react";
 import { FormEvent, useState } from "react";
 
+import { SEARCH_UI } from "@/components/search/search-ui.constants";
 import { useControllerState } from "@/lib/coveo/use-controller-state";
 
 export function SearchBoxView({ controller }: { controller: SearchBox }) {
@@ -29,7 +30,7 @@ export function SearchBoxView({ controller }: { controller: SearchBox }) {
             setIsFocused(true);
             controller.showSuggestions();
           }}
-          placeholder="Search indexed content"
+          placeholder={SEARCH_UI.defaultQuery}
           type="search"
           value={state.value}
         />
@@ -43,8 +44,8 @@ export function SearchBoxView({ controller }: { controller: SearchBox }) {
             <X aria-hidden="true" size={18} />
           </button>
         ) : null}
-        <button className="primary-button" disabled={state.isLoading} type="submit">
-          Search
+        <button aria-label="Search" className="primary-button" disabled={state.isLoading} type="submit">
+          <Search aria-hidden="true" size={22} />
         </button>
       </form>
 

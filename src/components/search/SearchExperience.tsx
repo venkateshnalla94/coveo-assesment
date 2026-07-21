@@ -10,30 +10,48 @@ import {
   buildSearchEngine,
   buildSearchStatus,
   getOrganizationEndpoints,
-  type Facet,
-  type Pager,
-  type QueryError,
-  type QuerySummary,
-  type ResultList,
-  type SearchBox,
-  type SearchEngine,
-  type SearchStatus,
 } from "@coveo/headless";
-import { AlertCircle } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import type {
+  Facet,
+  Pager,
+  QueryError,
+  QuerySummary,
+  ResultList,
+  SearchBox,
+  SearchEngine,
+  SearchStatus,
+} from "@coveo/headless";
+import { AlertCircle, ChevronDown, List, Search } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 
+import { ConfigurationNotice } from "@/components/shared/ConfigurationNotice";
 import { FacetPanel } from "@/components/search/facets/FacetPanel";
+import {
+  SearchInsightsRail,
+  type SearchInsightsContent,
+} from "@/components/search/layout/SearchInsightsRail";
 import { PagerControls } from "@/components/search/PagerControls";
+import { SearchResponseFacetPanel } from "@/components/search/response/SearchResponseFacetPanel";
+import { SearchResponsePagerControls } from "@/components/search/response/SearchResponsePagerControls";
+import { SearchResponseResultList } from "@/components/search/response/SearchResponseResultList";
+import type { CoveoSearchResponse } from "@/components/search/response/search-response-types";
+import { useSearchResponseState } from "@/components/search/response/use-search-response-state";
 import { ResultListView } from "@/components/search/results/ResultListView";
 import { SearchBoxView } from "@/components/search/SearchBoxView";
 import { SearchSummary } from "@/components/search/SearchSummary";
+import { SEARCH_UI } from "@/components/search/search-ui.constants";
+import {
+  defaultSearchFeatureFlags,
+  type SearchFeatureFlags,
+} from "@/lib/features/search-feature-flags";
 import { fetchSearchTokenConfig, type SearchTokenConfig } from "@/lib/coveo/search-token";
 import { useControllerState } from "@/lib/coveo/use-controller-state";
 
 type EngineState =
+  | { status: "idle" }
   | { status: "loading" }
-  | { status: "ready"; engine: SearchEngine; config: SearchTokenConfig }
-  | { status: "error"; message: string };
+  | { status: "ready"; engine: SearchEngine; config: SearchTokenConfig; initialQuery: string }
+  | { status: "configuration-error" };
 
 type SearchControllers = {
   searchBox: SearchBox;
@@ -113,67 +131,178 @@ function createControllers(engine: SearchEngine, facetFields: string[]): SearchC
   };
 }
 
-export function SearchExperience() {
-  const [engineState, setEngineState] = useState<EngineState>({ status: "loading" });
+export function SearchExperience({
+  featureFlags = defaultSearchFeatureFlags,
+  insightsContent,
+  sampleSearchResponse,
+}: {
+  featureFlags?: SearchFeatureFlags;
+  insightsContent?: SearchInsightsContent;
+  sampleSearchResponse?: CoveoSearchResponse;
+}) {
+  const [engineState, setEngineState] = useState<EngineState>({ status: "idle" });
+  const [pendingQuery, setPendingQuery] = useState("");
 
-  useEffect(() => {
-    let cancelled = false;
+  if (featureFlags.enableSampleSearchResponse && sampleSearchResponse) {
+    return (
+      <SearchResponseExperience
+        featureFlags={featureFlags}
+        insightsContent={insightsContent}
+        searchResponse={sampleSearchResponse}
+      />
+    );
+  }
 
-    async function initialize() {
-      try {
-        const config = await fetchSearchTokenConfig();
-        const engine = createEngine(config);
+  async function handleInitialSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const submittedQuery = pendingQuery.trim();
 
-        if (!cancelled) {
-          setEngineState({ status: "ready", engine, config });
-        }
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Unable to start search.";
+    setEngineState({ status: "loading" });
 
-        if (!cancelled) {
-          setEngineState({ status: "error", message });
-        }
-      }
+    try {
+      const config = await fetchSearchTokenConfig();
+      const engine = createEngine(config);
+
+      setEngineState({ status: "ready", engine, config, initialQuery: submittedQuery });
+    } catch (error) {
+      console.error("Coveo search initialization failed:", error);
+      setEngineState({ status: "configuration-error" });
     }
-
-    initialize();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  }
 
   if (engineState.status === "loading") {
     return (
-      <main className="app-shell">
-        <section className="search-surface" aria-busy="true">
-          <div className="loading-block">
-            <span className="spinner" />
-            <span>Initializing secure search</span>
-          </div>
-        </section>
-      </main>
+      <StartupSearchView
+        notice={
+          <ConfigurationNotice
+            message="Preparing the secured Coveo search session."
+            title="Initializing secure search"
+            variant="loading"
+          />
+        }
+        searchSlot={
+          <StartupSearchForm
+            isLoading
+            onQueryChange={setPendingQuery}
+            onSubmit={handleInitialSearch}
+            query={pendingQuery}
+          />
+        }
+      />
     );
   }
 
-  if (engineState.status === "error") {
+  if (engineState.status === "configuration-error") {
     return (
-      <main className="app-shell">
-        <section className="search-surface error-surface">
-          <AlertCircle aria-hidden="true" size={22} />
-          <div>
-            <h1>Search is not configured</h1>
-            <p>{engineState.message}</p>
-          </div>
-        </section>
-      </main>
+      <StartupSearchView
+        notice={
+          <ConfigurationNotice
+            message="Update the Coveo values in .env.local, then restart the development server."
+            title="Search configuration required"
+            variant="configuration"
+          />
+        }
+        searchSlot={
+          <StartupSearchForm
+            onQueryChange={setPendingQuery}
+            onSubmit={handleInitialSearch}
+            query={pendingQuery}
+          />
+        }
+      />
     );
   }
 
-  return <ReadySearchExperience engine={engineState.engine} config={engineState.config} />;
+  if (engineState.status === "ready") {
+    return (
+      <ReadySearchExperience
+        config={engineState.config}
+        engine={engineState.engine}
+        featureFlags={featureFlags}
+        initialQuery={engineState.initialQuery}
+        insightsContent={insightsContent}
+      />
+    );
+  }
+
+  return (
+    <StartupSearchView
+      searchSlot={
+        <StartupSearchForm
+          onQueryChange={setPendingQuery}
+          onSubmit={handleInitialSearch}
+          query={pendingQuery}
+        />
+      }
+    />
+  );
 }
 
-function ReadySearchExperience({ engine, config }: { engine: SearchEngine; config: SearchTokenConfig }) {
+function StartupSearchView({
+  notice,
+  searchSlot,
+}: {
+  notice?: ReactNode;
+  searchSlot: ReactNode;
+}) {
+  return (
+    <>
+      <div className="search-command-bar">{searchSlot}</div>
+      <main className="app-shell startup-shell">
+        <section className="startup-card">
+          <p className="eyebrow">{SEARCH_UI.startup.eyebrow}</p>
+          <h1>{SEARCH_UI.startup.title}</h1>
+          <p>{SEARCH_UI.startup.body}</p>
+          {notice}
+        </section>
+      </main>
+    </>
+  );
+}
+
+function StartupSearchForm({
+  isLoading = false,
+  onQueryChange,
+  onSubmit,
+  query,
+}: {
+  isLoading?: boolean;
+  onQueryChange: (query: string) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  query: string;
+}) {
+  return (
+    <form className="search-box" onSubmit={onSubmit} role="search">
+      <Search aria-hidden="true" size={22} />
+      <input
+        aria-label="Search"
+        autoComplete="off"
+        disabled={isLoading}
+        onChange={(event) => onQueryChange(event.target.value)}
+        placeholder={SEARCH_UI.defaultQuery}
+        type="search"
+        value={query}
+      />
+      <button aria-label="Search" className="primary-button" disabled={isLoading} type="submit">
+        <Search aria-hidden="true" size={22} />
+      </button>
+    </form>
+  );
+}
+
+function ReadySearchExperience({
+  config,
+  engine,
+  featureFlags,
+  initialQuery,
+  insightsContent,
+}: {
+  config: SearchTokenConfig;
+  engine: SearchEngine;
+  featureFlags: SearchFeatureFlags;
+  initialQuery: string;
+  insightsContent?: SearchInsightsContent;
+}) {
   const firstSearchExecuted = useRef(false);
 
   const controllers = useMemo(
@@ -183,27 +312,28 @@ function ReadySearchExperience({ engine, config }: { engine: SearchEngine; confi
 
   const searchStatus = useControllerState(controllers.searchStatus);
   const queryError = useControllerState(controllers.queryError);
+  const showInsights = featureFlags.enableInsightsRail && Boolean(insightsContent);
 
   useEffect(() => {
     if (!firstSearchExecuted.current) {
       firstSearchExecuted.current = true;
+
+      if (initialQuery) {
+        controllers.searchBox.updateText(initialQuery);
+        controllers.searchBox.submit();
+        return;
+      }
+
       engine.executeFirstSearch();
     }
-  }, [engine]);
+  }, [controllers.searchBox, engine, initialQuery]);
 
   return (
-    <main className="app-shell">
-      <section className="search-surface">
-        <header className="app-header">
-          <div>
-            <p className="eyebrow">Coveo TME Assessment</p>
-            <h1>Secure Headless Search</h1>
-          </div>
-          <div className="context-pill">{config.searchHub || "default-search-hub"}</div>
-        </header>
-
+    <>
+      <div className="search-command-bar">
         <SearchBoxView controller={controllers.searchBox} />
-
+      </div>
+      <main className="app-shell">
         {queryError.hasError ? (
           <div className="inline-error" role="alert">
             <AlertCircle aria-hidden="true" size={18} />
@@ -211,21 +341,141 @@ function ReadySearchExperience({ engine, config }: { engine: SearchEngine; confi
           </div>
         ) : null}
 
-        <SearchSummary controller={controllers.querySummary} />
+        <div className="search-context-row">
+          <span>{config.searchHub || "default-search-hub"}</span>
+        </div>
 
-        <div className="search-layout">
-          <aside className="facet-sidebar" aria-label="Search filters">
-            {controllers.facets.map((facet) => (
-              <FacetPanel key={facet.field} field={facet.field} controller={facet.controller} />
-            ))}
-          </aside>
+        <div className={getSearchLayoutClassName(featureFlags.enableFacets, showInsights)}>
+          {featureFlags.enableFacets ? (
+            <aside className="facet-sidebar" aria-label="Search filters">
+              <div className="facet-sidebar-header">
+                <h2>{SEARCH_UI.facets.title}</h2>
+                <button className="link-button" type="button">
+                  {SEARCH_UI.facets.clearAllLabel}
+                </button>
+              </div>
+              {controllers.facets.map((facet) => (
+                <FacetPanel key={facet.field} field={facet.field} controller={facet.controller} />
+              ))}
+            </aside>
+          ) : null}
 
           <section className="results-column" aria-busy={searchStatus.isLoading}>
+            <div className="results-toolbar">
+              <SearchSummary controller={controllers.querySummary} />
+              <div className="sort-control">
+                <span>{SEARCH_UI.sort.label}</span>
+                <button type="button">
+                  {SEARCH_UI.sort.relevanceLabel}
+                  <ChevronDown aria-hidden="true" size={16} />
+                </button>
+                <button aria-label="List view" className="header-icon-button" type="button">
+                  <List aria-hidden="true" size={19} />
+                </button>
+              </div>
+            </div>
             <ResultListView engine={engine} controller={controllers.resultList} />
             <PagerControls controller={controllers.pager} />
           </section>
+
+          {showInsights && insightsContent ? (
+            <SearchInsightsRail content={insightsContent} featureFlags={featureFlags} />
+          ) : null}
         </div>
-      </section>
-    </main>
+      </main>
+    </>
   );
+}
+
+function SearchResponseExperience({
+  featureFlags,
+  insightsContent,
+  searchResponse,
+}: {
+  featureFlags: SearchFeatureFlags;
+  insightsContent?: SearchInsightsContent;
+  searchResponse: CoveoSearchResponse;
+}) {
+  const [query, setQuery] = useState(searchResponse.query);
+  const showInsights = featureFlags.enableInsightsRail && Boolean(insightsContent);
+  const responseState = useSearchResponseState(searchResponse);
+
+  return (
+    <>
+      <div className="search-command-bar">
+        <StartupSearchForm
+          onQueryChange={setQuery}
+          onSubmit={(event) => event.preventDefault()}
+          query={query}
+        />
+      </div>
+
+      <main className="app-shell">
+        <div className="search-context-row">
+          <span>{searchResponse.searchHub}</span>
+        </div>
+
+        <div className={getSearchLayoutClassName(featureFlags.enableFacets, showInsights)}>
+          {featureFlags.enableFacets ? (
+            <aside className="facet-sidebar" aria-label="Search filters">
+              <div className="facet-sidebar-header">
+                <h2>{SEARCH_UI.facets.title}</h2>
+                <button className="link-button" onClick={responseState.clearFacets} type="button">
+                  {SEARCH_UI.facets.clearAllLabel}
+                </button>
+              </div>
+              {responseState.facets.map((facet) => (
+                <SearchResponseFacetPanel
+                  facet={facet}
+                  key={facet.field}
+                  onToggleValue={responseState.toggleFacetValue}
+                />
+              ))}
+            </aside>
+          ) : null}
+
+          <section className="results-column" aria-busy="false">
+            <div className="results-toolbar">
+              <p className="summary-text">
+                Showing {responseState.firstResult}-{responseState.lastResult} of{" "}
+                {responseState.totalCount.toLocaleString()} results for{" "}
+                <strong>{query || searchResponse.query}</strong> in{" "}
+                {searchResponse.durationInSeconds.toFixed(2)}s
+              </p>
+              <div className="sort-control">
+                <span>{SEARCH_UI.sort.label}</span>
+                <button type="button">
+                  {SEARCH_UI.sort.relevanceLabel}
+                  <ChevronDown aria-hidden="true" size={16} />
+                </button>
+                <button aria-label="List view" className="header-icon-button" type="button">
+                  <List aria-hidden="true" size={19} />
+                </button>
+              </div>
+            </div>
+            <SearchResponseResultList results={responseState.pagedResults} />
+            <SearchResponsePagerControls
+              currentPage={responseState.currentPage}
+              maxPage={responseState.maxPage}
+              onSelectPage={responseState.selectPage}
+            />
+          </section>
+
+          {showInsights && insightsContent ? (
+            <SearchInsightsRail content={insightsContent} featureFlags={featureFlags} />
+          ) : null}
+        </div>
+      </main>
+    </>
+  );
+}
+
+function getSearchLayoutClassName(showFacets: boolean, showInsights: boolean) {
+  return [
+    "search-layout",
+    !showFacets ? "search-layout-no-facets" : "",
+    !showInsights ? "search-layout-no-insights" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 }

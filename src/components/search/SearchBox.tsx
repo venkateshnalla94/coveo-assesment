@@ -13,6 +13,7 @@ export function SearchBox({
   isLoading,
   onClear,
   onQueryChange,
+  onSuggestionSelected,
   onSubmit,
   provider,
   query,
@@ -20,6 +21,7 @@ export function SearchBox({
   isLoading: boolean;
   onClear: () => void;
   onQueryChange: (query: string) => void;
+  onSuggestionSelected?: (suggestion: SearchSuggestion) => void;
   onSubmit: (query: string) => void;
   provider: Pick<SearchProvider, "getSuggestions">;
   query: string;
@@ -51,6 +53,7 @@ export function SearchBox({
     onQueryChange(suggestion.value);
     setSuggestionsOpen(false);
     setActiveIndex(-1);
+    onSuggestionSelected?.(suggestion);
     onSubmit(suggestion.value);
   }
 

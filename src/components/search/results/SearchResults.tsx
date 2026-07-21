@@ -3,7 +3,7 @@ import { AlertCircle } from "lucide-react";
 import { ResultList } from "@/components/search/results/ResultList";
 import { SearchStatus } from "@/components/search/results/SearchStatus";
 import { ZeroResults } from "@/components/search/results/ZeroResults";
-import type { SearchResponse } from "@/features/search/models/search-models";
+import type { SearchResponse, SearchResult } from "@/features/search/models/search-models";
 import type { PaginationState } from "@/features/search/services/pagination";
 
 export function SearchResults({
@@ -11,6 +11,7 @@ export function SearchResults({
   error,
   isLoading,
   onClearFilters,
+  onResultSelect,
   onRetryQuery,
   pagination,
   response,
@@ -21,6 +22,7 @@ export function SearchResults({
   error?: string;
   isLoading: boolean;
   onClearFilters: () => void;
+  onResultSelect?: (result: SearchResult, position: number, query: string) => void;
   onRetryQuery: (query: string) => void;
   pagination: PaginationState;
   response?: SearchResponse;
@@ -55,7 +57,9 @@ export function SearchResults({
         </div>
       ) : null}
 
-      {response && response.results.length > 0 ? <ResultList results={response.results} /> : null}
+      {response && response.results.length > 0 ? (
+        <ResultList onResultSelect={onResultSelect} query={query} results={response.results} />
+      ) : null}
 
       {response && response.results.length === 0 ? (
         <ZeroResults

@@ -1,3 +1,5 @@
+"use client";
+
 /* eslint-disable @next/next/no-img-element */
 import {
   File,
@@ -7,6 +9,7 @@ import {
   Presentation,
   type LucideIcon,
 } from "lucide-react";
+import { useRef } from "react";
 
 type ResultCardProps = {
   clickUri: string;
@@ -46,6 +49,18 @@ export function ResultCard({
   typeLabel,
 }: ResultCardProps) {
   const ResultTypeIcon = typeIcon ?? resultTypeIcons[resultType] ?? File;
+  const selectedAt = useRef(0);
+
+  function handleSelect() {
+    const now = Date.now();
+
+    if (now - selectedAt.current < 500) {
+      return;
+    }
+
+    selectedAt.current = now;
+    onSelect?.();
+  }
 
   return (
     <article className="result-item">
@@ -60,9 +75,9 @@ export function ResultCard({
         <a
           className="result-title"
           href={clickUri}
-          onClick={onSelect}
-          onContextMenu={onSelect}
-          onMouseDown={onSelect}
+          onClick={handleSelect}
+          onContextMenu={handleSelect}
+          onMouseDown={handleSelect}
           rel="noreferrer"
           target="_blank"
         >

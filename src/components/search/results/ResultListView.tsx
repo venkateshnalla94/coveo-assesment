@@ -8,9 +8,13 @@ import { useControllerState } from "@/lib/coveo/use-controller-state";
 export function ResultListView({
   engine,
   controller,
+  onResultSelect,
+  query,
 }: {
   engine: SearchEngine;
   controller: ResultList;
+  onResultSelect?: (result: Result, position: number, query: string) => void;
+  query?: string;
 }) {
   const state = useControllerState(controller);
 
@@ -35,8 +39,15 @@ export function ResultListView({
 
   return (
     <div className="result-stack">
-      {state.results.map((result: Result) => (
-        <ResultItem engine={engine} key={result.uniqueId} result={result} />
+      {state.results.map((result: Result, index) => (
+        <ResultItem
+          engine={engine}
+          key={result.uniqueId}
+          onSelect={onResultSelect}
+          position={index + 1}
+          query={query}
+          result={result}
+        />
       ))}
     </div>
   );

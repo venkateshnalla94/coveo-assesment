@@ -12,7 +12,17 @@ function labelFromField(field: string) {
     .replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
-export function FacetPanel({ field, controller }: { field: string; controller: Facet }) {
+export function FacetPanel({
+  field,
+  controller,
+  onClearFacet,
+  onToggleValue,
+}: {
+  field: string;
+  controller: Facet;
+  onClearFacet?: (field: string) => void;
+  onToggleValue?: (field: string, value: string, selected: boolean) => void;
+}) {
   const state = useControllerState(controller);
 
   if (!state.enabled || (!state.isLoading && state.values.length === 0)) {
@@ -25,7 +35,14 @@ export function FacetPanel({ field, controller }: { field: string; controller: F
         <h2>{labelFromField(field)}</h2>
         <div className="facet-header-actions">
           {state.hasActiveValues ? (
-            <button className="link-button" onClick={() => controller.deselectAll()} type="button">
+            <button
+              className="link-button"
+              onClick={() => {
+                onClearFacet?.(field);
+                controller.deselectAll();
+              }}
+              type="button"
+            >
               Clear
             </button>
           ) : null}
@@ -43,7 +60,10 @@ export function FacetPanel({ field, controller }: { field: string; controller: F
               aria-pressed={isSelected}
               className="facet-value"
               key={value.value}
-              onClick={() => controller.toggleSelect(value)}
+              onClick={() => {
+                onToggleValue?.(field, value.value, !isSelected);
+                controller.toggleSelect(value);
+              }}
               type="button"
             >
               <span className="facet-checkbox" aria-hidden="true">

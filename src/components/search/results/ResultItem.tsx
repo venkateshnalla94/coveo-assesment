@@ -12,7 +12,19 @@ import {
 } from "@/components/search/results/result-fields";
 import { ResultCard } from "@/components/search/results/ResultCard";
 
-export function ResultItem({ engine, result }: { engine: SearchEngine; result: Result }) {
+export function ResultItem({
+  engine,
+  onSelect,
+  position,
+  query,
+  result,
+}: {
+  engine: SearchEngine;
+  onSelect?: (result: Result, position: number, query: string) => void;
+  position?: number;
+  query?: string;
+  result: Result;
+}) {
   const interactiveResult = useMemo(
     () =>
       buildInteractiveResult(engine, {
@@ -36,7 +48,10 @@ export function ResultItem({ engine, result }: { engine: SearchEngine; result: R
       dateLabel={resultDate}
       excerpt={excerpt}
       meta={meta}
-      onSelect={() => interactiveResult.select()}
+      onSelect={() => {
+        onSelect?.(result, position ?? 1, query ?? "");
+        interactiveResult.select();
+      }}
       printableUri={result.printableUri || result.uri}
       resultType={resultType}
       tags={resultTags}

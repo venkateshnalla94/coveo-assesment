@@ -5,10 +5,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SearchExperience } from "./SearchExperience";
 import type { SearchResponse } from "./response/search-response-types";
 import type { SearchInsightsContent } from "./layout/SearchInsightsRail";
-import type { SearchFeatureFlags } from "@/lib/features/search-feature-flags";
+import {
+  defaultSearchFeatureFlags,
+  type SearchFeatureFlags,
+} from "@/lib/features/search-feature-flags";
 
 const mocks = vi.hoisted(() => ({
   buildFacet: vi.fn(),
+  buildInteractiveResult: vi.fn(),
   buildPager: vi.fn(),
   buildQueryError: vi.fn(),
   buildQuerySummary: vi.fn(),
@@ -32,6 +36,7 @@ vi.mock("@/lib/coveo/use-controller-state", () => ({
 
 vi.mock("@coveo/headless", () => ({
   buildFacet: mocks.buildFacet,
+  buildInteractiveResult: mocks.buildInteractiveResult,
   buildPager: mocks.buildPager,
   buildQueryError: mocks.buildQueryError,
   buildQuerySummary: mocks.buildQuerySummary,
@@ -58,6 +63,7 @@ beforeEach(() => {
   Object.values(mocks).forEach((mock) => mock.mockReset());
 
   mocks.buildSearchEngine.mockReturnValue({ executeFirstSearch: mocks.executeFirstSearch });
+  mocks.buildInteractiveResult.mockReturnValue({ select: vi.fn() });
   mocks.buildSearchBox.mockReturnValue({
     ...controller({ isLoading: false, isLoadingSuggestions: false, suggestions: [], value: "" }),
     clear: vi.fn(),
@@ -211,6 +217,57 @@ describe("SearchExperience startup behavior", () => {
 
     await expect(configuration.renewAccessToken()).resolves.toBe("renewed-search-token");
   });
+
+  it("tracks live result and pagination app events without replacing Headless controllers", async () => {
+    const consoleInfo = vi.spyOn(console, "info").mockImplementation(() => undefined);
+    mocks.fetchSearchTokenConfig.mockResolvedValue(completeConfig);
+    mocks.buildResultList.mockReturnValue(
+      controller({
+        firstSearchExecuted: true,
+        hasError: false,
+        hasResults: true,
+        isLoading: false,
+        moreResultsAvailable: false,
+        results: [
+          {
+            clickUri: "https://example.test/live",
+            excerpt: "Live result excerpt",
+            firstSentences: "",
+            printableUri: "example.test/live",
+            raw: { filetype: "html" },
+            title: "Live result",
+            uniqueId: "live-result-1",
+            uri: "https://example.test/live",
+          },
+        ],
+        searchResponseId: "response-1",
+      }),
+    );
+    mocks.buildPager.mockReturnValue(
+      {
+        ...controller({
+        currentPage: 1,
+        currentPages: [1, 2],
+        hasNextPage: true,
+        hasPreviousPage: false,
+        maxPage: 2,
+        }),
+        nextPage: vi.fn(),
+        previousPage: vi.fn(),
+        selectPage: vi.fn(),
+      },
+    );
+
+    render(<SearchExperience />);
+
+    await userEvent.type(screen.getByRole("searchbox", { name: "Search" }), "live");
+    await userEvent.click(screen.getByRole("button", { name: "Search" }));
+    await userEvent.click(await screen.findByRole("link", { name: "Live result" }));
+    await userEvent.click(screen.getByRole("button", { name: "2" }));
+
+    expect(consoleInfo).not.toHaveBeenCalled();
+    expect(mocks.buildInteractiveResult).toHaveBeenCalled();
+  });
 });
 
 describe("SearchExperience sample response mode", () => {
@@ -312,7 +369,9 @@ describe("SearchExperience sample response mode", () => {
   };
 
   const enabledFlags: SearchFeatureFlags = {
+    ...defaultSearchFeatureFlags,
     enableFacets: true,
+    enableGenerativeAnswers: false,
     enableInsightsRail: true,
     enablePopularContent: true,
     enableRelatedQueries: true,
@@ -334,7 +393,7 @@ describe("SearchExperience sample response mode", () => {
     expect(screen.getByText("sample-search-hub")).toBeTruthy();
     expect(screen.getByText("About this topic")).toBeTruthy();
     expect(screen.getByText("Related queries")).toBeTruthy();
-    expect(screen.getByText("Popular content")).toBeTruthy();
+    expect(screen.getByText("Trending content")).toBeTruthy();
     await userEvent.click(screen.getByRole("button", { name: "Search" }));
     expect(mocks.fetchSearchTokenConfig).not.toHaveBeenCalled();
     expect(mocks.buildSearchEngine).not.toHaveBeenCalled();
@@ -410,6 +469,24 @@ describe("SearchExperience sample response mode", () => {
     expect(screen.getByText("Sample Digital Transformation Web Page")).toBeTruthy();
   });
 
+  it("clears a selected sample facet group", async () => {
+    render(
+      <SearchExperience
+        featureFlags={enabledFlags}
+        insightsContent={insightsContent}
+        sampleSearchResponse={sampleSearchResponse}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "PDF 4" }));
+    await userEvent.click(screen.getByRole("button", { name: "Clear" }));
+
+    expect(screen.getByRole("button", { name: "PDF 4" }).getAttribute("aria-pressed")).toBe(
+      "false",
+    );
+    expect(screen.getByText("Sample Digital Transformation Web Page")).toBeTruthy();
+  });
+
   it("clears a sample response facet when the All value is selected", async () => {
     render(
       <SearchExperience
@@ -466,6 +543,77 @@ describe("SearchExperience sample response mode", () => {
     expect(await screen.findByText("Sample Digital Transformation Guide")).toBeTruthy();
   });
 
+  it("does not duplicate zero-results tracking for the same sample query", async () => {
+    render(
+      <SearchExperience
+        featureFlags={enabledFlags}
+        insightsContent={insightsContent}
+        sampleSearchResponse={sampleSearchResponse}
+      />,
+    );
+
+    await userEvent.clear(screen.getByRole("combobox", { name: "Search" }));
+    await userEvent.type(screen.getByRole("combobox", { name: "Search" }), "no matching query");
+    await userEvent.click(screen.getByRole("button", { name: "Search" }));
+    expect(await screen.findByText("No results for no matching query")).toBeTruthy();
+
+    await userEvent.click(screen.getByRole("button", { name: "Search" }));
+    expect(await screen.findByText("No results for no matching query")).toBeTruthy();
+  });
+
+  it("clears filters from a sample zero-results state", async () => {
+    render(
+      <SearchExperience
+        featureFlags={enabledFlags}
+        insightsContent={insightsContent}
+        sampleSearchResponse={sampleSearchResponse}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "PDF 4" }));
+    await userEvent.clear(screen.getByRole("combobox", { name: "Search" }));
+    await userEvent.type(screen.getByRole("combobox", { name: "Search" }), "web page");
+    await userEvent.click(screen.getByRole("button", { name: "Search" }));
+
+    expect(await screen.findByText("No results for web page")).toBeTruthy();
+    await userEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+
+    expect(await screen.findByText("Sample Digital Transformation Web Page")).toBeTruthy();
+  });
+
+  it("submits selected sample query suggestions", async () => {
+    render(
+      <SearchExperience
+        featureFlags={enabledFlags}
+        insightsContent={insightsContent}
+        sampleSearchResponse={sampleSearchResponse}
+      />,
+    );
+
+    await userEvent.clear(screen.getByRole("combobox", { name: "Search" }));
+    await userEvent.type(screen.getByRole("combobox", { name: "Search" }), "Guide");
+    await userEvent.click(await screen.findByRole("option", { name: "Sample Digital Transformation Guide" }));
+
+    expect(screen.getByRole("combobox", { name: "Search" })).toHaveProperty(
+      "value",
+      "Sample Digital Transformation Guide",
+    );
+  });
+
+  it("clears the sample search draft", async () => {
+    render(
+      <SearchExperience
+        featureFlags={enabledFlags}
+        insightsContent={insightsContent}
+        sampleSearchResponse={sampleSearchResponse}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Clear search" }));
+
+    expect(screen.getByRole("combobox", { name: "Search" })).toHaveProperty("value", "");
+  });
+
   it("paginates sample response results at four cards per page", async () => {
     render(
       <SearchExperience
@@ -482,5 +630,55 @@ describe("SearchExperience sample response mode", () => {
 
     expect(screen.getByText("Sample Digital Transformation Playbook")).toBeTruthy();
     expect(screen.queryByText("Sample Digital Transformation Guide")).toBeNull();
+  });
+
+  it("renders sample generative answers when enabled", async () => {
+    render(
+      <SearchExperience
+        featureFlags={{ ...enabledFlags, enableGenerativeAnswers: true }}
+        insightsContent={insightsContent}
+        sampleSearchResponse={sampleSearchResponse}
+      />,
+    );
+
+    expect(await screen.findByText(/Fixture-backed summary/)).toBeTruthy();
+    expect(screen.getAllByRole("link", { name: /The Ultimate Guide/ }).length).toBeGreaterThan(0);
+  });
+
+  it("tracks sample result clicks and respects disabled analytics", async () => {
+    const consoleInfo = vi.spyOn(console, "info").mockImplementation(() => undefined);
+
+    render(
+      <SearchExperience
+        featureFlags={enabledFlags}
+        insightsContent={insightsContent}
+        sampleSearchResponse={sampleSearchResponse}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("link", { name: /Sample Digital Transformation Guide/ }));
+
+    expect(consoleInfo).toHaveBeenCalledWith(
+      "[analytics]",
+      expect.objectContaining({
+        name: "result_clicked",
+        payload: expect.objectContaining({ resultId: "sample-guide" }),
+      }),
+    );
+
+    cleanup();
+    consoleInfo.mockClear();
+
+    render(
+      <SearchExperience
+        featureFlags={{ ...enabledFlags, enableAnalytics: false }}
+        insightsContent={insightsContent}
+        sampleSearchResponse={sampleSearchResponse}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("link", { name: /Sample Digital Transformation Guide/ }));
+
+    expect(consoleInfo).not.toHaveBeenCalled();
   });
 });

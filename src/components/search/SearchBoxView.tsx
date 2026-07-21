@@ -7,7 +7,15 @@ import { FormEvent, KeyboardEvent, useId, useState } from "react";
 import { SEARCH_UI } from "@/components/search/search-ui.constants";
 import { useControllerState } from "@/lib/coveo/use-controller-state";
 
-export function SearchBoxView({ controller }: { controller: SearchBox }) {
+export function SearchBoxView({
+  controller,
+  onSearchSubmitted,
+  onSuggestionSelected,
+}: {
+  controller: SearchBox;
+  onSearchSubmitted?: (query: string) => void;
+  onSuggestionSelected?: (suggestion: string) => void;
+}) {
   const state = useControllerState(controller);
   const suggestionsId = useId();
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -21,6 +29,7 @@ export function SearchBoxView({ controller }: { controller: SearchBox }) {
     }
     setSuggestionsOpen(false);
     setActiveIndex(-1);
+    onSearchSubmitted?.(state.value.trim());
     controller.submit();
   }
 
@@ -50,6 +59,7 @@ export function SearchBoxView({ controller }: { controller: SearchBox }) {
     if (event.key === "Enter" && activeIndex >= 0) {
       event.preventDefault();
       setSuggestionsOpen(false);
+      onSuggestionSelected?.(state.suggestions[activeIndex].rawValue);
       controller.selectSuggestion(state.suggestions[activeIndex].rawValue);
     }
   }
@@ -118,6 +128,7 @@ export function SearchBoxView({ controller }: { controller: SearchBox }) {
               onClick={() => {
                 setSuggestionsOpen(false);
                 setActiveIndex(-1);
+                onSuggestionSelected?.(suggestion.rawValue);
                 controller.selectSuggestion(suggestion.rawValue);
               }}
               aria-selected={activeIndex === index}

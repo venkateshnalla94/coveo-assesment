@@ -1,5 +1,7 @@
-import { ArrowRight, Flame, Search, Sparkles } from "lucide-react";
+import { ArrowRight, Search, Sparkles } from "lucide-react";
 
+import { TrendingContent } from "@/components/content/TrendingContent";
+import type { TrendingProvider } from "@/features/trending/providers/trending-provider";
 import type { SearchFeatureFlags } from "@/lib/features/search-feature-flags";
 
 export type SearchInsightsContent = {
@@ -26,12 +28,14 @@ export type SearchInsightsContent = {
 export function SearchInsightsRail({
   content,
   featureFlags,
+  trendingProvider,
 }: {
   content: SearchInsightsContent;
   featureFlags: Pick<
     SearchFeatureFlags,
-    "enablePopularContent" | "enableRelatedQueries" | "enableTopicInsight"
+    "enablePopularContent" | "enableRelatedQueries" | "enableTopicInsight" | "enableTrendingContent"
   >;
+  trendingProvider: TrendingProvider;
 }) {
   return (
     <aside className="insights-rail" aria-label="Search insights">
@@ -65,22 +69,10 @@ export function SearchInsightsRail({
         </section>
       ) : null}
 
-      {featureFlags.enablePopularContent ? (
-        <section className="insight-card">
-          <div className="insight-card-title">
-            <Flame aria-hidden="true" size={18} />
-            <h2>{content.popularContent.title}</h2>
-          </div>
-          <ul className="popular-list">
-            {content.popularContent.items.map((item) => (
-              <li key={item.title}>
-                <a href={item.href}>{item.title}</a>
-                <span>{item.metric}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+      <TrendingContent
+        enabled={featureFlags.enablePopularContent && featureFlags.enableTrendingContent}
+        provider={trendingProvider}
+      />
     </aside>
   );
 }

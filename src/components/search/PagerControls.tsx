@@ -5,7 +5,13 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { useControllerState } from "@/lib/coveo/use-controller-state";
 
-export function PagerControls({ controller }: { controller: Pager }) {
+export function PagerControls({
+  controller,
+  onPageChanged,
+}: {
+  controller: Pager;
+  onPageChanged?: (page: number) => void;
+}) {
   const state = useControllerState(controller);
 
   if (state.maxPage <= 1) {
@@ -18,7 +24,10 @@ export function PagerControls({ controller }: { controller: Pager }) {
         aria-label="Previous page"
         className="icon-button"
         disabled={!state.hasPreviousPage}
-        onClick={() => controller.previousPage()}
+        onClick={() => {
+          onPageChanged?.(state.currentPage - 1);
+          controller.previousPage();
+        }}
         type="button"
       >
         <ChevronLeft aria-hidden="true" size={18} />
@@ -29,7 +38,10 @@ export function PagerControls({ controller }: { controller: Pager }) {
           aria-current={state.currentPage === page ? "page" : undefined}
           className="page-button"
           key={page}
-          onClick={() => controller.selectPage(page)}
+          onClick={() => {
+            onPageChanged?.(page);
+            controller.selectPage(page);
+          }}
           type="button"
         >
           {page}
@@ -40,7 +52,10 @@ export function PagerControls({ controller }: { controller: Pager }) {
         aria-label="Next page"
         className="icon-button"
         disabled={!state.hasNextPage}
-        onClick={() => controller.nextPage()}
+        onClick={() => {
+          onPageChanged?.(state.currentPage + 1);
+          controller.nextPage();
+        }}
         type="button"
       >
         <ChevronRight aria-hidden="true" size={18} />

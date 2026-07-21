@@ -32,6 +32,7 @@ import {
   type ReactNode,
 } from "react";
 
+import { GenerativeAnswer } from "@/components/generative/GenerativeAnswer";
 import { ConfigurationNotice } from "@/components/shared/ConfigurationNotice";
 import { FacetPanel } from "@/components/search/facets/FacetPanel";
 import {
@@ -50,7 +51,18 @@ import { SearchBoxView } from "@/components/search/SearchBoxView";
 import { SearchSummary } from "@/components/search/SearchSummary";
 import { SortControl } from "@/components/search/SortControl";
 import { SEARCH_UI } from "@/components/search/search-ui.constants";
+import {
+  AnalyticsProviderRoot,
+  ConsoleAnalyticsProvider,
+  CoveoAnalyticsProvider,
+  createSearchAnalyticsPayload,
+  useAnalytics,
+} from "@/features/analytics/analytics";
+import { CoveoGenerativeProvider } from "@/features/generative/providers/coveo-generative-provider";
+import { InMemoryFeedbackProvider } from "@/features/generative/providers/feedback-provider";
+import { MockGenerativeProvider } from "@/features/generative/providers/mock-generative-provider";
 import { getFacetLabel, getFacetOrder } from "@/features/search/config/facets";
+import type { SearchResult } from "@/features/search/models/search-models";
 import { getSearchStateResponse, searchStateReducer } from "@/features/search/models/search-state";
 import { InMemorySearchProvider } from "@/features/search/providers/in-memory-search-provider";
 import { getPaginationState } from "@/features/search/services/pagination";
@@ -68,6 +80,7 @@ import {
   defaultSearchFeatureFlags,
   type SearchFeatureFlags,
 } from "@/lib/features/search-feature-flags";
+import { MockTrendingProvider } from "@/features/trending/providers/mock-trending-provider";
 import { fetchSearchTokenConfig, type SearchTokenConfig } from "@/lib/coveo/search-token";
 import { useControllerState } from "@/lib/coveo/use-controller-state";
 
@@ -166,6 +179,47 @@ export function SearchExperience({
 }) {
   const [engineState, setEngineState] = useState<EngineState>({ status: "idle" });
   const [pendingQuery, setPendingQuery] = useState("");
+  const analyticsProvider = useMemo(
+    () =>
+      featureFlags.enableSampleSearchResponse
+        ? new ConsoleAnalyticsProvider()
+        : new CoveoAnalyticsProvider(),
+    [featureFlags.enableSampleSearchResponse],
+  );
+
+  return (
+    <AnalyticsProviderRoot enabled={featureFlags.enableAnalytics} provider={analyticsProvider}>
+      <SearchExperienceContent
+        engineState={engineState}
+        featureFlags={featureFlags}
+        insightsContent={insightsContent}
+        onEngineStateChange={setEngineState}
+        onPendingQueryChange={setPendingQuery}
+        pendingQuery={pendingQuery}
+        sampleSearchResponse={sampleSearchResponse}
+      />
+    </AnalyticsProviderRoot>
+  );
+}
+
+function SearchExperienceContent({
+  engineState,
+  featureFlags,
+  insightsContent,
+  onEngineStateChange,
+  onPendingQueryChange,
+  pendingQuery,
+  sampleSearchResponse,
+}: {
+  engineState: EngineState;
+  featureFlags: SearchFeatureFlags;
+  insightsContent?: SearchInsightsContent;
+  onEngineStateChange: (state: EngineState) => void;
+  onPendingQueryChange: (query: string) => void;
+  pendingQuery: string;
+  sampleSearchResponse?: SearchResponse;
+}) {
+  const analytics = useAnalytics();
 
   if (featureFlags.enableSampleSearchResponse && sampleSearchResponse) {
     return (
@@ -181,16 +235,17 @@ export function SearchExperience({
     event.preventDefault();
     const submittedQuery = pendingQuery.trim();
 
-    setEngineState({ status: "loading" });
+    analytics.track("search_submitted", { mode: "live", query: submittedQuery });
+    onEngineStateChange({ status: "loading" });
 
     try {
       const config = await fetchSearchTokenConfig();
       const engine = createEngine(config);
 
-      setEngineState({ status: "ready", engine, config, initialQuery: submittedQuery });
+      onEngineStateChange({ status: "ready", engine, config, initialQuery: submittedQuery });
     } catch (error) {
       console.error("Coveo search initialization failed:", error);
-      setEngineState({ status: "configuration-error" });
+      onEngineStateChange({ status: "configuration-error" });
     }
   }
 
@@ -207,7 +262,7 @@ export function SearchExperience({
         searchSlot={
           <StartupSearchForm
             isLoading
-            onQueryChange={setPendingQuery}
+            onQueryChange={onPendingQueryChange}
             onSubmit={handleInitialSearch}
             query={pendingQuery}
           />
@@ -228,7 +283,7 @@ export function SearchExperience({
         }
         searchSlot={
           <StartupSearchForm
-            onQueryChange={setPendingQuery}
+            onQueryChange={onPendingQueryChange}
             onSubmit={handleInitialSearch}
             query={pendingQuery}
           />
@@ -253,7 +308,7 @@ export function SearchExperience({
     <StartupSearchView
       searchSlot={
         <StartupSearchForm
-          onQueryChange={setPendingQuery}
+          onQueryChange={onPendingQueryChange}
           onSubmit={handleInitialSearch}
           query={pendingQuery}
         />
@@ -327,7 +382,9 @@ function ReadySearchExperience({
   initialQuery: string;
   insightsContent?: SearchInsightsContent;
 }) {
+  const analytics = useAnalytics();
   const firstSearchExecuted = useRef(false);
+  const trackedZeroResults = useRef("");
 
   const controllers = useMemo(
     () => createControllers(engine, config.facetFields),
@@ -335,8 +392,12 @@ function ReadySearchExperience({
   );
 
   const searchStatus = useControllerState(controllers.searchStatus);
+  const resultListState = useControllerState(controllers.resultList);
   const queryError = useControllerState(controllers.queryError);
   const showInsights = featureFlags.enableInsightsRail && Boolean(insightsContent);
+  const generativeProvider = useMemo(() => new CoveoGenerativeProvider(), []);
+  const feedbackProvider = useMemo(() => new InMemoryFeedbackProvider(), []);
+  const trendingProvider = useMemo(() => new MockTrendingProvider(), []);
 
   useEffect(() => {
     if (!firstSearchExecuted.current) {
@@ -352,10 +413,47 @@ function ReadySearchExperience({
     }
   }, [controllers.searchBox, engine, initialQuery]);
 
+  useEffect(() => {
+    if (
+      !resultListState.firstSearchExecuted ||
+      resultListState.hasResults ||
+      resultListState.isLoading
+    ) {
+      return;
+    }
+
+    const key = controllers.searchBox.state.value.trim();
+
+    if (trackedZeroResults.current === key) {
+      return;
+    }
+
+    trackedZeroResults.current = key;
+    analytics.track("zero_results_displayed", { mode: "live", query: key });
+  }, [
+    analytics,
+    controllers.searchBox,
+    resultListState.firstSearchExecuted,
+    resultListState.hasResults,
+    resultListState.isLoading,
+  ]);
+
   return (
     <>
       <div className="search-command-bar">
-        <SearchBoxView controller={controllers.searchBox} />
+        <SearchBoxView
+          controller={controllers.searchBox}
+          onSearchSubmitted={(query) =>
+            analytics.track("search_submitted", { mode: "live", query, searchHub: config.searchHub })
+          }
+          onSuggestionSelected={(suggestion) =>
+            analytics.track("query_suggestion_selected", {
+              mode: "live",
+              suggestion,
+              searchHub: config.searchHub,
+            })
+          }
+        />
       </div>
       <main className="app-shell">
         {queryError.hasError ? (
@@ -377,6 +475,7 @@ function ReadySearchExperience({
                 <button
                   className="link-button"
                   onClick={() => {
+                    analytics.track("filters_cleared", { mode: "live", searchHub: config.searchHub });
                     controllers.facets.forEach((facet) => facet.controller.deselectAll());
                   }}
                   type="button"
@@ -385,7 +484,22 @@ function ReadySearchExperience({
                 </button>
               </div>
               {controllers.facets.map((facet) => (
-                <FacetPanel key={facet.field} field={facet.field} controller={facet.controller} />
+                <FacetPanel
+                  key={facet.field}
+                  field={facet.field}
+                  controller={facet.controller}
+                  onClearFacet={(field) =>
+                    analytics.track("facet_removed", { field, mode: "live", searchHub: config.searchHub })
+                  }
+                  onToggleValue={(field, value, selected) =>
+                    analytics.track(selected ? "facet_selected" : "facet_removed", {
+                      field,
+                      mode: "live",
+                      searchHub: config.searchHub,
+                      value,
+                    })
+                  }
+                />
               ))}
             </aside>
           ) : null}
@@ -398,12 +512,46 @@ function ReadySearchExperience({
                 <span className="sort-readonly">{SEARCH_UI.sort.relevanceLabel}</span>
               </div>
             </div>
-            <ResultListView engine={engine} controller={controllers.resultList} />
-            <PagerControls controller={controllers.pager} />
+            <GenerativeAnswer
+              feedbackProvider={feedbackProvider}
+              featureFlags={featureFlags}
+              provider={generativeProvider}
+              query={controllers.searchBox.state.value}
+            />
+            <ResultListView
+              engine={engine}
+              controller={controllers.resultList}
+              onResultSelect={(result, position, resultQuery) =>
+                analytics.track("result_clicked", {
+                  mode: "live",
+                  position,
+                  query: resultQuery,
+                  resultId: result.uniqueId,
+                  searchHub: config.searchHub,
+                  type: typeof result.raw.filetype === "string" ? result.raw.filetype : "unknown",
+                })
+              }
+              query={controllers.searchBox.state.value}
+            />
+            <PagerControls
+              controller={controllers.pager}
+              onPageChanged={(page) =>
+                analytics.track("page_changed", {
+                  mode: "live",
+                  page,
+                  query: controllers.searchBox.state.value,
+                  searchHub: config.searchHub,
+                })
+              }
+            />
           </section>
 
           {showInsights && insightsContent ? (
-            <SearchInsightsRail content={insightsContent} featureFlags={featureFlags} />
+            <SearchInsightsRail
+              content={insightsContent}
+              featureFlags={featureFlags}
+              trendingProvider={trendingProvider}
+            />
           ) : null}
         </div>
       </main>
@@ -420,7 +568,12 @@ function SearchResponseExperience({
   insightsContent?: SearchInsightsContent;
   searchResponse: SearchResponse;
 }) {
+  const analytics = useAnalytics();
   const provider = useMemo(() => new InMemorySearchProvider(searchResponse), [searchResponse]);
+  const generativeProvider = useMemo(() => new MockGenerativeProvider(), []);
+  const feedbackProvider = useMemo(() => new InMemoryFeedbackProvider(), []);
+  const trendingProvider = useMemo(() => new MockTrendingProvider(), []);
+  const trackedZeroResults = useRef("");
   const [draftQuery, setDraftQuery] = useState(searchResponse.query ?? "");
   const [query, setQuery] = useState(() =>
     normalizeSearchQuery({
@@ -456,6 +609,25 @@ function SearchResponseExperience({
     }))
     .sort((left, right) => getFacetOrder(left.field) - getFacetOrder(right.field));
 
+  useEffect(() => {
+    if (state.status !== "empty") {
+      return;
+    }
+
+    const key = JSON.stringify({ filters: state.query.filters, query: state.query.query });
+
+    if (trackedZeroResults.current === key) {
+      return;
+    }
+
+    trackedZeroResults.current = key;
+    analytics.track("zero_results_displayed", {
+      activeFilterCount,
+      mode: "sample",
+      query: state.query.query,
+    });
+  }, [activeFilterCount, analytics, state]);
+
   function runSearch(nextQuery: typeof query) {
     const normalizedQuery = normalizeSearchQuery(nextQuery);
     setQuery(normalizedQuery);
@@ -475,11 +647,25 @@ function SearchResponseExperience({
   }
 
   function submitSearch(nextQueryText: string) {
+    analytics.track("search_submitted", { mode: "sample", query: nextQueryText });
     runSearch(setSearchQueryText(query, nextQueryText));
   }
 
   function clearSearch() {
     setDraftQuery("");
+  }
+
+  function trackResultClick(result: SearchResult, position: number, resultQuery: string) {
+    analytics.track(
+      "result_clicked",
+      createSearchAnalyticsPayload({
+        position,
+        query: resultQuery,
+        resultId: result.id,
+        searchHub: searchResponse.searchHub,
+        type: result.type,
+      }),
+    );
   }
 
   return (
@@ -489,6 +675,14 @@ function SearchResponseExperience({
           isLoading={state.status === "loading"}
           onClear={clearSearch}
           onQueryChange={setDraftQuery}
+          onSuggestionSelected={(suggestion) =>
+            analytics.track("query_suggestion_selected", {
+              mode: "sample",
+              query: draftQuery,
+              suggestionId: suggestion.id,
+              suggestion: suggestion.value,
+            })
+          }
           onSubmit={submitSearch}
           provider={provider}
           query={draftQuery}
@@ -504,14 +698,30 @@ function SearchResponseExperience({
           {featureFlags.enableFacets && sortedFacets.length > 0 ? (
             <DomainFacetPanel
               facets={sortedFacets}
-              onClearAll={() => runSearch(clearSearchQueryFilters(query))}
-              onClearFacet={(field) => runSearch(clearSearchQueryFacet(query, field))}
+              onClearAll={() => {
+                analytics.track("filters_cleared", {
+                  activeFilterCount,
+                  mode: "sample",
+                  query: query.query,
+                });
+                runSearch(clearSearchQueryFilters(query));
+              }}
+              onClearFacet={(field) => {
+                analytics.track("facet_removed", { field, mode: "sample", query: query.query });
+                runSearch(clearSearchQueryFacet(query, field));
+              }}
               onToggleValue={(field, value) => {
                 if (value.toLowerCase() === "all" || value.toLowerCase() === "any time") {
+                  analytics.track("facet_removed", { field, mode: "sample", query: query.query });
                   runSearch(clearSearchQueryFacet(query, field));
                   return;
                 }
 
+                const selectedValues = query.filters[field] ?? [];
+                analytics.track(
+                  selectedValues.includes(value) ? "facet_removed" : "facet_selected",
+                  { field, mode: "sample", query: query.query, value },
+                );
                 runSearch(toggleSearchQueryFacet(query, field, value));
               }}
             />
@@ -526,17 +736,39 @@ function SearchResponseExperience({
                 query={state.query.query}
               />
               <SortControl
-                onChange={(sort) => runSearch(setSearchQuerySort(query, sort))}
+                onChange={(sort) => {
+                  analytics.track("sort_changed", {
+                    mode: "sample",
+                    query: query.query,
+                    sort,
+                  });
+                  runSearch(setSearchQuerySort(query, sort));
+                }}
                 value={state.query.sort}
               />
             </div>
+            <GenerativeAnswer
+              feedbackProvider={feedbackProvider}
+              featureFlags={featureFlags}
+              provider={generativeProvider}
+              query={state.query.query}
+            />
             <SearchResults
               activeFilterCount={activeFilterCount}
               error={state.status === "error" ? state.error : undefined}
               isLoading={state.status === "loading"}
-              onClearFilters={() => runSearch(clearSearchQueryFilters(query))}
+              onClearFilters={() => {
+                analytics.track("filters_cleared", {
+                  activeFilterCount,
+                  mode: "sample",
+                  query: query.query,
+                });
+                runSearch(clearSearchQueryFilters(query));
+              }}
+              onResultSelect={trackResultClick}
               onRetryQuery={(nextQuery) => {
                 setDraftQuery(nextQuery);
+                analytics.track("search_submitted", { mode: "sample", query: nextQuery });
                 runSearch(setSearchQueryText(query, nextQuery));
               }}
               pagination={pagination}
@@ -546,6 +778,11 @@ function SearchResponseExperience({
             />
             <Pagination
               onSelectPage={(page) => {
+                analytics.track("page_changed", {
+                  mode: "sample",
+                  page,
+                  query: query.query,
+                });
                 runSearch(setSearchQueryPage(query, page));
                 window.requestAnimationFrame(() => {
                   document.querySelector<HTMLElement>(".results-column")?.focus();
@@ -556,7 +793,11 @@ function SearchResponseExperience({
           </section>
 
           {showInsights && insightsContent ? (
-            <SearchInsightsRail content={insightsContent} featureFlags={featureFlags} />
+            <SearchInsightsRail
+              content={insightsContent}
+              featureFlags={featureFlags}
+              trendingProvider={trendingProvider}
+            />
           ) : null}
         </div>
       </main>

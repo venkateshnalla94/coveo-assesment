@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 
 import { DomainResultCard } from "@/components/search/results/DomainResultCard";
 import type { SearchResult, SearchResultType } from "@/features/search/models/search-models";
@@ -17,6 +18,22 @@ describe("DomainResultCard", () => {
 
     rerender(<DomainResultCard result={resultFor("unknown" as never)} />);
     expect(screen.getAllByText("Content").length).toBeGreaterThan(0);
+  });
+
+  it("uses safe fallback urls and emits selection context", async () => {
+    const onSelect = vi.fn();
+    const result = {
+      ...resultFor("product"),
+      displayUrl: undefined,
+      url: "javascript:alert(1)",
+    };
+
+    render(<DomainResultCard onSelect={onSelect} position={3} query="digital" result={result} />);
+
+    expect(screen.getByText("Unavailable URL")).toBeTruthy();
+    await userEvent.click(screen.getByRole("link", { name: /product result/ }));
+
+    expect(onSelect).toHaveBeenCalledWith(result, 3, "digital");
   });
 });
 

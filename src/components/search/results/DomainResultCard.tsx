@@ -28,7 +28,17 @@ const variantIconLabels: Record<ResultVariant, string> = {
   video: "Video",
 };
 
-export function DomainResultCard({ result }: { result: SearchResult }) {
+export function DomainResultCard({
+  onSelect,
+  position,
+  query,
+  result,
+}: {
+  onSelect?: (result: SearchResult, position: number, query: string) => void;
+  position?: number;
+  query?: string;
+  result: SearchResult;
+}) {
   const variant = getResultVariant(result);
   const safeUrl = getSafeResultUrl(result);
   const metadata = [
@@ -42,6 +52,7 @@ export function DomainResultCard({ result }: { result: SearchResult }) {
       dateLabel={getResultDateLabel(result.updatedAt)}
       excerpt={getResultDescription(result)}
       meta={metadata}
+      onSelect={() => onSelect?.(result, position ?? 1, query ?? "")}
       printableUri={result.displayUrl ?? (safeUrl === "#" ? "Unavailable URL" : safeUrl)}
       resultType={variantLabels[variant]}
       tags={result.badges ?? []}

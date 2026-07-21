@@ -102,13 +102,10 @@ export async function GET() {
     }
 
     if (!response?.ok) {
-      const detail = await response?.text();
-
       return NextResponse.json(
         {
           error: "Unable to mint Coveo search token.",
           status: response?.status ?? 500,
-          detail: detail || "No response body returned by Coveo.",
         },
         { status: 502, headers: noStoreHeaders },
       );

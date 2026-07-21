@@ -1,7 +1,7 @@
 "use client";
 
 import { Search, X } from "lucide-react";
-import { FormEvent, KeyboardEvent, useId, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useId, useRef, useState } from "react";
 
 import { SearchSuggestions } from "@/components/search/SearchSuggestions";
 import { SEARCH_UI } from "@/components/search/search-ui.constants";
@@ -27,6 +27,8 @@ export function SearchBox({
   query: string;
 }) {
   const suggestionsId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [isFocused, setIsFocused] = useState(false);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
@@ -36,6 +38,11 @@ export function SearchBox({
     query,
   });
   const showSuggestions = suggestionsOpen && (isLoadingSuggestions || suggestions.length > 0);
+
+  useEffect(() => {
+    wrapperRef.current?.setAttribute("data-search-ready", "true");
+    inputRef.current?.focus();
+  }, []);
 
   function submitQuery(nextQuery = query) {
     const trimmedQuery = nextQuery.trim();
@@ -92,7 +99,7 @@ export function SearchBox({
   }
 
   return (
-    <div className="search-box-wrap">
+    <div className="search-box-wrap" data-search-ready="false" ref={wrapperRef}>
       <form className="search-box" onSubmit={handleSubmit} role="search">
         <Search aria-hidden="true" size={20} />
         <input
@@ -102,9 +109,12 @@ export function SearchBox({
           aria-expanded={showSuggestions}
           aria-label="Search"
           autoComplete="off"
+          autoFocus
           disabled={isLoading}
+          ref={inputRef}
           onBlur={() => window.setTimeout(() => setSuggestionsOpen(false), 120)}
           onChange={(event) => {
+            setIsFocused(true);
             onQueryChange(event.target.value);
             setActiveIndex(-1);
             setSuggestionsOpen(true);

@@ -187,6 +187,14 @@ function getQueryFeatureFlagOverrides(
     overrides.trending = { enabled: false };
   }
 
+  if (enabled.has("live")) {
+    overrides.demo = { sampleSearchResponse: false };
+  }
+
+  if (enabled.has("sample")) {
+    overrides.demo = { sampleSearchResponse: true };
+  }
+
   return Object.keys(overrides).length > 0 ? overrides : undefined;
 }
 

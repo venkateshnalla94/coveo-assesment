@@ -791,6 +791,7 @@ p {
 .generative-panel {
   display: grid;
   gap: 16px;
+  min-height: 190px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface);
@@ -830,10 +831,13 @@ p {
   color: var(--muted);
 }
 
-.generative-skeleton div {
+.generative-skeleton div,
+.trending-skeleton div {
   height: 13px;
   border-radius: 999px;
-  background: var(--surface-subtle);
+  background: linear-gradient(90deg, #edf1f8 0%, #f9fbff 50%, #edf1f8 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
 }
 
 .generative-skeleton div:nth-child(3) {
@@ -953,6 +957,21 @@ p {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.trending-skeleton {
+  display: grid;
+  gap: 10px;
+  min-height: 124px;
+  color: var(--muted);
+}
+
+.trending-skeleton div:nth-child(3) {
+  width: 86%;
+}
+
+.trending-skeleton div:nth-child(4) {
+  width: 64%;
 }
 
 .trending-list li {
@@ -1089,7 +1108,7 @@ p {
 }
 
 .result-skeleton {
-  height: 148px;
+  min-height: 148px;
   border-radius: 8px;
   background: linear-gradient(90deg, #edf1f8 0%, #f9fbff 50%, #edf1f8 100%);
   background-size: 200% 100%;

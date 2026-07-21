@@ -143,8 +143,8 @@ describe("GET /api/search-token", () => {
     expect(body).toEqual({
       error: "Unable to mint Coveo search token.",
       status: 401,
-      detail: "invalid privileges",
     });
+    expect(JSON.stringify(body)).not.toContain("invalid privileges");
   });
 
   it("uses an explicit token endpoint override when configured", async () => {

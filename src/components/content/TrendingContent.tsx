@@ -60,9 +60,12 @@ export function TrendingContent({
       </div>
       <p className="muted-copy">Fixture metrics for sample-mode demonstration.</p>
       {state.status === "loading" ? (
-        <p role="status" aria-live="polite">
-          Loading trending content.
-        </p>
+        <div className="trending-skeleton" role="status" aria-live="polite">
+          <span>Loading trending content.</span>
+          <div />
+          <div />
+          <div />
+        </div>
       ) : null}
       {state.status === "empty" ? <p>No trending content is available.</p> : null}
       {state.status === "error" ? <p>Trending content could not be loaded.</p> : null}

@@ -50,6 +50,8 @@ export function ResultCard({
 }: ResultCardProps) {
   const ResultTypeIcon = typeIcon ?? resultTypeIcons[resultType] ?? File;
   const selectedAt = useRef(0);
+  const safeClickUri = getSafeUrl(clickUri);
+  const isLinkAvailable = safeClickUri !== "#";
 
   function handleSelect() {
     const now = Date.now();
@@ -74,12 +76,12 @@ export function ResultCard({
 
         <a
           className="result-title"
-          href={clickUri}
+          href={safeClickUri}
           onClick={handleSelect}
           onContextMenu={handleSelect}
           onMouseDown={handleSelect}
           rel="noreferrer"
-          target="_blank"
+          target={isLinkAvailable ? "_blank" : undefined}
         >
           <span>{title}</span>
         </a>
@@ -111,4 +113,18 @@ export function ResultCard({
       {dateLabel ? <time className="result-date">{dateLabel}</time> : null}
     </article>
   );
+}
+
+function getSafeUrl(value: string) {
+  try {
+    const url = new URL(value);
+
+    if (url.protocol === "https:" || url.protocol === "http:") {
+      return url.toString();
+    }
+  } catch {
+    return "#";
+  }
+
+  return "#";
 }

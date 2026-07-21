@@ -8,7 +8,7 @@ import type { SearchProviderCapabilities } from "@/features/search/capabilities/
 
 export interface SearchProvider {
   readonly capabilities: SearchProviderCapabilities;
-  search(query: SearchQuery): Promise<SearchResponse>;
-  getSuggestions(query: string): Promise<SearchSuggestion[]>;
+  search(query: SearchQuery, options?: { signal?: AbortSignal }): Promise<SearchResponse>;
+  getSuggestions(query: string, options?: { signal?: AbortSignal }): Promise<SearchSuggestion[]>;
   getTrendingContent?(): Promise<SearchResult[]>;
 }

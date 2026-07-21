@@ -18,7 +18,8 @@ afterEach(() => {
 });
 
 describe("SearchResults", () => {
-  it("renders loading and error states", () => {
+  it("renders loading and retryable error states", async () => {
+    const onRetryQuery = vi.fn();
     const { rerender } = render(
       <SearchResults
         activeFilterCount={0}
@@ -38,13 +39,15 @@ describe("SearchResults", () => {
         error="Provider error"
         isLoading={false}
         onClearFilters={vi.fn()}
-        onRetryQuery={vi.fn()}
+        onRetryQuery={onRetryQuery}
         pagination={pagination}
         query="digital"
       />,
     );
 
     expect(screen.getByRole("alert").textContent).toContain("Provider error");
+    await userEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(onRetryQuery).toHaveBeenCalledWith("digital");
   });
 
   it("renders result variants and zero-results recovery", async () => {

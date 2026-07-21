@@ -81,6 +81,44 @@ describe("runtime config", () => {
     expect(config.featureFlags.trending.enabled).toBe(true);
   });
 
+  it("allows development-only sample/live provider overrides", () => {
+    const liveConfig = resolveRuntimeConfig({
+      environment: {
+        COVEO_DEVELOPMENT_QUERY_OVERRIDES: "true",
+        NODE_ENV: "test",
+      },
+      searchParams: { flags: "live" },
+    });
+    const sampleConfig = resolveRuntimeConfig({
+      environment: {
+        COVEO_DEVELOPMENT_QUERY_OVERRIDES: "true",
+        COVEO_FEATURE_SAMPLE_SEARCH_RESPONSE: "false",
+        NODE_ENV: "test",
+      },
+      searchParams: { flags: "sample" },
+    });
+
+    expect(liveConfig.searchProvider).toBe("coveo");
+    expect(sampleConfig.searchProvider).toBe("mock");
+  });
+
+  it("rejects development query overrides in production", () => {
+    const config = resolveRuntimeConfig({
+      environment: {
+        COVEO_DEVELOPMENT_QUERY_OVERRIDES: "true",
+        COVEO_FEATURE_SAMPLE_SEARCH_RESPONSE: "true",
+        NEXT_PUBLIC_DEMO_PROFILE: "developer-documentation",
+        NODE_ENV: "production",
+      },
+      searchParams: { flags: "live,no-generative", profile: "ecommerce", scenario: "error" },
+    });
+
+    expect(config.demoProfile.id).toBe("developer-documentation");
+    expect(config.scenario).toBe("default");
+    expect(config.searchProvider).toBe("mock");
+    expect(config.featureFlags.generative.enabled).toBe(true);
+  });
+
   it("keeps server-only secrets separate", () => {
     expect(
       resolveServerOnlyRuntimeConfig({

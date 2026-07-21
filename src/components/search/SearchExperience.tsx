@@ -52,6 +52,7 @@ import { SearchBoxView } from "@/components/search/SearchBoxView";
 import { SearchSummary } from "@/components/search/SearchSummary";
 import { SortControl } from "@/components/search/SortControl";
 import { SEARCH_UI } from "@/components/search/search-ui.constants";
+import { useSampleExperienceProviders } from "@/components/search/use-sample-experience-providers";
 import {
   AnalyticsProviderRoot,
   ConsoleAnalyticsProvider,
@@ -61,13 +62,12 @@ import {
 } from "@/features/analytics/analytics";
 import { CoveoGenerativeProvider } from "@/features/generative/providers/coveo-generative-provider";
 import { InMemoryFeedbackProvider } from "@/features/generative/providers/feedback-provider";
-import { MockGenerativeProvider } from "@/features/generative/providers/mock-generative-provider";
 import type { DemoProfile } from "@/features/demo-profiles/demo-profiles";
 import type { DevelopmentScenario } from "@/features/development/scenarios";
 import { getFacetLabel, getFacetOrder } from "@/features/search/config/facets";
 import type { SearchResult } from "@/features/search/models/search-models";
+import type { GenerativeAnswer as GenerativeAnswerModel } from "@/features/generative/models/generative-models";
 import { getSearchStateResponse, searchStateReducer } from "@/features/search/models/search-state";
-import { InMemorySearchProvider } from "@/features/search/providers/in-memory-search-provider";
 import {
   coveoGenerativeCapabilities,
   coveoHeadlessCapabilities,
@@ -98,8 +98,8 @@ import {
   defaultSearchFeatureFlags,
   type SearchFeatureFlags,
 } from "@/lib/features/search-feature-flags";
+import type { TrendingItem } from "@/features/trending/models/trending-models";
 import { MockTrendingProvider } from "@/features/trending/providers/mock-trending-provider";
-import type { TrendingProvider } from "@/features/trending/providers/trending-provider";
 import { fetchSearchTokenConfig, type SearchTokenConfig } from "@/lib/coveo/search-token";
 import { useControllerState } from "@/lib/coveo/use-controller-state";
 import { ConsoleLogger, type Logger } from "@/lib/logging/logger";
@@ -199,6 +199,9 @@ export function SearchExperience({
   profile,
   scenario = "default",
   sampleSearchResponse,
+  suggestedQueries,
+  generativeFixture,
+  trendingItems,
 }: {
   capabilities?: {
     search: SearchProviderCapabilities;
@@ -212,6 +215,9 @@ export function SearchExperience({
   profile?: DemoProfile;
   scenario?: DevelopmentScenario;
   sampleSearchResponse?: SearchResponse;
+  suggestedQueries?: string[];
+  generativeFixture?: Omit<GenerativeAnswerModel, "id" | "query">;
+  trendingItems?: TrendingItem[];
 }) {
   const [engineState, setEngineState] = useState<EngineState>({ status: "idle" });
   const [pendingQuery, setPendingQuery] = useState("");
@@ -248,6 +254,9 @@ export function SearchExperience({
         profile={profile}
         scenario={scenario}
         sampleSearchResponse={sampleSearchResponse}
+        suggestedQueries={suggestedQueries}
+        generativeFixture={generativeFixture}
+        trendingItems={trendingItems}
       />
     </AnalyticsProviderRoot>
   );
@@ -267,6 +276,9 @@ function SearchExperienceContent({
   profile,
   scenario,
   sampleSearchResponse,
+  suggestedQueries,
+  generativeFixture,
+  trendingItems,
 }: {
   engineState: EngineState;
   capabilities: {
@@ -284,6 +296,9 @@ function SearchExperienceContent({
   profile?: DemoProfile;
   scenario: DevelopmentScenario;
   sampleSearchResponse?: SearchResponse;
+  suggestedQueries?: string[];
+  generativeFixture?: Omit<GenerativeAnswerModel, "id" | "query">;
+  trendingItems?: TrendingItem[];
 }) {
   const analytics = useAnalytics();
 
@@ -299,6 +314,9 @@ function SearchExperienceContent({
         profile={profile}
         scenario={scenario}
         searchResponse={sampleSearchResponse}
+        suggestedQueries={suggestedQueries}
+        generativeFixture={generativeFixture}
+        trendingItems={trendingItems}
       />
     );
   }
@@ -431,6 +449,7 @@ function StartupSearchForm({
       <input
         aria-label="Search"
         autoComplete="off"
+        autoFocus
         disabled={isLoading}
         onChange={(event) => onQueryChange(event.target.value)}
         placeholder={SEARCH_UI.defaultQuery}
@@ -661,11 +680,14 @@ function SearchResponseExperience({
   development,
   environment,
   featureFlags,
+  generativeFixture,
   insightsContent,
   logger,
   profile,
   scenario,
   searchResponse,
+  suggestedQueries,
+  trendingItems,
 }: {
   capabilities: {
     search: SearchProviderCapabilities;
@@ -674,41 +696,34 @@ function SearchResponseExperience({
   development: { queryOverridesEnabled: boolean };
   environment: "development" | "test" | "production";
   featureFlags: SearchFeatureFlags;
+  generativeFixture?: Omit<GenerativeAnswerModel, "id" | "query">;
   insightsContent?: SearchInsightsContent;
   logger: Logger;
   profile?: DemoProfile;
   scenario: DevelopmentScenario;
   searchResponse: SearchResponse;
+  suggestedQueries?: string[];
+  trendingItems?: TrendingItem[];
 }) {
   const analytics = useAnalytics();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const provider = useMemo(() => new InMemorySearchProvider(searchResponse), [searchResponse]);
-  const generativeProvider = useMemo(() => new MockGenerativeProvider({
-    behavior:
-      scenario === "generative-error"
-        ? "error"
-        : scenario === "generative-no-answer"
-          ? "no-answer"
-          : scenario === "loading" || scenario === "generative"
-            ? "delayed-answer"
-            : undefined,
-    delayMs: scenario === "loading" ? 10000 : undefined,
-  }), [scenario]);
-  const feedbackProvider = useMemo(() => new InMemoryFeedbackProvider(), []);
-  const trendingProvider = useMemo<TrendingProvider>(() => {
-    if (scenario === "trending-empty") {
-      return new MockTrendingProvider([]);
-    }
-
-    if (scenario === "trending-error") {
-      return { getTrendingContent: async () => Promise.reject(new Error("Trending scenario failed.")) };
-    }
-
-    return new MockTrendingProvider();
-  }, [scenario]);
+  const {
+    feedbackProvider,
+    generativeProvider,
+    searchProvider: provider,
+    trendingProvider,
+  } = useSampleExperienceProviders({
+    generativeFixture,
+    scenario,
+    searchResponse,
+    suggestedQueries,
+    trendingItems,
+  });
   const trackedZeroResults = useRef("");
   const lastUrlState = useRef("");
+  const searchRequestId = useRef(0);
+  const searchAbortController = useRef<AbortController | null>(null);
   const allowDevelopmentParameters = environment !== "production" && development.queryOverridesEnabled;
   const parsedUrlState = parseSearchUrlState(searchParams, {
     allowDevelopmentParameters,
@@ -755,6 +770,12 @@ function SearchResponseExperience({
       scenario,
     });
   }, [logger, profile?.id, scenario]);
+
+  useEffect(() => {
+    return () => {
+      searchAbortController.current?.abort();
+    };
+  }, []);
 
   useEffect(() => {
     analytics.track("feature_flag_exposure", {
@@ -833,6 +854,11 @@ function SearchResponseExperience({
 
   function runSearch(nextQuery: typeof query, options: { updateUrl?: boolean } = {}) {
     const normalizedQuery = normalizeSearchQuery(nextQuery);
+    searchRequestId.current += 1;
+    const currentRequestId = searchRequestId.current;
+    searchAbortController.current?.abort();
+    const abortController = new AbortController();
+    searchAbortController.current = abortController;
     setQuery(normalizedQuery);
     dispatch({ type: "search-requested", query: normalizedQuery });
     logger.info("search_started", {
@@ -864,8 +890,15 @@ function SearchResponseExperience({
     }
 
     provider
-      .search(scenario === "empty" ? { ...normalizedQuery, query: "no matching scenario query" } : normalizedQuery)
+      .search(
+        scenario === "empty" ? { ...normalizedQuery, query: "no matching scenario query" } : normalizedQuery,
+        { signal: abortController.signal },
+      )
       .then((nextResponse) => {
+        if (searchRequestId.current !== currentRequestId || abortController.signal.aborted) {
+          return;
+        }
+
         const scenarioResponse =
           scenario === "partial"
             ? {
@@ -884,6 +917,10 @@ function SearchResponseExperience({
         dispatch({ type: "search-succeeded", response: scenarioResponse });
       })
       .catch((error: unknown) => {
+        if (searchRequestId.current !== currentRequestId || abortController.signal.aborted) {
+          return;
+        }
+
         logger.error("search_failed", error, { mode: "sample", query: normalizedQuery.query });
         dispatch({
           type: "search-failed",

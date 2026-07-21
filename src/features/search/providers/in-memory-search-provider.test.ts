@@ -73,6 +73,16 @@ describe("InMemorySearchProvider", () => {
     ]);
   });
 
+  it("returns configured profile suggestions before domain-title suggestions", async () => {
+    const provider = new InMemorySearchProvider(response, {
+      suggestedQueries: ["authentication", "digital transformation"],
+    });
+
+    await expect(provider.getSuggestions("auth")).resolves.toEqual([
+      { id: "suggestion-authentication", label: "authentication", value: "authentication" },
+    ]);
+  });
+
   it("matches source and metadata facets and rejects empty suggestions", async () => {
     const provider = new InMemorySearchProvider(response);
 
@@ -86,5 +96,25 @@ describe("InMemorySearchProvider", () => {
       }),
     ).resolves.toMatchObject({ results: [], totalCount: 0 });
     await expect(provider.getSuggestions(" ")).resolves.toEqual([]);
+  });
+
+  it("rejects aborted provider requests before work starts", async () => {
+    const provider = new InMemorySearchProvider(response);
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(
+      provider.search(
+        {
+          filters: {},
+          page: 1,
+          pageSize: 4,
+          query: "digital",
+          sort: "relevance",
+        },
+        { signal: controller.signal },
+      ),
+    ).rejects.toThrow("aborted");
+    await expect(provider.getSuggestions("dig", { signal: controller.signal })).rejects.toThrow("aborted");
   });
 });

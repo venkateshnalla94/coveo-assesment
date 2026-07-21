@@ -34,6 +34,9 @@ export function SearchResults({
       <div className="inline-error" role="alert">
         <AlertCircle aria-hidden="true" size={18} />
         <span>{error}</span>
+        <button className="secondary-button" onClick={() => onRetryQuery(query)} type="button">
+          Retry
+        </button>
       </div>
     );
   }
@@ -50,7 +53,7 @@ export function SearchResults({
       ) : null}
 
       {isLoading && !response ? (
-        <div className="result-stack" role="status">
+        <div className="result-stack" role="status" aria-live="polite" aria-label="Loading search results">
           {Array.from({ length: 5 }, (_, index) => (
             <div className="result-skeleton" key={index} />
           ))}

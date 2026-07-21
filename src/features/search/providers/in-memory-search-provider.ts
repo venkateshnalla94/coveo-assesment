@@ -14,9 +14,13 @@ import { sortSearchResults } from "@/features/search/services/sort-options";
 export class InMemorySearchProvider implements SearchProvider {
   readonly capabilities = inMemorySearchCapabilities;
 
-  constructor(private readonly response: SearchResponse) {}
+  constructor(
+    private readonly response: SearchResponse,
+    private readonly options: { suggestedQueries?: string[] } = {},
+  ) {}
 
-  async search(query: SearchQuery): Promise<SearchResponse> {
+  async search(query: SearchQuery, options?: { signal?: AbortSignal }): Promise<SearchResponse> {
+    throwIfAborted(options?.signal);
     const normalizedQuery = normalizeSearchQuery(query);
     const filteredResults = this.response.results.filter((result) =>
       resultMatchesSearchQuery(result, normalizedQuery),
@@ -43,14 +47,24 @@ export class InMemorySearchProvider implements SearchProvider {
     };
   }
 
-  async getSuggestions(query: string): Promise<SearchSuggestion[]> {
+  async getSuggestions(query: string, options?: { signal?: AbortSignal }): Promise<SearchSuggestion[]> {
+    throwIfAborted(options?.signal);
     const normalizedQuery = query.trim().toLowerCase();
 
     if (!normalizedQuery) {
       return [];
     }
 
-    return this.response.results
+    const configuredSuggestions = this.options.suggestedQueries ?? [];
+    const profileSuggestions = configuredSuggestions
+      .filter((suggestion) => suggestion.toLowerCase().includes(normalizedQuery))
+      .map((suggestion) => ({
+        id: `suggestion-${suggestion.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+        label: suggestion,
+        value: suggestion,
+      }));
+
+    const resultSuggestions = this.response.results
       .filter((result) => result.title.toLowerCase().includes(normalizedQuery))
       .slice(0, 5)
       .map((result) => ({
@@ -58,6 +72,14 @@ export class InMemorySearchProvider implements SearchProvider {
         label: result.title,
         value: result.title,
       }));
+
+    return [...profileSuggestions, ...resultSuggestions].slice(0, 5);
+  }
+}
+
+function throwIfAborted(signal: AbortSignal | undefined) {
+  if (signal?.aborted) {
+    throw new DOMException("The request was aborted.", "AbortError");
   }
 }
 

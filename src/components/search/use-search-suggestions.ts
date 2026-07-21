@@ -28,10 +28,12 @@ export function useSearchSuggestions({
       return;
     }
 
+    const controller = new AbortController();
+
     const timer = window.setTimeout(() => {
       setIsLoading(true);
       provider
-        .getSuggestions(trimmedQuery)
+        .getSuggestions(trimmedQuery, { signal: controller.signal })
         .then((nextSuggestions) => {
           if (requestId.current === currentRequestId) {
             setSuggestions(nextSuggestions);
@@ -50,6 +52,7 @@ export function useSearchSuggestions({
     }, 180);
 
     return () => {
+      controller.abort();
       window.clearTimeout(timer);
     };
   }, [canSuggest, provider, query]);

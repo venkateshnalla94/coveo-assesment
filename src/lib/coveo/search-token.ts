@@ -6,9 +6,10 @@ export type SearchTokenConfig = {
   facetFields: string[];
 };
 
-export async function fetchSearchTokenConfig(): Promise<SearchTokenConfig> {
+export async function fetchSearchTokenConfig(options: { signal?: AbortSignal } = {}): Promise<SearchTokenConfig> {
   const response = await fetch("/api/search-token", {
     cache: "no-store",
+    signal: options.signal,
   });
 
   if (!response.ok) {

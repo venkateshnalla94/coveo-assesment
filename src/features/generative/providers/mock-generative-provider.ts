@@ -7,6 +7,7 @@ export type MockGenerativeBehavior = "answer" | "no-answer" | "error" | "delayed
 export class MockGenerativeProvider implements GenerativeProvider {
   constructor(
     private readonly options: {
+      answer?: Omit<GenerativeAnswer, "id" | "query">;
       behavior?: MockGenerativeBehavior;
       delayMs?: number;
     } = {},
@@ -26,6 +27,16 @@ export class MockGenerativeProvider implements GenerativeProvider {
 
     if (!trimmedQuery || behavior === "no-answer") {
       return null;
+    }
+
+    const answer = this.options.answer;
+
+    if (answer) {
+      return {
+        ...answer,
+        id: `mock-ga-${slugify(trimmedQuery)}`,
+        query: trimmedQuery,
+      };
     }
 
     return {

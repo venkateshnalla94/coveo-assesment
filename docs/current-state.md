@@ -19,7 +19,11 @@
   - `src/components/shared/ConfigurationNotice.tsx`
 - Search shell:
   - `src/components/search/SearchExperience.tsx`
+  - `src/components/search/SearchBox.tsx`
   - `src/components/search/SearchBoxView.tsx`
+  - `src/components/search/SearchSuggestions.tsx`
+  - `src/components/search/Pagination.tsx`
+  - `src/components/search/SortControl.tsx`
   - `src/components/search/SearchSummary.tsx`
   - `src/components/search/PagerControls.tsx`
   - `src/components/search/search-ui.constants.ts`
@@ -28,13 +32,17 @@
   - `src/components/search/results/ResultItem.tsx`
   - `src/components/search/results/ResultCard.tsx`
   - `src/components/search/results/result-fields.ts`
+- Domain result rendering:
+  - `src/components/search/results/DomainResultCard.tsx`
+  - `src/components/search/results/ResultList.tsx`
+  - `src/components/search/results/SearchResults.tsx`
+  - `src/components/search/results/SearchStatus.tsx`
+  - `src/components/search/results/ZeroResults.tsx`
 - Headless facets:
   - `src/components/search/facets/FacetPanel.tsx`
-- Sample response mode:
-  - `src/components/search/response/SearchResponseResultList.tsx`
-  - `src/components/search/response/SearchResponseFacetPanel.tsx`
-  - `src/components/search/response/SearchResponsePagerControls.tsx`
-  - `src/components/search/response/use-search-response-state.ts`
+- Domain/sample facets:
+  - `src/components/search/facets/DomainFacetPanel.tsx`
+- Legacy sample response aliases:
   - `src/components/search/response/search-response-types.ts`
 - Supporting rail:
   - `src/components/search/layout/SearchInsightsRail.tsx`
@@ -54,9 +62,9 @@ Browser search UI -> Coveo Search API directly with short-lived token
 
 `src/components/search/SearchExperience.tsx` owns most runtime orchestration. It fetches token config only after the user submits the startup form, builds the Coveo search engine, registers Headless controllers, executes the first search, and renders search box, result list, facets, pagination, summary, errors, and insight rail.
 
-There is also a sample response path gated by feature flags. In that mode, `src/app/page.tsx` creates a `MockSearchProvider`, maps `src/data/sample-coveo-search-response.json` into the search domain model, and passes a `SearchResponse` to `SearchExperience`. Insight content still comes from `src/data/search-insights.json`.
+There is also a sample response path gated by feature flags. In that mode, `src/app/page.tsx` maps `src/data/sample-coveo-search-response.json` into the search domain model and passes the complete domain `SearchResponse` to `SearchExperience`. The client wraps that response in `InMemorySearchProvider`, so query submission, suggestions, facets, sorting, and numbered pagination still go through the `SearchProvider` contract. Insight content still comes from `src/data/search-insights.json`.
 
-The main architectural weakness is that `SearchExperience` is currently both composition root and search orchestration layer. The sample-response path now has a provider/domain boundary, but live UI components are still coupled directly to Coveo Headless controller types. That works for the current assessment surface, but it does not yet fully match the final execution-plan target of:
+The main architectural weakness is that `SearchExperience` is currently both composition root and search orchestration layer. The sample-response path now has a provider/domain boundary and an explicit search-state reducer, but live UI components are still coupled directly to Coveo Headless controller types. That is intentional for Phase 3 because replacing live Headless controllers with a server-safe provider adapter would risk credentials, analytics, facets, suggestions, and pagination behavior outside the search-experience scope.
 
 ```text
 UI Components
@@ -88,11 +96,37 @@ Search domain models live in `src/features/search/models/search-models.ts`.
 Provider abstractions live in `src/features/search/providers/`:
 
 - `search-provider.ts`: shared `SearchProvider` interface.
+- `in-memory-search-provider.ts`: domain-backed provider used by sample mode for query text, suggestions, filters, sorting, and pagination.
 - `mock-search-provider.ts`: maps the existing sample Coveo-shaped fixture into the search domain model.
 - `coveo-response-mapper.ts`: raw provider-to-domain mapping boundary with defensive defaults for missing or malformed data.
 - `coveo-search-provider.ts`: skeleton for a future server-safe Coveo provider implementation.
 
 The provider abstraction decision is documented in `docs/decisions/0001-search-provider-abstraction.md`.
+
+## Current Search Experience
+
+Sample-mode behavior:
+
+- Uses a discriminated `SearchState` union with `initial`, `loading`, `success`, `empty`, and `error`.
+- Uses controlled search input, submit, clear, debounced provider suggestions, Escape close, Arrow Up/Down navigation, Enter selection, and mouse selection.
+- Renders domain result cards through a centralized result variant resolver for `article`, `documentation`, `video`, `community`, `product`, and default fallback.
+- Supports configured facets for Content Type, Source, and Product when present in the provider response. Date is intentionally not surfaced because the current provider model does not support date-range semantics cleanly.
+- Supports active filter summary, clear one facet group, clear all filters, and selected-value preservation.
+- Supports Relevance, Newest, and Most Popular sort. Most Popular is deterministic in sample mode using fixture order-derived metadata because the fixture has no real popularity metric.
+- Uses numbered pagination with previous/next controls, current page indication, and page reset on query, facet, and sort changes.
+- Provides a dedicated zero-results state with query text, clear-filter action when filters are active, suggested searches, and retry broader search.
+
+Live Coveo behavior:
+
+- Keeps the secured Headless path: `/api/search-token` mints a short-lived token, then browser-side Headless controllers query Coveo directly.
+- Search box accessibility and keyboard handling were improved without replacing `buildSearchBox`.
+- Headless facets remain controller-driven. Clear all now deselects all registered facet controllers.
+- Live sorting remains Coveo relevance only. The UI does not expose Newest or Most Popular for live mode because no configured Headless sort controller or Coveo sort criteria are present yet.
+
+Deferred Phase 3-adjacent items:
+
+- URL state synchronization is deferred. It would be useful, but forcing it now would add App Router routing risk after the search reducer/provider boundary was already changed.
+- End-to-end browser tests are not configured in this repository. Phase 3 coverage is unit/component/integration coverage through Vitest and React Testing Library.
 
 ## Existing Agents
 
@@ -149,8 +183,10 @@ Coverage configuration in `vitest.config.ts` includes:
 - `src/app/api/search-token/route.ts`
 - `src/lib/coveo/search-token.ts`
 - `src/components/search/SearchExperience.tsx`
+- New Phase 3 search components under `src/components/search`
 - `src/components/search/results/result-fields.ts`
 - `src/components/shared/ConfigurationNotice.tsx`
+- New Phase 3 search state, provider, facet, sorting, pagination, and result-template helpers under `src/features/search`
 
 Coverage thresholds are enforced per file at 80% for statements, branches, functions, and lines.
 
@@ -160,6 +196,8 @@ Existing tests cover:
 - Client search-token config fetch behavior.
 - Server feature flag parsing.
 - Search experience startup, configuration failure, query handoff, token renewal, and sample response mode.
+- Sample-mode provider search flow, query suggestions, facet updates, sort changes, pagination, zero-results recovery, and result variants.
+- Search state transitions, query helper behavior, pagination calculations, sort mapping, result-template fallback behavior, facet label/order configuration, and in-memory provider behavior.
 - Result field extraction.
 - Configuration notice rendering.
 
@@ -167,25 +205,23 @@ Documented gaps in `docs/testing.md` include direct DOM tests for Headless-drive
 
 ## Risks
 
-- The provider boundary is only partially implemented. The sample response path now uses a domain model and `MockSearchProvider`, but the live search path still depends directly on Coveo Headless controllers. That is acceptable for Phase 2, but it remains the next real architecture boundary to resolve.
+- The provider boundary is still split by runtime. Sample mode now uses a domain model, reducer, and provider-driven UI; live mode still depends directly on Coveo Headless controllers. That is acceptable for Phase 3, but it remains the next real architecture boundary to resolve.
 - `SearchExperience.tsx` is carrying too many responsibilities: token loading, engine creation, controller construction, startup state, ready state, sample mode, layout, and error rendering.
-- Search state is partly implicit in multiple Headless controller states. The startup path uses a discriminated union, but the broader search experience does not yet expose the explicit `initial/loading/success/empty/error/offline/partial` state model described in the execution plan.
-- Sort UI is present but not functional. It displays relevance and a chevron, but no provider/controller sort state is wired.
-- The Headless facet sidebar has a "Clear all" button that is not wired. Individual facet clear buttons are wired.
-- Search suggestions render from Headless suggestions, but keyboard navigation and full ARIA combobox behavior are not complete.
+- Search state is explicit in sample mode but remains implicit in multiple Headless controller states in live mode.
+- Live sorting is intentionally limited to relevance until Coveo sort criteria or a Headless sort controller are configured.
 - Analytics exists through Coveo Headless configuration and result click tracking with `buildInteractiveResult`, but submit, suggestion selection, facet, sort, and pagination analytics are not surfaced as explicit app-level events.
-- Sample response mode is useful for demos and now exercises the provider/domain contract, but it still uses separate sample-mode UI components rather than the same components as live Headless search.
+- Sample response mode is useful for demos and now exercises the provider/domain contract, but it still uses domain components separate from live Headless controller components.
 - There is a stray `src/components/search/.DS_Store` local artifact in the working tree view. It should not be committed or used as part of the app.
-- The application is not yet organized under `src/features/search`, `src/features/analytics`, or provider/service folders. For this assessment, that is acceptable only if future changes introduce boundaries incrementally instead of reorganizing folders for aesthetics.
+- The application is now partly organized under `src/features/search`, but analytics and future demo-profile work remain deferred.
 
 ## Recommended Changes
 
 1. Decide how the live Headless path should meet the provider/domain boundary without regressing controller-owned facets, suggestions, pagination, and analytics.
 2. Extract Headless engine/controller setup out of `SearchExperience.tsx` into a focused hook or service boundary. Keep `SearchExperience` as composition and layout.
-3. Add explicit search-state and generative-answer-state discriminated unions before expanding loading, empty, offline, partial, or answer streaming behavior.
-4. Make the existing sort control real or remove it until it is real. Dead UI is worse than missing UI in an assessment because it signals shallow product thinking.
-5. Wire Headless "Clear all" facet behavior and add URL synchronization only after the provider/state boundary is stable.
-6. Improve `SearchBoxView` accessibility: full combobox roles, keyboard navigation, Escape behavior, suggestion loading state, and clearer submit/select analytics hooks.
+3. Add a generative-answer-state discriminated union before expanding loading, empty, offline, partial, or answer streaming behavior in a later phase.
+4. Add live Coveo sort only after the target sort criteria are configured and can be represented honestly in Headless.
+5. Add URL synchronization only after the provider/state boundary is stable.
+6. Add explicit app-level analytics hooks for submit, suggestion selection, facets, sort, and pagination in the analytics phase.
 7. Keep tests focused around provider mapping, state transitions, and pure result/facet logic before attempting broad browser-level Headless tests.
 8. Keep the backend route limited to token minting unless assessment requirements explicitly change. A full search proxy would add operational surface without solving a current problem.
 9. Remove local artifacts such as `.DS_Store` from the working tree and ensure the hook gate continues blocking generated or local files.

@@ -218,10 +218,74 @@ Documented gaps in `docs/testing.md` include direct DOM tests for Headless-drive
 
 1. Decide how the live Headless path should meet the provider/domain boundary without regressing controller-owned facets, suggestions, pagination, and analytics.
 2. Extract Headless engine/controller setup out of `SearchExperience.tsx` into a focused hook or service boundary. Keep `SearchExperience` as composition and layout.
-3. Add a generative-answer-state discriminated union before expanding loading, empty, offline, partial, or answer streaming behavior in a later phase.
+3. Integrate live Coveo generative answers only after supported endpoints and server-side credentials are confirmed.
 4. Add live Coveo sort only after the target sort criteria are configured and can be represented honestly in Headless.
 5. Add URL synchronization only after the provider/state boundary is stable.
-6. Add explicit app-level analytics hooks for submit, suggestion selection, facets, sort, and pagination in the analytics phase.
+6. Replace the live analytics skeleton with a supported Coveo analytics adapter only after the target event contract is confirmed.
 7. Keep tests focused around provider mapping, state transitions, and pure result/facet logic before attempting broad browser-level Headless tests.
 8. Keep the backend route limited to token minting unless assessment requirements explicitly change. A full search proxy would add operational surface without solving a current problem.
 9. Remove local artifacts such as `.DS_Store` from the working tree and ensure the hook gate continues blocking generated or local files.
+
+## Phase 4 Current State
+
+Phase 4 added provider-independent generative, trending, feedback, and analytics layers without merging the live and sample search paths.
+
+New components:
+
+- `src/components/generative/GenerativeAnswer.tsx`
+- `src/components/generative/GenerativeAnswerSkeleton.tsx`
+- `src/components/generative/GenerativeAnswerContent.tsx`
+- `src/components/generative/GenerativeCitations.tsx`
+- `src/components/generative/GenerativeCitation.tsx`
+- `src/components/generative/GenerativeFeedback.tsx`
+- `src/components/generative/GenerativeError.tsx`
+- `src/components/generative/GenerativeNoAnswer.tsx`
+- `src/components/content/TrendingContent.tsx`
+
+New provider boundaries:
+
+- `GenerativeProvider`: normalized generated-answer contract.
+- `MockGenerativeProvider`: deterministic fixture-backed answer, no-answer, error, and delayed-answer scenarios.
+- `CoveoGenerativeProvider`: live skeleton that throws a typed configuration error until a supported server-side integration exists.
+- `FeedbackProvider`: local/in-memory feedback submission boundary.
+- `TrendingProvider`: normalized trending content contract.
+- `AnalyticsProvider`: typed app analytics contract with local console and live skeleton adapters.
+
+New feature flags:
+
+- `enableAnalytics`
+- `enableGenerativeAnswers`
+- `enableGenerativeCitations`
+- `enableGenerativeDisclaimer`
+- `enableGenerativeFeedback`
+- `enableGenerativeStreaming`
+- `enableTrendingContent`
+
+Sample-mode behavior:
+
+- Generated answers are fixture-backed and query-driven.
+- Queries containing `no answer` trigger the no-answer state.
+- Queries containing `error` trigger the error state.
+- Citations are validated before rendering as external links.
+- Feedback supports helpful, not helpful, and negative reasons without backend persistence.
+- Trending content is deterministic fixture data with rank, type, view count, trend percentage, reason, and time window.
+- App analytics emit typed events through `ConsoleAnalyticsProvider` when enabled.
+
+Live Coveo behavior:
+
+- The secured Headless search path remains unchanged.
+- Coveo Headless analytics remain enabled in engine configuration.
+- Live result clicks still call `buildInteractiveResult().select()`.
+- Live generated answers are not claimed as integrated. The live provider is a skeleton and should remain disabled unless deliberately testing the controlled not-configured state.
+- The live app analytics adapter is a skeleton; no custom live analytics transport is claimed in Phase 4.
+
+Phase 4 tests cover:
+
+- Generative state transitions.
+- Mock and skeleton generative providers.
+- Citation URL validation and citation click analytics.
+- Feedback submission, negative reasons, duplicate prevention, and error handling.
+- Trending provider, loading, success, empty, error, sparse item, invalid URL, and click analytics behavior.
+- Analytics provider timestamping, disabled behavior, and safe payload construction.
+- Feature-flag resolution for enabled and disabled states.
+- Search-experience instrumentation for search, suggestions, facets, filters, sorting, pagination, result clicks, zero results, generative answers, and disabled analytics.

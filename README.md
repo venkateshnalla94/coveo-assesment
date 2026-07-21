@@ -10,6 +10,9 @@ Secured Coveo Headless search UI built with Next.js App Router and TypeScript.
 - Result list with click analytics through `buildInteractiveResult`.
 - Configurable facets.
 - Pagination.
+- Sample-mode generated answer with fixture citations and local feedback.
+- Fixture-backed trending content.
+- Provider-independent app analytics abstraction with local console analytics.
 - Loading, empty, and query error states.
 
 ## Architecture
@@ -44,6 +47,19 @@ COVEO_SEARCH_HUB=
 COVEO_PIPELINE=
 COVEO_FACET_FIELDS=source,filetype
 ```
+
+Optional feature flags:
+
+```bash
+COVEO_FEATURE_ANALYTICS=true
+COVEO_FEATURE_GENERATIVE_ENABLED=true
+COVEO_FEATURE_GENERATIVE_CITATIONS=true
+COVEO_FEATURE_GENERATIVE_FEEDBACK=true
+COVEO_FEATURE_GENERATIVE_STREAMING=false
+COVEO_FEATURE_TRENDING_ENABLED=true
+```
+
+Sample mode defaults to enabled on the server for local review. In sample mode, generated answers, citations, feedback, trending metrics, and app analytics are mocked or local-only. Queries containing `no answer` trigger the no-answer state; queries containing `error` trigger the generative error state.
 
 4. Run locally:
 
@@ -84,6 +100,7 @@ Pull requests use `.github/pull_request_template.md` to capture title quality, t
 - `COVEO_PLATFORM_API_KEY` is server-side only and must never be prefixed with `NEXT_PUBLIC_`.
 - `.env.local` is ignored by git.
 - The browser receives only the generated search token and non-secret search configuration.
+- Generative live mode is not integrated with Coveo APIs in this phase. The live provider is a safe skeleton and does not expose access tokens or privileged credentials.
 - Anonymous identity is used by default. A real application would resolve the signed-in user's security identity before minting the token.
 
 ## Trade-offs
@@ -97,6 +114,8 @@ Pull requests use `.github/pull_request_template.md` to capture title quality, t
 
 - Add Headless SSR for first paint.
 - Add did-you-mean, sort, and deeper facet coverage after inspecting real fields.
+- Add live Coveo generative answer integration after supported endpoints and server-side credentials are confirmed.
+- Persist generative feedback to a backend service.
 - Add a search hub switcher to demonstrate relevance context changes.
 - Add DOM or browser-level tests for Headless-driven React components after real Coveo credentials are validated.
 - Deploy to Vercel and add the live URL here.

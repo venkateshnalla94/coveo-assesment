@@ -3,9 +3,12 @@ import type {
   SearchResponse,
   SearchSuggestion,
 } from "@/features/search/models/search-models";
+import { coveoHeadlessCapabilities } from "@/features/search/capabilities/provider-capabilities";
 import type { SearchProvider } from "@/features/search/providers/search-provider";
 
 export class CoveoSearchProvider implements SearchProvider {
+  readonly capabilities = coveoHeadlessCapabilities;
+
   async search(query: SearchQuery): Promise<SearchResponse> {
     void query;
 

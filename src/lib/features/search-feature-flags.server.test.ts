@@ -25,7 +25,7 @@ describe("getSearchFeatureFlags", () => {
     });
   });
 
-  it("treats only explicit truthy values as enabled when an env value is present", () => {
+  it("applies strict env booleans before the default demo profile", () => {
     vi.stubEnv("COVEO_FEATURE_SAMPLE_SEARCH_RESPONSE", "false");
     vi.stubEnv("COVEO_FEATURE_FACETS", "0");
     vi.stubEnv("COVEO_FEATURE_INSIGHTS_RAIL", "off");
@@ -42,13 +42,13 @@ describe("getSearchFeatureFlags", () => {
 
     expect(getSearchFeatureFlags()).toEqual({
       enableAnalytics: false,
-      enableFacets: false,
+      enableFacets: true,
       enableGenerativeAnswers: true,
-      enableGenerativeCitations: false,
-      enableGenerativeDisclaimer: false,
+      enableGenerativeCitations: true,
+      enableGenerativeDisclaimer: true,
       enableGenerativeFeedback: true,
       enableGenerativeStreaming: true,
-      enableInsightsRail: false,
+      enableInsightsRail: true,
       enablePopularContent: true,
       enableRelatedQueries: true,
       enableSampleSearchResponse: false,

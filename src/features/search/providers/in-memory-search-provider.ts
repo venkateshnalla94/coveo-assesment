@@ -6,11 +6,14 @@ import type {
   SearchSuggestion,
 } from "@/features/search/models/search-models";
 import type { SearchProvider } from "@/features/search/providers/search-provider";
+import { inMemorySearchCapabilities } from "@/features/search/capabilities/provider-capabilities";
 import { getPaginationState } from "@/features/search/services/pagination";
 import { normalizeSearchQuery } from "@/features/search/services/search-query";
 import { sortSearchResults } from "@/features/search/services/sort-options";
 
 export class InMemorySearchProvider implements SearchProvider {
+  readonly capabilities = inMemorySearchCapabilities;
+
   constructor(private readonly response: SearchResponse) {}
 
   async search(query: SearchQuery): Promise<SearchResponse> {

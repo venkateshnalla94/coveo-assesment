@@ -1,0 +1,222 @@
+import {
+  DEFAULT_DEMO_PROFILE_ID,
+  resolveDemoProfile,
+  type DemoProfile,
+} from "@/features/demo-profiles/demo-profiles";
+import {
+  DEFAULT_DEVELOPMENT_SCENARIO,
+  resolveDevelopmentScenario,
+  type DevelopmentScenario,
+} from "@/features/development/scenarios";
+import {
+  defaultFeatureFlags,
+  resolveFeatureFlags,
+  type FeatureFlagOverrides,
+  type FeatureFlags,
+} from "@/features/feature-flags/feature-flags";
+import { getEnvironmentFeatureFlagOverrides } from "@/features/feature-flags/env-feature-flags";
+import {
+  coveoGenerativeCapabilities,
+  coveoHeadlessCapabilities,
+  inMemorySearchCapabilities,
+  mockGenerativeCapabilities,
+  type GenerativeProviderCapabilities,
+  type SearchProviderCapabilities,
+} from "@/features/search/capabilities/provider-capabilities";
+
+export type RuntimeEnvironment = "development" | "test" | "production";
+export type SearchProviderMode = "mock" | "coveo";
+
+export interface RuntimeConfig {
+  environment: RuntimeEnvironment;
+  searchProvider: SearchProviderMode;
+  demoProfile: DemoProfile;
+  scenario: DevelopmentScenario;
+  featureFlags: FeatureFlags;
+  coveo: {
+    organizationId?: string;
+    searchEndpoint?: string;
+    tokenConfigured: boolean;
+  };
+  capabilities: {
+    search: SearchProviderCapabilities;
+    generative: GenerativeProviderCapabilities;
+  };
+  development: {
+    queryOverridesEnabled: boolean;
+  };
+}
+
+export interface ServerOnlyRuntimeConfig {
+  coveo: {
+    platformApiKey?: string;
+    searchTokenEndpoint?: string;
+    userId: string;
+    identityProvider: string;
+  };
+}
+
+export function resolveRuntimeConfig({
+  environment = process.env,
+  searchParams,
+}: {
+  environment?: Record<string, string | undefined>;
+  searchParams?: Record<string, string | string[] | undefined>;
+} = {}): RuntimeConfig {
+  const runtimeEnvironment = normalizeEnvironment(environment.NODE_ENV);
+  const envOverrides = getEnvironmentFeatureFlagOverrides(environment);
+  const queryOverridesEnabled =
+    runtimeEnvironment !== "production" &&
+    (environment.COVEO_DEVELOPMENT_QUERY_OVERRIDES === "true" ||
+      environment.NODE_ENV === "development");
+  const queryProfile = queryOverridesEnabled
+    ? firstValue(searchParams?.profile)
+    : undefined;
+  const profile = resolveDemoProfile(
+    queryProfile ?? environment.NEXT_PUBLIC_DEMO_PROFILE,
+  );
+  const featureFlags = resolveFeatureFlags({
+    defaults: {
+      ...defaultFeatureFlags,
+      demo: { ...defaultFeatureFlags.demo, sampleSearchResponse: true },
+      generative: {
+        ...defaultFeatureFlags.generative,
+        enabled:
+          envOverrides.generative?.enabled ??
+          envOverrides.demo?.sampleSearchResponse ??
+          true,
+      },
+    },
+    environment: envOverrides,
+    profile: profile.featureFlags,
+    developmentOverrides: queryOverridesEnabled
+      ? getQueryFeatureFlagOverrides(searchParams ?? {})
+      : undefined,
+  });
+  const searchProvider: SearchProviderMode = featureFlags.demo
+    .sampleSearchResponse
+    ? "mock"
+    : "coveo";
+
+  return {
+    capabilities: {
+      generative:
+        searchProvider === "mock"
+          ? mockGenerativeCapabilities
+          : coveoGenerativeCapabilities,
+      search:
+        searchProvider === "mock"
+          ? inMemorySearchCapabilities
+          : coveoHeadlessCapabilities,
+    },
+    coveo: {
+      organizationId: optional(environment.COVEO_ORGANIZATION_ID),
+      searchEndpoint: optional(environment.COVEO_SEARCH_TOKEN_ENDPOINT),
+      tokenConfigured: Boolean(
+        optional(environment.COVEO_ORGANIZATION_ID) &&
+        optional(environment.COVEO_PLATFORM_API_KEY),
+      ),
+    },
+    demoProfile: profile,
+    development: {
+      queryOverridesEnabled,
+    },
+    environment: runtimeEnvironment,
+    featureFlags,
+    scenario: resolveDevelopmentScenario({
+      environment: runtimeEnvironment,
+      queryValue: queryOverridesEnabled
+        ? firstValue(searchParams?.scenario)
+        : undefined,
+    }),
+    searchProvider,
+  };
+}
+
+export function resolveServerOnlyRuntimeConfig(
+  environment: Record<string, string | undefined> = process.env,
+): ServerOnlyRuntimeConfig {
+  return {
+    coveo: {
+      identityProvider:
+        optional(environment.COVEO_IDENTITY_PROVIDER) ??
+        "Email Security Provider",
+      platformApiKey: optional(environment.COVEO_PLATFORM_API_KEY),
+      searchTokenEndpoint: optional(environment.COVEO_SEARCH_TOKEN_ENDPOINT),
+      userId: optional(environment.COVEO_USER_ID) ?? "anonymous",
+    },
+  };
+}
+
+export function normalizeEnvironment(
+  value: string | undefined,
+): RuntimeEnvironment {
+  return value === "production" || value === "test" ? value : "development";
+}
+
+function getQueryFeatureFlagOverrides(
+  searchParams: Record<string, string | string[] | undefined>,
+): FeatureFlagOverrides | undefined {
+  const flags = firstValue(searchParams.flags);
+
+  if (!flags) {
+    return undefined;
+  }
+
+  const overrides: FeatureFlagOverrides = {};
+  const enabled = new Set(
+    flags
+      .split(",")
+      .map((flag) => flag.trim())
+      .filter(Boolean),
+  );
+
+  if (enabled.has("generative")) {
+    overrides.generative = { enabled: true };
+  }
+
+  if (enabled.has("no-generative")) {
+    overrides.generative = { enabled: false };
+  }
+
+  if (enabled.has("trending")) {
+    overrides.trending = { enabled: true };
+  }
+
+  if (enabled.has("no-trending")) {
+    overrides.trending = { enabled: false };
+  }
+
+  return Object.keys(overrides).length > 0 ? overrides : undefined;
+}
+
+function optional(value: string | undefined) {
+  return value && value.trim().length > 0 ? value : undefined;
+}
+
+function firstValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export const fallbackRuntimeConfig: RuntimeConfig = {
+  capabilities: {
+    generative: mockGenerativeCapabilities,
+    search: inMemorySearchCapabilities,
+  },
+  coveo: {
+    tokenConfigured: false,
+  },
+  demoProfile: resolveDemoProfile(DEFAULT_DEMO_PROFILE_ID),
+  development: {
+    queryOverridesEnabled: false,
+  },
+  environment: "development",
+  featureFlags: resolveFeatureFlags({
+    defaults: {
+      ...defaultFeatureFlags,
+      demo: { ...defaultFeatureFlags.demo, sampleSearchResponse: true },
+    },
+  }),
+  scenario: DEFAULT_DEVELOPMENT_SCENARIO,
+  searchProvider: "mock",
+};

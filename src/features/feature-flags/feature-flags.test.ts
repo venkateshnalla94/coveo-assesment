@@ -1,0 +1,50 @@
+import { describe, expect, it } from "vitest";
+
+import { getEnvironmentFeatureFlagOverrides, parseStrictBoolean } from "./env-feature-flags";
+import { defaultFeatureFlags, resolveFeatureFlags } from "./feature-flags";
+
+describe("feature flag resolution", () => {
+  it("deep merges known boolean keys in deterministic precedence order", () => {
+    const resolved = resolveFeatureFlags({
+      defaults: defaultFeatureFlags,
+      developmentOverrides: { generative: { enabled: false } },
+      environment: { generative: { enabled: true }, insights: { topic: false } },
+      profile: { facets: { product: false }, generative: { citations: false } },
+    });
+
+    expect(resolved.generative.enabled).toBe(false);
+    expect(resolved.generative.citations).toBe(false);
+    expect(resolved.insights.topic).toBe(false);
+    expect(resolved.facets.product).toBe(false);
+    expect(resolved.facets.source).toBe(true);
+  });
+
+  it("ignores malformed override values", () => {
+    const resolved = resolveFeatureFlags({
+      defaults: defaultFeatureFlags,
+      environment: { generative: { enabled: "true" as unknown as boolean } },
+    });
+
+    expect(resolved.generative.enabled).toBe(false);
+  });
+
+  it("parses booleans strictly", () => {
+    expect(parseStrictBoolean("true")).toEqual({ ok: true, value: true });
+    expect(parseStrictBoolean("0")).toEqual({ ok: true, value: false });
+    expect(parseStrictBoolean("maybe")).toEqual({ ok: false, reason: "invalid", value: undefined });
+  });
+
+  it("maps environment variables into hierarchical overrides", () => {
+    expect(
+      getEnvironmentFeatureFlagOverrides({
+        COVEO_FEATURE_FACETS: "false",
+        COVEO_FEATURE_GENERATIVE_ENABLED: "true",
+        COVEO_FEATURE_QUERY_SUGGESTIONS: "off",
+      }),
+    ).toMatchObject({
+      facets: { enabled: false },
+      generative: { enabled: true },
+      search: { querySuggestions: false },
+    });
+  });
+});

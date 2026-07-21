@@ -14,13 +14,14 @@ npm run workflow:check
 
 - `src/app/api/search-token/route.ts`
 - `src/lib/coveo/search-token.ts`
+- `src/components/search/SearchExperience.tsx`
 - `src/components/search/results/result-fields.ts`
+- `src/components/shared/ConfigurationNotice.tsx`
 
 ## Current Gaps
 
-The React components are not under DOM test coverage yet:
+Some Headless-driven child components are not under direct DOM test coverage yet:
 
-- `src/components/search/SearchExperience.tsx`
 - `src/components/search/SearchBoxView.tsx`
 - `src/components/search/SearchSummary.tsx`
 - `src/components/search/PagerControls.tsx`
@@ -28,7 +29,7 @@ The React components are not under DOM test coverage yet:
 - `src/components/search/results/ResultItem.tsx`
 - `src/components/search/results/ResultListView.tsx`
 
-That is intentional for now. Meaningful tests for those paths require either React Testing Library with mocked Coveo Headless controllers or browser-level tests against a configured Coveo org. Adding that stack before validating real Coveo credentials would be heavier than the value it provides.
+That is intentional for now. Meaningful tests for those paths require deeper Coveo Headless controller mocks or browser-level tests against a configured Coveo org. `SearchExperience` is covered with React Testing Library for startup behavior, safe configuration failure, query handoff, and token renewal.
 
 ## Pre-commit Hook
 
@@ -40,7 +41,7 @@ npm run hooks:install
 
 `npm install` also runs the same installer through `prepare` when the repo has a `.git` directory.
 
-The hook blocks commits when staged files include local secrets, generated output, or ignored local context. For code and validation config changes, it runs:
+The pre-commit hook blocks commits when staged files include local secrets, generated output, or ignored local context. For code and validation config changes, it runs:
 
 ```bash
 npm run lint
@@ -50,3 +51,11 @@ npm run build
 ```
 
 Use `npm run workflow:check` to run the same checks against the full dirty tree before files are staged.
+
+The pre-push hook runs:
+
+```bash
+npm run workflow:push
+```
+
+`workflow:push` validates the full working tree with the same checks as `workflow:check`.

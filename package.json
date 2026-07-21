@@ -13,8 +13,8 @@
     "test:coverage": "vitest run --coverage",
     "workflow:check": "node scripts/pre-commit-check.mjs --all",
     "workflow:precommit": "node scripts/pre-commit-check.mjs",
-    "typecheck": "next typegen && tsc --noEmit",
-    "workflow:push": "node scripts/pre-commit-check.mjs --all"
+    "workflow:push": "node scripts/pre-commit-check.mjs --all",
+    "typecheck": "next typegen && tsc --noEmit"
   },
   "keywords": [],
   "author": "",
@@ -33,12 +33,15 @@
     "uuid": "^11.1.1"
   },
   "devDependencies": {
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^26.1.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitest/coverage-v8": "^4.1.10",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.2.10",
+    "jsdom": "^29.1.1",
     "typescript": "^6.0.3",
     "vitest": "^4.1.10"
   }

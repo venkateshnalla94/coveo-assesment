@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
 
 async function gotoSample(page: import("@playwright/test").Page, params = "") {
-  await page.goto(`/${params}`);
+  const separator = params ? "&" : "?";
+  await page.goto(`/${params}${separator}profile=developer-documentation`);
   await expect(page.locator(".search-box-wrap[data-search-ready='true']")).toBeVisible();
   await expect(page.getByRole("combobox", { name: "Search" })).toBeVisible();
 }
@@ -86,7 +87,7 @@ test("generative answer renders citations and accepts positive feedback", async 
   await runSearch(page, "authentication");
 
   await expect(page.getByText(/Generating answer for authentication/i)).toBeVisible();
-  await page.goto("/");
+  await page.goto("/?profile=developer-documentation");
   await expect(page.locator(".search-box-wrap[data-search-ready='true']")).toBeVisible();
   await runSearch(page, "authentication");
   await expect(page.getByText(/short-lived token from the server/i)).toBeVisible();
@@ -105,4 +106,35 @@ test("generative errors remain isolated and retryable", async ({ page }) => {
   await page.getByRole("button", { name: "Retry" }).click();
   await expect(page.getByText(/Generated answer could not be loaded/i)).toBeVisible();
   await expect(page.getByRole("link", { name: /Authenticated search token guide/i })).toBeVisible();
+});
+
+test("RoboMotion product discovery supports facets, comparison, details, and pagination", async ({ page }) => {
+  await page.goto("/?profile=industrial-product-discovery");
+  await expect(page.locator(".search-box-wrap[data-search-ready='true']")).toBeVisible();
+  await runSearch(page, "welding arm");
+
+  await expect(page.getByText(/products for "welding arm"/i)).toBeVisible();
+  await expect(page.locator(".product-card").first()).toBeVisible();
+  expect(await page.locator(".product-card").count()).toBeGreaterThanOrEqual(2);
+  await expect(page.getByLabel("Product filters")).toBeVisible();
+
+  await page.getByRole("button", { name: /NexBot Vision/i }).click();
+  await expect(page.locator(".product-card")).toHaveCount(1);
+
+  await page.getByRole("button", { name: "Clear all" }).click();
+  const cards = page.locator(".product-card");
+  await cards.nth(0).getByRole("button", { name: /Compare/i }).click();
+  await cards.nth(1).getByRole("button", { name: /Compare/i }).click();
+  await expect(page.getByText("2 products selected")).toBeVisible();
+
+  await page.getByRole("button", { name: "Compare (2)" }).click();
+  const comparisonDialog = page.getByRole("dialog", { name: "Compare products" });
+  await expect(comparisonDialog).toBeVisible();
+  await expect(comparisonDialog.getByRole("rowheader", { name: "Compatible Robot Series" })).toBeVisible();
+  await page.getByRole("button", { name: "Close comparison" }).click();
+
+  await cards.nth(0).getByRole("button", { name: /View Product/i }).click();
+  await expect(page.getByRole("dialog", { name: "Product details" })).toBeVisible();
+  await expect(page.getByText("Download Datasheet")).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /View Product/i })).toHaveAttribute("href", /robotics\.barca\.group/);
 });

@@ -39,7 +39,7 @@ test("profiles resolve distinct fixture behavior", async ({ page }) => {
 });
 
 test("browser back and forward restore sample URL and UI state", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/?profile=developer-documentation");
   await search(page, "authentication");
   await expect(page).toHaveURL(/q=authentication/);
   await page.getByRole("button", { name: /html/i }).click();

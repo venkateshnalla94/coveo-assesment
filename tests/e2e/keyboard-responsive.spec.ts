@@ -16,7 +16,7 @@ async function search(page: import("@playwright/test").Page, query: string) {
 }
 
 test("keyboard interactions cover suggestions, facets, sorting, pagination, citations, feedback, and retry", async ({ page }) => {
-  await page.goto("/?scenario=generative");
+  await page.goto("/?scenario=generative&profile=developer-documentation");
   await expect(page.locator(".search-box-wrap[data-search-ready='true']")).toBeVisible();
   const input = page.getByRole("combobox", { name: "Search" });
   await input.focus();
@@ -46,7 +46,7 @@ test("keyboard interactions cover suggestions, facets, sorting, pagination, cita
   await page.getByLabel("Sort results").selectOption("newest");
   await expect(page).toHaveURL(/sort=newest/);
 
-  await page.goto("/");
+  await page.goto("/?profile=developer-documentation");
   await search(page, "authentication");
   await expect(
     page.getByLabel("Generated answer citations").getByRole("link", { name: /Authenticated search token guide/i }),
@@ -55,7 +55,7 @@ test("keyboard interactions cover suggestions, facets, sorting, pagination, cita
   await page.keyboard.press("Enter");
   await expect(page.getByText("Feedback submitted.")).toBeVisible();
 
-  await page.goto("/?scenario=error");
+  await page.goto("/?scenario=error&profile=developer-documentation");
   await search(page, "authentication");
   await expect(page.locator(".inline-error[role='alert']")).toBeVisible();
   await page.getByRole("button", { name: "Retry" }).focus();
@@ -66,13 +66,12 @@ test("keyboard interactions cover suggestions, facets, sorting, pagination, cita
 for (const viewport of viewports) {
   test(`responsive layout remains usable at ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
-    await page.goto("/");
-    await search(page, "authentication");
-    await expect(page.getByText(/1-4 of 5 results/i)).toBeVisible();
-    await expect(page.getByLabel("Search filters")).toBeVisible();
-    await expect(page.getByLabel("Trending content")).toBeVisible();
+    await page.goto("/?profile=industrial-product-discovery");
+    await search(page, "welding arm");
+    await expect(page.getByText(/products for "welding arm"/i)).toBeVisible();
+    await expect(page.getByLabel("Product filters")).toBeVisible();
+    await expect(page.getByLabel("Product guidance and resources")).toBeVisible();
     await expect(page.getByLabel("Generated answer citations")).toBeVisible();
-    await expect(page.getByRole("navigation", { name: "Pagination" })).toBeVisible();
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
     expect(overflow).toBe(false);
@@ -81,10 +80,7 @@ for (const viewport of viewports) {
     expect(searchBox?.width ?? 0).toBeGreaterThan(160);
 
     const searchButton = await page.getByRole("button", { name: "Search", exact: true }).boundingBox();
-    const nextPageButton = await page.getByRole("button", { name: "Next page" }).boundingBox();
     expect(searchButton?.height ?? 0).toBeGreaterThanOrEqual(40);
     expect(searchButton?.width ?? 0).toBeGreaterThanOrEqual(40);
-    expect(nextPageButton?.height ?? 0).toBeGreaterThanOrEqual(40);
-    expect(nextPageButton?.width ?? 0).toBeGreaterThanOrEqual(40);
   });
 }

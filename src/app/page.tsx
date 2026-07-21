@@ -1,5 +1,6 @@
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
+import { ProductDiscoveryExperience } from "@/components/commerce/ProductDiscoveryExperience";
 import { SearchExperience } from "@/components/search/SearchExperience";
 import type { SearchInsightsContent } from "@/components/search/layout/SearchInsightsRail";
 import searchInsightsJson from "@/data/search-insights.json";
@@ -18,19 +19,23 @@ export default async function Home({
   return (
     <div className="search-app">
       <Header />
-      <SearchExperience
-        capabilities={runtimeConfig.capabilities}
-        development={runtimeConfig.development}
-        environment={runtimeConfig.environment}
-        featureFlags={toSearchFeatureFlags(runtimeConfig.featureFlags)}
-        generativeFixture={fixtures.generativeAnswer}
-        insightsContent={searchInsightsJson as SearchInsightsContent}
-        profile={runtimeConfig.demoProfile}
-        scenario={runtimeConfig.scenario}
-        sampleSearchResponse={fixtures.searchResponse}
-        suggestedQueries={fixtures.suggestedQueries}
-        trendingItems={fixtures.trendingItems}
-      />
+      {runtimeConfig.demoProfile.id === "industrial-product-discovery" ? (
+        <ProductDiscoveryExperience featureFlags={toSearchFeatureFlags(runtimeConfig.featureFlags)} />
+      ) : (
+        <SearchExperience
+          capabilities={runtimeConfig.capabilities}
+          development={runtimeConfig.development}
+          environment={runtimeConfig.environment}
+          featureFlags={toSearchFeatureFlags(runtimeConfig.featureFlags)}
+          generativeFixture={fixtures.generativeAnswer}
+          insightsContent={searchInsightsJson as SearchInsightsContent}
+          profile={runtimeConfig.demoProfile}
+          scenario={runtimeConfig.scenario}
+          sampleSearchResponse={fixtures.searchResponse}
+          suggestedQueries={fixtures.suggestedQueries}
+          trendingItems={fixtures.trendingItems}
+        />
+      )}
       <Footer />
     </div>
   );

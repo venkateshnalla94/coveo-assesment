@@ -1,6 +1,6 @@
 export const SEARCH_UI = {
-  announcement: "Welcome to the Coveo Showcase. This is a demo experience of intelligent search.",
-  defaultQuery: "digital transformation",
+  announcement: "RoboMotion Industries product discovery demo powered by Coveo.",
+  defaultQuery: "welding arm",
   facets: {
     clearAllLabel: "Clear all",
     title: "Refine your results",
@@ -10,16 +10,18 @@ export const SEARCH_UI = {
   },
   announcementLink: {
     href: "#",
-    label: "Learn more about Coveo",
+    label: "Industrial robotics resources",
   },
-  brandLabel: "COVEO",
+  brandLabel: "RoboMotion Industries",
   copyright: "© 2024 Coveo Solutions Inc. All rights reserved.",
   footerLinks: ["Privacy Policy", "Terms of Use", "Support", "Contact Us"],
   navItems: [
-    { href: "#", label: "Home" },
-    { href: "#", label: "Search", active: true },
-    { href: "#", label: "Collections" },
-    { href: "#", label: "Insights" },
+    { href: "#", label: "Products", active: true },
+    { href: "#", label: "Solutions" },
+    { href: "#", label: "Industries" },
+    { href: "#", label: "Resources" },
+    { href: "#", label: "Support" },
+    { href: "#", label: "About" },
   ],
   user: {
     initials: "VN",
@@ -30,9 +32,9 @@ export const SEARCH_UI = {
     relevanceLabel: "Relevance",
   },
   startup: {
-    body: "Search is initialized only after submission so the privileged Coveo API key stays on the server while the browser receives a short-lived search token.",
-    eyebrow: "Coveo TME Assessment",
-    title: "Secure Headless Search",
+    body: "Search is initialized through secure server-side boundaries so privileged Coveo credentials stay out of client bundles.",
+    eyebrow: "RoboMotion Industries",
+    title: "Industrial Robotics Product Discovery",
   },
 };
 

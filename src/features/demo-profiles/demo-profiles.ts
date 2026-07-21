@@ -1,13 +1,23 @@
 import type { FeatureFlagOverrides } from "@/features/feature-flags/feature-flags";
 
 export type DemoProfileId =
+  | "industrial-product-discovery"
   | "developer-documentation"
   | "customer-support"
   | "ecommerce"
   | "minimal";
 
 export type FacetConfiguration = {
-  field: "filetype" | "source" | "product" | "updatedDate";
+  field:
+    | "filetype"
+    | "source"
+    | "product"
+    | "updatedDate"
+    | "ec_category"
+    | "compatible_robot_series"
+    | "ec_brand"
+    | "ec_price"
+    | "ec_rating";
   label: string;
   enabled: boolean;
 };
@@ -28,9 +38,38 @@ export interface DemoProfile {
   fixtureSet?: string;
 }
 
-export const DEFAULT_DEMO_PROFILE_ID: DemoProfileId = "developer-documentation";
+export const DEFAULT_DEMO_PROFILE_ID: DemoProfileId = "industrial-product-discovery";
 
 export const demoProfiles: Record<DemoProfileId, DemoProfile> = {
+  "industrial-product-discovery": {
+    audience: "Manufacturing engineers, automation teams, plant managers, systems integrators, and procurement teams",
+    branding: {
+      subtitle: "Industrial Robotics Product Discovery",
+      title: "RoboMotion Industries",
+    },
+    businessProblem:
+      "Help robotics buyers search, filter, compare, and evaluate industrial automation products without exposing platform credentials.",
+    description:
+      "Commerce-powered product discovery with real product fields, range facets, comparison, product details, and technical guidance.",
+    facetConfiguration: [
+      { enabled: true, field: "ec_category", label: "Category" },
+      { enabled: true, field: "compatible_robot_series", label: "Compatible Robots" },
+      { enabled: true, field: "ec_brand", label: "Brand" },
+      { enabled: true, field: "ec_price", label: "Price" },
+      { enabled: true, field: "ec_rating", label: "Rating" },
+    ],
+    featureFlags: {
+      facets: { contentType: false, enabled: true, product: true, source: false },
+      generative: { citations: true, disclaimer: true, enabled: true, feedback: true },
+      insights: { enabled: true, popularContent: true, relatedQueries: true, topic: true },
+      results: { badges: true, quickView: true, thumbnails: true },
+      search: { querySuggestions: true },
+    },
+    fixtureSet: "commerce-products",
+    id: "industrial-product-discovery",
+    name: "Industrial Product Discovery",
+    suggestedQueries: ["welding arm", "collaborative robot", "palletizing", "precision"],
+  },
   "customer-support": {
     audience: "Support leaders and knowledge managers",
     branding: {

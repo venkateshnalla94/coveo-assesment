@@ -12,6 +12,7 @@ describe("demo profiles", () => {
       "customer-support",
       "developer-documentation",
       "ecommerce",
+      "industrial-product-discovery",
       "minimal",
     ]);
   });

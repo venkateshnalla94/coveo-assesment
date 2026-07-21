@@ -18,6 +18,28 @@ export interface DemoProfileFixtures {
 const fixtureDate = "2026-01-01T00:00:00.000Z";
 
 export const profileFixtures: Record<DemoProfileId, DemoProfileFixtures> = {
+  "industrial-product-discovery": {
+    generativeAnswer: {
+      answer:
+        "Fixture-backed product guidance: use Commerce product results for product selection, then use technical resources to evaluate application fit, compatibility, and robot-cell safety considerations.",
+      citations: [
+        citation("robotics-citation-welding", "Choosing the Right Robot for Welding Cells", "/resources/robotic-welding-guide"),
+        citation("robotics-citation-compatibility", "Robot Compatibility Planning Guide", "/resources/compatibility-planning"),
+      ],
+      generatedAt: fixtureDate,
+    },
+    searchResponse: response("RoboMotion Product Discovery", "welding arm", [
+      result("robotics-guide", "Choosing the Right Robot for Welding Cells", "Technical buying guidance for industrial welding automation.", "article", "Technical Resources", "html", "Robotics"),
+      result("robotics-safety", "Robotic Welding Safety Best Practices", "Safety planning resource for welding robot cells.", "documentation", "Technical Resources", "pdf", "Robotics"),
+      result("robotics-compatibility", "Robot Compatibility Planning Guide", "How to evaluate compatible robots, tooling, and joints.", "documentation", "Technical Resources", "html", "Robotics"),
+    ]),
+    suggestedQueries: ["welding arm", "collaborative robot", "palletizing", "precision"],
+    trendingItems: [
+      trend("robotics-trend-welding", 1, "Choosing the Right Robot for Welding Cells", "article", "Sample technical resource"),
+      trend("robotics-trend-compatibility", 2, "Robot Compatibility Planning Guide", "documentation", "Sample technical resource"),
+      trend("robotics-trend-safety", 3, "Robotic Welding Safety Best Practices", "article", "Sample technical resource"),
+    ],
+  },
   "customer-support": {
     generativeAnswer: {
       answer:

@@ -24,7 +24,18 @@ export type AnalyticsEventName =
   | "generative_citation_clicked"
   | "generative_feedback_submitted"
   | "trending_content_clicked"
-  | "feature_flag_exposure";
+  | "feature_flag_exposure"
+  | "commerce_search_submitted"
+  | "commerce_product_clicked"
+  | "commerce_facet_selected"
+  | "commerce_facet_removed"
+  | "commerce_page_changed"
+  | "product_compare_added"
+  | "product_compare_removed"
+  | "product_compare_opened"
+  | "product_details_opened"
+  | "contact_sales_clicked"
+  | "request_quote_clicked";
 
 export interface AnalyticsEvent<TPayload = Record<string, unknown>> {
   name: AnalyticsEventName;

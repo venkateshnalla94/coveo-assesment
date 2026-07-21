@@ -15,6 +15,7 @@ export default defineConfig({
     env: {
       COVEO_DEVELOPMENT_QUERY_OVERRIDES: "true",
       COVEO_FEATURE_SAMPLE_SEARCH_RESPONSE: "true",
+      NEXT_PUBLIC_DEMO_PROFILE: "industrial-product-discovery",
       NODE_ENV: "development",
     },
     reuseExistingServer: !process.env.CI,

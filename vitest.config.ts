@@ -37,6 +37,7 @@ export default defineConfig({
         "src/components/search/results/result-fields.ts",
         "src/components/shared/ConfigurationNotice.tsx",
         "src/features/analytics/analytics.tsx",
+        "src/features/commerce/mappers/commerce-response-mapper.ts",
         "src/features/demo-profiles/demo-profiles.ts",
         "src/features/demo-profiles/profile-fixtures.ts",
         "src/features/development/scenarios.ts",

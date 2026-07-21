@@ -14,7 +14,7 @@ Validated states:
 - Facets displayed.
 - Zero results.
 - Generative answer.
-- Trending content.
+- Technical resources.
 - Minimal profile.
 
 No rule is disabled globally. If a future rule needs an exception, scope it to the smallest selector and document the reason in the test.

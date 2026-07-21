@@ -48,6 +48,15 @@
   - `src/components/search/response/search-response-types.ts`
 - Supporting rail:
   - `src/components/search/layout/SearchInsightsRail.tsx`
+- Commerce product discovery:
+  - `src/components/commerce/ProductDiscoveryExperience.tsx`
+  - `src/components/commerce/ProductResultCard.tsx`
+  - `src/components/commerce/ProductGrid.tsx`
+  - `src/components/commerce/ProductFacetPanel.tsx`
+  - `src/components/commerce/ComparisonBar.tsx`
+  - `src/components/commerce/ComparisonDrawer.tsx`
+  - `src/components/commerce/ProductDetailsDrawer.tsx`
+  - `src/components/commerce/ProductRightRail.tsx`
 
 ## Existing Architecture
 
@@ -75,6 +84,17 @@ UI Components
   -> Search Provider Interface
   -> Mock Search Provider / Coveo Search Provider
 ```
+
+RoboMotion product discovery uses a parallel Commerce boundary:
+
+```text
+ProductDiscoveryExperience
+  -> CommerceProductProvider
+  -> /api/coveo/commerce/search
+  -> Coveo Commerce Search API
+```
+
+The Commerce server route reads `COVEO_PLATFORM_API_KEY` server-side and returns normalized product-domain data. UI components never consume raw `ec_*` fields directly.
 
 ## Existing Feature Flags
 
@@ -107,6 +127,21 @@ The provider abstraction decision is documented in `docs/decisions/0001-search-p
 
 ## Current Search Experience
 
+RoboMotion product-discovery behavior:
+
+- Uses `CommerceProductProvider` rather than forcing Commerce into the generic `SearchProvider`.
+- Uses `/api/coveo/commerce/search` for live Commerce calls so the platform API key remains server-side.
+- Uses `/api/coveo/commerce/suggestions` for live product query suggestions.
+- Uses `/api/coveo/generative/answer` for live RGA technical guidance in the RoboMotion right rail.
+- Uses `/api/coveo/content/search` for live technical resources in the RoboMotion right rail.
+- Uses `MockCommerceProductProvider` in default sample mode so CI and E2E do not require live credentials.
+- Renders product image, name, brand, category, short description, price, promo price, rating, stock, compatible robot series, comparison, and product details from confirmed Commerce fields only.
+- Supports real Commerce facets: Category, Compatible Robots, Brand, Price, and Rating.
+- Models Price and Rating as numerical range facets.
+- Uses local comparison state with a maximum of three products.
+- Uses product details drawer with View Product, Contact Sales, and Request Quote; no datasheet action is shown because no datasheet field is confirmed.
+- Shows AI Product Guidance as technical research support, not product recommendation. RGA is grounded in configured content/blog material, not Commerce product results.
+
 Sample-mode behavior:
 
 - Uses a discriminated `SearchState` union with `initial`, `loading`, `success`, `empty`, and `error`.
@@ -124,6 +159,7 @@ Live Coveo behavior:
 - Search box accessibility and keyboard handling were improved without replacing `buildSearchBox`.
 - Headless facets remain controller-driven. Clear all now deselects all registered facet controllers.
 - Live sorting remains Coveo relevance only. The UI does not expose Newest or Most Popular for live mode because no configured Headless sort controller or Coveo sort criteria are present yet.
+- Live Commerce sorting also remains relevance-only because Commerce returned only relevance in `availableSorts`.
 
 Phase 6 additions:
 
@@ -308,7 +344,7 @@ Sample-mode behavior:
 - Queries containing `error` trigger the error state.
 - Citations are validated before rendering as external links.
 - Feedback supports helpful, not helpful, and negative reasons without backend persistence.
-- Trending content is deterministic fixture data with rank, type, view count, trend percentage, reason, and time window.
+- Technical resources are deterministic fixture data in sample mode and Search API-backed content results in live RoboMotion mode.
 - App analytics emit typed events through `ConsoleAnalyticsProvider` when enabled.
 
 Live Coveo behavior:
@@ -410,7 +446,7 @@ Remaining limitations:
 
 ## Phase 7 Current State
 
-Phase 7 adds local workflow automation, CI, PR report automation, and agent guardrails only. It does not add live Coveo credentials, live generative integration, backend feedback persistence, Storybook, product features, full live/sample unification, or Phase 8 demo material.
+Phase 7 adds local workflow automation, CI, PR report automation, and agent guardrails only. It does not add live Coveo credentials, backend feedback persistence, Storybook, full live/sample unification, or Phase 8 demo material.
 
 Executable automation:
 

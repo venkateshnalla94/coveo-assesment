@@ -42,7 +42,7 @@ The Playwright suite covers:
 - Generative answer loading, citations, feedback, no-answer, and error states.
 - Demo profiles for developer documentation, customer support, ecommerce, and minimal.
 - Browser back and forward restoration in sample mode.
-- Live safety without credentials: unsupported live generative controls stay hidden and live sorting remains relevance-only.
+- Live safety without credentials: internal live routes fail safely when server-side credentials are absent and live sorting remains relevance-only.
 - Responsive assertions at `375x812`, `768x1024`, `1024x768`, and `1440x900`.
 
 ## Accessibility
@@ -54,7 +54,7 @@ Automated accessibility checks run in Playwright using axe against:
 - Results and facets.
 - Zero-results state.
 - Generative answer state.
-- Trending content.
+- Technical resources.
 - Minimal profile.
 
 The suite fails on serious or critical violations. No global axe rules are disabled.
@@ -62,5 +62,7 @@ The suite fails on serious or critical violations. No global axe rules are disab
 ## Known Gaps
 
 - The E2E suite uses deterministic sample fixtures by default. It intentionally does not require real Coveo credentials.
+- RoboMotion product-discovery E2E uses the deterministic sample Commerce provider by default. Live Commerce validation is intentionally separate because it requires local credentials and external network access.
 - Live Coveo behavior is covered only for safety gates that can be verified without secrets.
 - No visual-regression platform is configured. Responsive checks assert layout usability and horizontal overflow instead of maintaining image baselines.
+- Product comparison and product details drawers are covered by component tests and Playwright accessibility checks in sample mode.

@@ -22,6 +22,35 @@ Sample-mode search state is synchronized with URL parameters:
 
 Invalid URL state is normalized with safe defaults. Live Headless mode is not forced into this URL model because Headless owns controller state and live routing has not been validated against a real Coveo organization.
 
+## Commerce Product Discovery
+
+RoboMotion product search uses a separate product-focused provider boundary:
+
+```text
+ProductDiscoveryExperience
+  -> CommerceProductProvider
+  -> /api/coveo/commerce/search
+  -> Coveo Commerce Search API
+```
+
+The Commerce API key is read only by the server route. Client UI sends normalized product search requests with `query`, `page`, `perPage`, and selected product facets. The response is mapped centrally into `ProductResult`, `ProductFacet`, and `ProductPagination` models before rendering.
+
+Confirmed live Commerce sort support is relevance-only. The UI does not expose price, rating, name, newest, payload, reach, or precision sorting for live Commerce mode.
+
+Confirmed Commerce facets are `ec_category`, `compatible_robot_series`, `ec_brand`, `ec_price`, and `ec_rating`. Price and rating are modeled as numerical range facets.
+
+Supporting technical resources and generated guidance are intentionally separate from Commerce product search. RGA/blog content can explain selection criteria, but the UI must not claim that RGA chose specific Commerce products.
+
+Live RoboMotion supporting paths use separate server routes:
+
+```text
+SearchBox suggestions -> /api/coveo/commerce/suggestions -> Coveo Search API querySuggest with the Commerce query pipeline
+AI Product Guidance -> /api/coveo/generative/answer -> Coveo Search API RGA stream
+Technical Resources -> /api/coveo/content/search -> Coveo Search API
+```
+
+These routes use the server-side platform key and return normalized domain data to the browser.
+
 ## Runtime Configuration
 
 Runtime configuration is resolved centrally in `src/lib/runtime/runtime-config.ts`.
@@ -55,6 +84,7 @@ Profiles live outside UI components in `src/features/demo-profiles/demo-profiles
 
 Supported profiles:
 
+- `industrial-product-discovery`
 - `developer-documentation`
 - `customer-support`
 - `ecommerce`
@@ -100,7 +130,7 @@ Feedback uses a separate `FeedbackProvider`; the current implementation is local
 
 ## Trending Content
 
-Trending content uses `TrendingProvider`. Current data is deterministic fixture content with explicit sample-mode language so mock view counts are not presented as production analytics.
+Technical resources use `TrendingProvider`. Sample mode is deterministic fixture content with explicit sample-mode language; live RoboMotion mode uses Search API content results and does not present fixture metrics as production analytics.
 
 ## Analytics
 

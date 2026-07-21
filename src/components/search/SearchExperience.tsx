@@ -22,6 +22,7 @@ import type {
   SearchStatus,
 } from "@coveo/headless";
 import { AlertCircle, Search } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   useEffect,
   useMemo,
@@ -61,10 +62,20 @@ import {
 import { CoveoGenerativeProvider } from "@/features/generative/providers/coveo-generative-provider";
 import { InMemoryFeedbackProvider } from "@/features/generative/providers/feedback-provider";
 import { MockGenerativeProvider } from "@/features/generative/providers/mock-generative-provider";
+import type { DemoProfile } from "@/features/demo-profiles/demo-profiles";
+import type { DevelopmentScenario } from "@/features/development/scenarios";
 import { getFacetLabel, getFacetOrder } from "@/features/search/config/facets";
 import type { SearchResult } from "@/features/search/models/search-models";
 import { getSearchStateResponse, searchStateReducer } from "@/features/search/models/search-state";
 import { InMemorySearchProvider } from "@/features/search/providers/in-memory-search-provider";
+import {
+  coveoGenerativeCapabilities,
+  coveoHeadlessCapabilities,
+  inMemorySearchCapabilities,
+  mockGenerativeCapabilities,
+  type GenerativeProviderCapabilities,
+  type SearchProviderCapabilities,
+} from "@/features/search/capabilities/provider-capabilities";
 import { getPaginationState } from "@/features/search/services/pagination";
 import {
   clearSearchQueryFacet,
@@ -77,12 +88,22 @@ import {
   toggleSearchQueryFacet,
 } from "@/features/search/services/search-query";
 import {
+  DEFAULT_URL_FACETS,
+  parseSearchUrlState,
+  searchQueryFromUrlState,
+  searchUrlStateFromQuery,
+  serializeSearchUrlState,
+} from "@/features/search/services/search-url-state";
+import {
   defaultSearchFeatureFlags,
   type SearchFeatureFlags,
 } from "@/lib/features/search-feature-flags";
 import { MockTrendingProvider } from "@/features/trending/providers/mock-trending-provider";
+import type { TrendingProvider } from "@/features/trending/providers/trending-provider";
 import { fetchSearchTokenConfig, type SearchTokenConfig } from "@/lib/coveo/search-token";
 import { useControllerState } from "@/lib/coveo/use-controller-state";
+import { ConsoleLogger, type Logger } from "@/lib/logging/logger";
+import { toApplicationError } from "@/lib/errors/application-error";
 
 type EngineState =
   | { status: "idle" }
@@ -169,12 +190,27 @@ function createControllers(engine: SearchEngine, facetFields: string[]): SearchC
 }
 
 export function SearchExperience({
+  capabilities,
+  development = { queryOverridesEnabled: false },
+  environment = "development",
   featureFlags = defaultSearchFeatureFlags,
   insightsContent,
+  logger = new ConsoleLogger("warn"),
+  profile,
+  scenario = "default",
   sampleSearchResponse,
 }: {
+  capabilities?: {
+    search: SearchProviderCapabilities;
+    generative: GenerativeProviderCapabilities;
+  };
+  development?: { queryOverridesEnabled: boolean };
+  environment?: "development" | "test" | "production";
   featureFlags?: SearchFeatureFlags;
   insightsContent?: SearchInsightsContent;
+  logger?: Logger;
+  profile?: DemoProfile;
+  scenario?: DevelopmentScenario;
   sampleSearchResponse?: SearchResponse;
 }) {
   const [engineState, setEngineState] = useState<EngineState>({ status: "idle" });
@@ -191,11 +227,26 @@ export function SearchExperience({
     <AnalyticsProviderRoot enabled={featureFlags.enableAnalytics} provider={analyticsProvider}>
       <SearchExperienceContent
         engineState={engineState}
+        capabilities={
+          capabilities ?? {
+            generative: featureFlags.enableSampleSearchResponse
+              ? mockGenerativeCapabilities
+              : coveoGenerativeCapabilities,
+            search: featureFlags.enableSampleSearchResponse
+              ? inMemorySearchCapabilities
+              : coveoHeadlessCapabilities,
+          }
+        }
+        development={development}
+        environment={environment}
         featureFlags={featureFlags}
         insightsContent={insightsContent}
+        logger={logger}
         onEngineStateChange={setEngineState}
         onPendingQueryChange={setPendingQuery}
         pendingQuery={pendingQuery}
+        profile={profile}
+        scenario={scenario}
         sampleSearchResponse={sampleSearchResponse}
       />
     </AnalyticsProviderRoot>
@@ -204,19 +255,34 @@ export function SearchExperience({
 
 function SearchExperienceContent({
   engineState,
+  capabilities,
+  development,
+  environment,
   featureFlags,
   insightsContent,
+  logger,
   onEngineStateChange,
   onPendingQueryChange,
   pendingQuery,
+  profile,
+  scenario,
   sampleSearchResponse,
 }: {
   engineState: EngineState;
+  capabilities: {
+    search: SearchProviderCapabilities;
+    generative: GenerativeProviderCapabilities;
+  };
+  development: { queryOverridesEnabled: boolean };
+  environment: "development" | "test" | "production";
   featureFlags: SearchFeatureFlags;
   insightsContent?: SearchInsightsContent;
+  logger: Logger;
   onEngineStateChange: (state: EngineState) => void;
   onPendingQueryChange: (query: string) => void;
   pendingQuery: string;
+  profile?: DemoProfile;
+  scenario: DevelopmentScenario;
   sampleSearchResponse?: SearchResponse;
 }) {
   const analytics = useAnalytics();
@@ -225,7 +291,13 @@ function SearchExperienceContent({
     return (
       <SearchResponseExperience
         featureFlags={featureFlags}
+        capabilities={capabilities}
+        development={development}
+        environment={environment}
         insightsContent={insightsContent}
+        logger={logger}
+        profile={profile}
+        scenario={scenario}
         searchResponse={sampleSearchResponse}
       />
     );
@@ -242,9 +314,10 @@ function SearchExperienceContent({
       const config = await fetchSearchTokenConfig();
       const engine = createEngine(config);
 
+      logger.info("provider_initialized", { mode: "live", organizationId: config.organizationId });
       onEngineStateChange({ status: "ready", engine, config, initialQuery: submittedQuery });
     } catch (error) {
-      console.error("Coveo search initialization failed:", error);
+      logger.error("provider_initialization_failed", error, { mode: "live" });
       onEngineStateChange({ status: "configuration-error" });
     }
   }
@@ -298,8 +371,10 @@ function SearchExperienceContent({
         config={engineState.config}
         engine={engineState.engine}
         featureFlags={featureFlags}
+        capabilities={capabilities}
         initialQuery={engineState.initialQuery}
         insightsContent={insightsContent}
+        logger={logger}
       />
     );
   }
@@ -373,14 +448,21 @@ function ReadySearchExperience({
   config,
   engine,
   featureFlags,
+  capabilities,
   initialQuery,
   insightsContent,
+  logger,
 }: {
   config: SearchTokenConfig;
   engine: SearchEngine;
   featureFlags: SearchFeatureFlags;
+  capabilities: {
+    search: SearchProviderCapabilities;
+    generative: GenerativeProviderCapabilities;
+  };
   initialQuery: string;
   insightsContent?: SearchInsightsContent;
+  logger: Logger;
 }) {
   const analytics = useAnalytics();
   const firstSearchExecuted = useRef(false);
@@ -398,6 +480,10 @@ function ReadySearchExperience({
   const generativeProvider = useMemo(() => new CoveoGenerativeProvider(), []);
   const feedbackProvider = useMemo(() => new InMemoryFeedbackProvider(), []);
   const trendingProvider = useMemo(() => new MockTrendingProvider(), []);
+
+  useEffect(() => {
+    logger.info("provider_initialized", { mode: "live", searchHub: config.searchHub });
+  }, [config.searchHub, logger]);
 
   useEffect(() => {
     if (!firstSearchExecuted.current) {
@@ -459,7 +545,7 @@ function ReadySearchExperience({
         {queryError.hasError ? (
           <div className="inline-error" role="alert">
             <AlertCircle aria-hidden="true" size={18} />
-            <span>{queryError.error?.message ?? "Coveo returned an error for this query."}</span>
+            <span>{toApplicationError(queryError.error).userMessage}</span>
           </div>
         ) : null}
 
@@ -468,7 +554,7 @@ function ReadySearchExperience({
         </div>
 
         <div className={getSearchLayoutClassName(featureFlags.enableFacets, showInsights)}>
-          {featureFlags.enableFacets ? (
+          {featureFlags.enableFacets && capabilities.search.facets ? (
             <aside className="facet-sidebar" aria-label="Search filters">
               <div className="facet-sidebar-header">
                 <h2>{SEARCH_UI.facets.title}</h2>
@@ -514,7 +600,18 @@ function ReadySearchExperience({
             </div>
             <GenerativeAnswer
               feedbackProvider={feedbackProvider}
-              featureFlags={featureFlags}
+              featureFlags={{
+                ...featureFlags,
+                enableGenerativeAnswers:
+                  featureFlags.enableGenerativeAnswers && capabilities.generative.available,
+                enableGenerativeCitations:
+                  featureFlags.enableGenerativeCitations && capabilities.generative.citations,
+                enableGenerativeFeedback:
+                  featureFlags.enableGenerativeFeedback &&
+                  capabilities.generative.feedbackPersistence,
+                enableGenerativeStreaming:
+                  featureFlags.enableGenerativeStreaming && capabilities.generative.streaming,
+              }}
               provider={generativeProvider}
               query={controllers.searchBox.state.value}
             />
@@ -560,27 +657,69 @@ function ReadySearchExperience({
 }
 
 function SearchResponseExperience({
+  capabilities,
+  development,
+  environment,
   featureFlags,
   insightsContent,
+  logger,
+  profile,
+  scenario,
   searchResponse,
 }: {
+  capabilities: {
+    search: SearchProviderCapabilities;
+    generative: GenerativeProviderCapabilities;
+  };
+  development: { queryOverridesEnabled: boolean };
+  environment: "development" | "test" | "production";
   featureFlags: SearchFeatureFlags;
   insightsContent?: SearchInsightsContent;
+  logger: Logger;
+  profile?: DemoProfile;
+  scenario: DevelopmentScenario;
   searchResponse: SearchResponse;
 }) {
   const analytics = useAnalytics();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const provider = useMemo(() => new InMemorySearchProvider(searchResponse), [searchResponse]);
-  const generativeProvider = useMemo(() => new MockGenerativeProvider(), []);
+  const generativeProvider = useMemo(() => new MockGenerativeProvider({
+    behavior:
+      scenario === "generative-error"
+        ? "error"
+        : scenario === "generative-no-answer"
+          ? "no-answer"
+          : scenario === "loading" || scenario === "generative"
+            ? "delayed-answer"
+            : undefined,
+    delayMs: scenario === "loading" ? 10000 : undefined,
+  }), [scenario]);
   const feedbackProvider = useMemo(() => new InMemoryFeedbackProvider(), []);
-  const trendingProvider = useMemo(() => new MockTrendingProvider(), []);
+  const trendingProvider = useMemo<TrendingProvider>(() => {
+    if (scenario === "trending-empty") {
+      return new MockTrendingProvider([]);
+    }
+
+    if (scenario === "trending-error") {
+      return { getTrendingContent: async () => Promise.reject(new Error("Trending scenario failed.")) };
+    }
+
+    return new MockTrendingProvider();
+  }, [scenario]);
   const trackedZeroResults = useRef("");
-  const [draftQuery, setDraftQuery] = useState(searchResponse.query ?? "");
-  const [query, setQuery] = useState(() =>
-    normalizeSearchQuery({
-      ...DEFAULT_SEARCH_QUERY,
-      query: searchResponse.query ?? DEFAULT_SEARCH_QUERY.query,
-    }),
-  );
+  const lastUrlState = useRef("");
+  const allowDevelopmentParameters = environment !== "production" && development.queryOverridesEnabled;
+  const parsedUrlState = parseSearchUrlState(searchParams, {
+    allowDevelopmentParameters,
+    allowedFacets: DEFAULT_URL_FACETS,
+  });
+  const initialQuery = searchQueryFromUrlState({
+    ...parsedUrlState,
+    query: parsedUrlState.query ?? searchResponse.query ?? DEFAULT_SEARCH_QUERY.query,
+  });
+  const [draftQuery, setDraftQuery] = useState(initialQuery.query);
+  const [query, setQuery] = useState(() => normalizeSearchQuery(initialQuery));
   const [state, dispatch] = useReducer(searchStateReducer, {
     query,
     response: {
@@ -602,12 +741,76 @@ function SearchResponseExperience({
     0,
   );
   const sortedFacets = (response?.facets ?? [])
-    .filter((facet) => ["filetype", "source", "product"].includes(facet.field))
+    .filter((facet) => isFacetEnabled(facet.field, featureFlags, profile))
     .map((facet) => ({
       ...facet,
       label: getFacetLabel(facet.field, facet.label),
     }))
     .sort((left, right) => getFacetOrder(left.field) - getFacetOrder(right.field));
+
+  useEffect(() => {
+    logger.info("provider_initialized", {
+      mode: "sample",
+      profile: profile?.id,
+      scenario,
+    });
+  }, [logger, profile?.id, scenario]);
+
+  useEffect(() => {
+    analytics.track("feature_flag_exposure", {
+      analytics: featureFlags.enableAnalytics,
+      facets: featureFlags.enableFacets,
+      generative: featureFlags.enableGenerativeAnswers,
+      profile: profile?.id,
+      scenario,
+      trending: featureFlags.enableTrendingContent,
+    });
+  }, [
+    analytics,
+    featureFlags.enableAnalytics,
+    featureFlags.enableFacets,
+    featureFlags.enableGenerativeAnswers,
+    featureFlags.enableTrendingContent,
+    profile?.id,
+    scenario,
+  ]);
+
+  useEffect(() => {
+    const nextQuery = searchQueryFromUrlState({
+      ...parsedUrlState,
+      query: parsedUrlState.query ?? searchResponse.query ?? DEFAULT_SEARCH_QUERY.query,
+    });
+    const serialized = serializeSearchUrlState(
+      {
+        ...searchUrlStateFromQuery(nextQuery, {
+          profile: parsedUrlState.profile,
+          scenario: parsedUrlState.scenario,
+        }),
+        query: parsedUrlState.query,
+      },
+      {
+        includeDevelopmentParameters: allowDevelopmentParameters,
+      },
+    );
+    const current = searchParams.toString();
+
+    if (current !== serialized) {
+      logger.warn("invalid_url_state_normalized", { current, normalized: serialized });
+      router.replace(serialized ? `?${serialized}` : "/");
+      return;
+    }
+
+    if (lastUrlState.current === current) {
+      return;
+    }
+
+    lastUrlState.current = current;
+    setDraftQuery(nextQuery.query);
+    runSearch(nextQuery, { updateUrl: false });
+    // The effect is keyed to the App Router search-param snapshot; adding derived objects here
+    // causes redundant provider searches and router writes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   useEffect(() => {
     if (state.status !== "empty") {
@@ -628,20 +831,63 @@ function SearchResponseExperience({
     });
   }, [activeFilterCount, analytics, state]);
 
-  function runSearch(nextQuery: typeof query) {
+  function runSearch(nextQuery: typeof query, options: { updateUrl?: boolean } = {}) {
     const normalizedQuery = normalizeSearchQuery(nextQuery);
     setQuery(normalizedQuery);
     dispatch({ type: "search-requested", query: normalizedQuery });
+    logger.info("search_started", {
+      mode: "sample",
+      query: normalizedQuery.query,
+      scenario,
+    });
+
+    if (options.updateUrl !== false) {
+      const serialized = serializeSearchUrlState(searchUrlStateFromQuery(normalizedQuery, {
+        profile: parsedUrlState.profile,
+        scenario: parsedUrlState.scenario,
+      }), {
+        includeDevelopmentParameters: allowDevelopmentParameters,
+      });
+      lastUrlState.current = serialized;
+      router.push(serialized ? `?${serialized}` : "/");
+    }
+
+    if (scenario === "error") {
+      const error = new Error("Scenario search provider failure.");
+      logger.error("search_failed", error, { mode: "sample", query: normalizedQuery.query });
+      dispatch({ type: "search-failed", error: toApplicationError(error).userMessage });
+      return;
+    }
+
+    if (scenario === "loading") {
+      return;
+    }
 
     provider
-      .search(normalizedQuery)
+      .search(scenario === "empty" ? { ...normalizedQuery, query: "no matching scenario query" } : normalizedQuery)
       .then((nextResponse) => {
-        dispatch({ type: "search-succeeded", response: nextResponse });
+        const scenarioResponse =
+          scenario === "partial"
+            ? {
+                ...nextResponse,
+                facets: nextResponse.facets.slice(0, 1),
+                results: nextResponse.results.slice(0, 2),
+                totalCount: Math.min(nextResponse.totalCount, 2),
+              }
+            : nextResponse;
+
+        logger.info("search_completed", {
+          mode: "sample",
+          query: normalizedQuery.query,
+          resultCount: scenarioResponse.totalCount,
+        });
+        dispatch({ type: "search-succeeded", response: scenarioResponse });
       })
       .catch((error: unknown) => {
+        logger.error("search_failed", error, { mode: "sample", query: normalizedQuery.query });
         dispatch({
           type: "search-failed",
-          error: error instanceof Error ? error.message : "Search failed.",
+          error: toApplicationError(error).userMessage,
         });
       });
   }
@@ -744,12 +990,22 @@ function SearchResponseExperience({
                   });
                   runSearch(setSearchQuerySort(query, sort));
                 }}
+                options={profile?.id === "minimal" ? ["relevance"] : capabilities.search.sorting}
                 value={state.query.sort}
               />
             </div>
             <GenerativeAnswer
               feedbackProvider={feedbackProvider}
-              featureFlags={featureFlags}
+              featureFlags={{
+                ...featureFlags,
+                enableGenerativeAnswers:
+                  featureFlags.enableGenerativeAnswers && capabilities.generative.available,
+                enableGenerativeCitations:
+                  featureFlags.enableGenerativeCitations && capabilities.generative.citations,
+                enableGenerativeFeedback: featureFlags.enableGenerativeFeedback,
+                enableGenerativeStreaming:
+                  featureFlags.enableGenerativeStreaming && capabilities.generative.streaming,
+              }}
               provider={generativeProvider}
               query={state.query.query}
             />
@@ -800,9 +1056,27 @@ function SearchResponseExperience({
             />
           ) : null}
         </div>
+        {environment !== "production" ? (
+          <div className="search-context-row" aria-label="Development context">
+            <span>{profile?.name ?? "Default profile"}</span>
+            <span>{scenario}</span>
+          </div>
+        ) : null}
       </main>
     </>
   );
+}
+
+function isFacetEnabled(field: string, featureFlags: SearchFeatureFlags, profile?: DemoProfile) {
+  if (!featureFlags.enableFacets) {
+    return false;
+  }
+
+  if (profile?.facetConfiguration.length) {
+    return profile.facetConfiguration.some((facet) => facet.field === field && facet.enabled);
+  }
+
+  return ["filetype", "source", "product"].includes(field);
 }
 
 function getSearchLayoutClassName(showFacets: boolean, showInsights: boolean) {

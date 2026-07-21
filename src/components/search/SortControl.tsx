@@ -1,14 +1,27 @@
 import { List } from "lucide-react";
 
-import { SEARCH_SORT_OPTIONS } from "@/features/search/services/sort-options";
+import { SEARCH_SORT_OPTIONS, type SearchSort } from "@/features/search/services/sort-options";
 
 export function SortControl({
   onChange,
+  options = SEARCH_SORT_OPTIONS.map((option) => option.value),
   value,
 }: {
   onChange: (sort: string) => void;
+  options?: readonly SearchSort[];
   value: string;
 }) {
+  const visibleOptions = SEARCH_SORT_OPTIONS.filter((option) => options.includes(option.value));
+
+  if (visibleOptions.length <= 1) {
+    return (
+      <div className="sort-control">
+        <span>Sort by</span>
+        <span className="sort-readonly">{visibleOptions[0]?.label ?? "Relevance"}</span>
+      </div>
+    );
+  }
+
   return (
     <div className="sort-control">
       <label htmlFor="search-sort">Sort by</label>
@@ -18,7 +31,7 @@ export function SortControl({
         onChange={(event) => onChange(event.target.value)}
         value={value}
       >
-        {SEARCH_SORT_OPTIONS.map((option) => (
+        {visibleOptions.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
           </option>

@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SearchExperience } from "./SearchExperience";
 import type { SearchResponse } from "./response/search-response-types";
 import type { SearchInsightsContent } from "./layout/SearchInsightsRail";
+import { demoProfiles } from "@/features/demo-profiles/demo-profiles";
+import { coveoHeadlessCapabilities, inMemorySearchCapabilities, mockGenerativeCapabilities } from "@/features/search/capabilities/provider-capabilities";
 import {
   defaultSearchFeatureFlags,
   type SearchFeatureFlags,
@@ -24,6 +26,9 @@ const mocks = vi.hoisted(() => ({
   fetchSearchTokenConfig: vi.fn(),
   searchBoxSubmit: vi.fn(),
   searchBoxUpdateText: vi.fn(),
+  routerPush: vi.fn(),
+  routerReplace: vi.fn(),
+  searchParams: new URLSearchParams(),
 }));
 
 vi.mock("@/lib/coveo/search-token", () => ({
@@ -32,6 +37,14 @@ vi.mock("@/lib/coveo/search-token", () => ({
 
 vi.mock("@/lib/coveo/use-controller-state", () => ({
   useControllerState: (controller: { state: unknown }) => controller.state,
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: mocks.routerPush,
+    replace: mocks.routerReplace,
+  }),
+  useSearchParams: () => mocks.searchParams,
 }));
 
 vi.mock("@coveo/headless", () => ({
@@ -60,7 +73,12 @@ function controller<TState>(state: TState) {
 }
 
 beforeEach(() => {
-  Object.values(mocks).forEach((mock) => mock.mockReset());
+  Object.values(mocks).forEach((mock) => {
+    if (typeof mock === "function" && "mockReset" in mock) {
+      mock.mockReset();
+    }
+  });
+  mocks.searchParams = new URLSearchParams();
 
   mocks.buildSearchEngine.mockReturnValue({ executeFirstSearch: mocks.executeFirstSearch });
   mocks.buildInteractiveResult.mockReturnValue({ select: vi.fn() });
@@ -163,8 +181,13 @@ describe("SearchExperience startup behavior", () => {
     expect(screen.getByText("Update the Coveo values in .env.local, then restart the development server.")).toBeTruthy();
     expect(screen.queryByText("Missing required environment variable: COVEO_ORGANIZATION_ID")).toBeNull();
     expect(consoleError).toHaveBeenCalledWith(
-      "Coveo search initialization failed:",
-      expect.objectContaining({ message: "Missing required environment variable: COVEO_ORGANIZATION_ID" }),
+      "[app]",
+      expect.objectContaining({
+        event: "provider_initialization_failed",
+        metadata: expect.objectContaining({
+          errorMessage: "Missing required environment variable: COVEO_ORGANIZATION_ID",
+        }),
+      }),
     );
   });
 
@@ -680,5 +703,118 @@ describe("SearchExperience sample response mode", () => {
     await userEvent.click(screen.getByRole("link", { name: /Sample Digital Transformation Guide/ }));
 
     expect(consoleInfo).not.toHaveBeenCalled();
+  });
+
+  it("initializes sample search state from the URL", async () => {
+    mocks.searchParams = new URLSearchParams("q=web&sort=newest&contentType=PDF");
+
+    render(
+      <SearchExperience
+        featureFlags={enabledFlags}
+        insightsContent={insightsContent}
+        sampleSearchResponse={sampleSearchResponse}
+      />,
+    );
+
+    expect(screen.getByRole("combobox", { name: "Search" })).toHaveProperty("value", "web");
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "PDF 4" }).getAttribute("aria-pressed")).toBe(
+        "true",
+      );
+    });
+    expect(await screen.findByText("No results for web")).toBeTruthy();
+  });
+
+  it("updates the URL when sample search state changes", async () => {
+    render(
+      <SearchExperience
+        featureFlags={enabledFlags}
+        insightsContent={insightsContent}
+        sampleSearchResponse={sampleSearchResponse}
+      />,
+    );
+
+    await userEvent.clear(screen.getByRole("combobox", { name: "Search" }));
+    await userEvent.type(screen.getByRole("combobox", { name: "Search" }), "guide");
+    await userEvent.click(screen.getByRole("button", { name: "Search" }));
+
+    expect(mocks.routerPush).toHaveBeenCalledWith("?q=guide");
+  });
+
+  it("uses minimal profile configuration to hide optional sample content", () => {
+    render(
+      <SearchExperience
+        capabilities={{ generative: mockGenerativeCapabilities, search: inMemorySearchCapabilities }}
+        featureFlags={{
+          ...enabledFlags,
+          enableFacets: false,
+          enableGenerativeAnswers: false,
+          enableInsightsRail: false,
+          enablePopularContent: false,
+          enableRelatedQueries: false,
+          enableTopicInsight: false,
+          enableTrendingContent: false,
+        }}
+        insightsContent={insightsContent}
+        profile={demoProfiles.minimal}
+        sampleSearchResponse={sampleSearchResponse}
+      />,
+    );
+
+    expect(screen.getByText("Sample Digital Transformation Guide")).toBeTruthy();
+    expect(screen.queryByText("Content Type")).toBeNull();
+    expect(screen.queryByText("Generated answer")).toBeNull();
+  });
+
+  it("uses ecommerce profile and capabilities to show sample popularity sorting", () => {
+    render(
+      <SearchExperience
+        capabilities={{ generative: mockGenerativeCapabilities, search: inMemorySearchCapabilities }}
+        featureFlags={enabledFlags}
+        insightsContent={insightsContent}
+        profile={demoProfiles.ecommerce}
+        sampleSearchResponse={sampleSearchResponse}
+      />,
+    );
+
+    expect(screen.getByRole("option", { name: "Most Popular" })).toBeTruthy();
+  });
+
+  it("uses the partial development scenario to render a reduced provider response", async () => {
+    render(
+      <SearchExperience
+        featureFlags={enabledFlags}
+        insightsContent={insightsContent}
+        sampleSearchResponse={sampleSearchResponse}
+        scenario="partial"
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Search" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Sample Digital Transformation Guide")).toBeTruthy();
+      expect(screen.queryByText("Sample Digital Transformation Presentation")).toBeNull();
+    });
+  });
+
+  it("hides unsupported live sorting controls when capabilities only confirm relevance", async () => {
+    mocks.fetchSearchTokenConfig.mockResolvedValue({
+      facetFields: [],
+      organizationId: "example-org",
+      token: "search-token",
+    });
+
+    render(
+      <SearchExperience
+        capabilities={{ generative: mockGenerativeCapabilities, search: coveoHeadlessCapabilities }}
+        featureFlags={{ ...enabledFlags, enableSampleSearchResponse: false }}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Search" }));
+
+    expect(await screen.findByText("Relevance")).toBeTruthy();
+    expect(screen.queryByLabelText("Sort results")).toBeNull();
   });
 });

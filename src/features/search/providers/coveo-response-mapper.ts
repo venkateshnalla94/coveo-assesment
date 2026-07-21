@@ -78,6 +78,36 @@ function mapFiletypeToResultType(filetype: string | undefined): SearchResultType
   }
 }
 
+function inferResultType({
+  filetype,
+  source,
+  tags,
+  title,
+  url,
+}: {
+  filetype: string | undefined;
+  source: string | undefined;
+  tags: string[];
+  title: string;
+  url: string;
+}): SearchResultType {
+  const searchableText = [source, title, url, ...tags].join(" ").toLowerCase();
+
+  if (searchableText.includes("community")) {
+    return "community";
+  }
+
+  if (
+    searchableText.includes("product") ||
+    searchableText.includes("/products") ||
+    searchableText.includes("/solutions")
+  ) {
+    return "product";
+  }
+
+  return mapFiletypeToResultType(filetype);
+}
+
 function mapResult(rawResult: unknown, index: number): SearchResult {
   const result = rawResult && typeof rawResult === "object" ? (rawResult as RawCoveoResult) : {};
   const filetype = asString(result.filetype);
@@ -91,13 +121,14 @@ function mapResult(rawResult: unknown, index: number): SearchResult {
     title,
     description: asString(result.excerpt) ?? "",
     url,
-    type: mapFiletypeToResultType(filetype),
+    type: inferResultType({ filetype, source, tags, title, url }),
     ...(asString(result.author) ? { author: asString(result.author) } : {}),
     ...(tags.length > 0 ? { badges: tags } : {}),
     ...(asString(result.printableUri) ? { displayUrl: asString(result.printableUri) } : {}),
     ...(asString(result.thumbnail) ? { imageUrl: asString(result.thumbnail) } : {}),
     metadata: {
       filetype: filetype ?? null,
+      popularity: Math.max(0, 1000 - index),
     },
     ...(source ? { source } : {}),
     ...(asString(result.date) ? { updatedAt: asString(result.date) } : {}),

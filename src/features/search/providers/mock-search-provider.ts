@@ -1,38 +1,20 @@
-import type {
-  SearchQuery,
-  SearchResponse,
-  SearchSuggestion,
-} from "@/features/search/models/search-models";
+import type { SearchQuery, SearchResponse, SearchSuggestion } from "@/features/search/models/search-models";
 import { mapCoveoSearchResponse } from "@/features/search/providers/coveo-response-mapper";
+import { InMemorySearchProvider } from "@/features/search/providers/in-memory-search-provider";
 import type { SearchProvider } from "@/features/search/providers/search-provider";
 
 export class MockSearchProvider implements SearchProvider {
-  private readonly response: SearchResponse;
+  private readonly provider: InMemorySearchProvider;
 
   constructor(rawResponse: unknown) {
-    this.response = mapCoveoSearchResponse(rawResponse);
+    this.provider = new InMemorySearchProvider(mapCoveoSearchResponse(rawResponse));
   }
 
   async search(query: SearchQuery): Promise<SearchResponse> {
-    void query;
-
-    return this.response;
+    return this.provider.search(query);
   }
 
   async getSuggestions(query: string): Promise<SearchSuggestion[]> {
-    const normalizedQuery = query.trim().toLowerCase();
-
-    if (!normalizedQuery) {
-      return [];
-    }
-
-    return this.response.results
-      .filter((result) => result.title.toLowerCase().includes(normalizedQuery))
-      .slice(0, 5)
-      .map((result) => ({
-        id: result.id,
-        label: result.title,
-        value: result.title,
-      }));
+    return this.provider.getSuggestions(query);
   }
 }

@@ -23,11 +23,11 @@ describe("MockSearchProvider", () => {
           uniqueId: "guide-1",
         },
       ],
-      totalCount: 20,
+      totalCount: 1,
     });
 
     await expect(provider.search(query)).resolves.toMatchObject({
-      totalCount: 20,
+      totalCount: 1,
       results: [
         {
           description: "Guide excerpt",

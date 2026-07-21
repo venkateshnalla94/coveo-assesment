@@ -16,7 +16,9 @@ This directory defines repo-local agents for independent work lanes. Use these f
 4. If code changed and `test-agent` has not already run for the current diff, `commit-agent` triggers `test-agent`.
 5. If the diff changes architecture, setup, commands, env vars, or ownership boundaries, `commit-agent` triggers `context-agent`.
 6. The Git pre-commit hook runs `npm run workflow:precommit` for mechanical enforcement.
-7. Commit only after the required validation is complete or after explicitly documenting why a validation step could not run.
+7. The Git pre-push hook runs `npm run workflow:push` before publishing local work.
+8. GitHub Actions runs `npm run workflow:check` for pull requests and pushes to `main`.
+9. Commit only after the required validation is complete or after explicitly documenting why a validation step could not run.
 
 ## Hooks
 
@@ -26,9 +28,11 @@ Install local hooks with:
 npm run hooks:install
 ```
 
-The committed `.githooks/pre-commit` hook runs lint, coverage, typecheck, build, staged whitespace checks, and a basic secret/generated-file gate. It cannot literally trigger Codex agents; it enforces the mechanical checks that agents are expected to request.
+The committed `.githooks/pre-commit` hook runs lint, coverage, typecheck, build, staged whitespace checks, and a basic secret/generated-file gate. The committed `.githooks/pre-push` hook runs the full-tree validation through `npm run workflow:push`. Hooks cannot literally trigger Codex agents; they enforce the mechanical checks that agents are expected to request.
 
 Use `npm run workflow:check` to run the same mechanical checks across the full dirty tree before staging.
+
+Pull requests use `.github/pull_request_template.md` to capture behavior, architecture/security impact, validation commands, coverage, and merge readiness.
 
 ## Non-Negotiables
 

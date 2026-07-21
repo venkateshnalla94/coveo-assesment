@@ -48,7 +48,7 @@ if (uniqueChangedFiles.length === 0) {
 }
 
 const forbiddenPaths = [
-  /^\.env($|\.|\/)/,
+  /^\.env($|\.|\/)(?!example$)/,
   /^\.claude\//,
   /^\.next\//,
   /^node_modules\//,

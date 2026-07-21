@@ -72,7 +72,12 @@ Install local Git hooks with:
 npm run hooks:install
 ```
 
-Run `npm run workflow:check` before staging when you want the same mechanical checks across the full dirty tree.
+Run `npm run workflow:check` before staging when you want the same mechanical checks across the full dirty tree. The installed Git hooks run:
+
+- `npm run workflow:precommit` before commits, scoped to staged changes.
+- `npm run workflow:push` before pushes, scoped to the full working tree.
+
+Pull requests use `.github/pull_request_template.md` to capture title quality, test coverage, configuration impact, security boundaries, and merge readiness. GitHub Actions runs `npm run workflow:check` on pull requests and pushes to `main`.
 
 ## Security Notes
 

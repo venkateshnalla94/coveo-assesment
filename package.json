@@ -13,7 +13,8 @@
     "test:coverage": "vitest run --coverage",
     "workflow:check": "node scripts/pre-commit-check.mjs --all",
     "workflow:precommit": "node scripts/pre-commit-check.mjs",
-    "typecheck": "next typegen && tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit",
+    "workflow:push": "node scripts/pre-commit-check.mjs --all"
   },
   "keywords": [],
   "author": "",

@@ -18,12 +18,13 @@ Goal: keep the assessment readable for a cold reviewer.
 - Validate with `npm run lint`, `npm run test:coverage`, `npm run typecheck`, and `npm run build`.
 - Keep `.githooks/pre-commit` and `scripts/pre-commit-check.mjs` aligned with the documented workflow.
 - Use `npm run workflow:check` to validate the full dirty tree before staging.
+- Keep `.githooks/pre-push`, `.github/workflows/ci.yml`, and `.github/pull_request_template.md` aligned with merge expectations.
 
 Done when: repo setup, scripts, docs, and git hygiene are correct.
 
 Trigger: use `.codex/agents/commit-agent.md` before every commit.
 
-Hook: run `npm run hooks:install` once per clone so Git uses `.githooks/pre-commit`.
+Hook: run `npm run hooks:install` once per clone so Git uses `.githooks/pre-commit` and `.githooks/pre-push`.
 
 ## 2. Coveo Auth Implementer
 
@@ -79,3 +80,15 @@ Goal: make the project story obvious in 15 minutes.
 Done when: the repo can be reviewed cold without a live walkthrough.
 
 Trigger: use `.codex/agents/context-agent.md` when architecture, env vars, validation commands, or workflow expectations change.
+
+## Pull Request Workflow
+
+Use `.github/pull_request_template.md` for reviewer-facing merge context. A ready PR should include:
+
+- A behavior-focused title.
+- A short summary of what changed and why.
+- Test commands and coverage summary.
+- Configuration, deployment, and security impact.
+- Known warnings or limitations.
+
+GitHub Actions runs `npm run workflow:check` for pull requests and pushes to `main`. Local pre-push runs `npm run workflow:push`, which validates the full working tree before pushing.

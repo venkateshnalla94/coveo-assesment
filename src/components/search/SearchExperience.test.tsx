@@ -378,8 +378,7 @@ describe("SearchExperience sample response mode", () => {
       screen.getByText((_, element) =>
         Boolean(
           element?.classList.contains("summary-text") &&
-            element.textContent?.includes("Showing 0-0 of 0 results for") &&
-            element.textContent.includes("0.00s"),
+            element.textContent?.includes("No results found for digital transformation"),
         ),
       ),
     ).toBeTruthy();
@@ -409,6 +408,62 @@ describe("SearchExperience sample response mode", () => {
       "false",
     );
     expect(screen.getByText("Sample Digital Transformation Web Page")).toBeTruthy();
+  });
+
+  it("clears a sample response facet when the All value is selected", async () => {
+    render(
+      <SearchExperience
+        featureFlags={enabledFlags}
+        insightsContent={insightsContent}
+        sampleSearchResponse={sampleSearchResponse}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "PDF 4" }));
+    await userEvent.click(screen.getByRole("button", { name: "All 10" }));
+
+    expect(screen.getByRole("button", { name: "PDF 4" }).getAttribute("aria-pressed")).toBe(
+      "false",
+    );
+    expect(screen.getByText("Sample Digital Transformation Web Page")).toBeTruthy();
+  });
+
+  it("sorts sample response results and resets pagination", async () => {
+    render(
+      <SearchExperience
+        featureFlags={enabledFlags}
+        insightsContent={insightsContent}
+        sampleSearchResponse={sampleSearchResponse}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "2" }));
+    expect(screen.getByText("Sample Digital Transformation Playbook")).toBeTruthy();
+
+    await userEvent.selectOptions(screen.getByLabelText("Sort results"), "newest");
+
+    expect(screen.getByRole("button", { name: "1" }).getAttribute("aria-current")).toBe("page");
+    expect(screen.getByText("Sample Digital Transformation Guide")).toBeTruthy();
+  });
+
+  it("recovers from zero results with a broader sample query", async () => {
+    render(
+      <SearchExperience
+        featureFlags={enabledFlags}
+        insightsContent={insightsContent}
+        sampleSearchResponse={sampleSearchResponse}
+      />,
+    );
+
+    await userEvent.clear(screen.getByRole("combobox", { name: "Search" }));
+    await userEvent.type(screen.getByRole("combobox", { name: "Search" }), "no matching query");
+    await userEvent.click(screen.getByRole("button", { name: "Search" }));
+
+    expect(await screen.findByText("No results for no matching query")).toBeTruthy();
+
+    await userEvent.click(screen.getByRole("button", { name: "Retry broader search" }));
+
+    expect(await screen.findByText("Sample Digital Transformation Guide")).toBeTruthy();
   });
 
   it("paginates sample response results at four cards per page", async () => {

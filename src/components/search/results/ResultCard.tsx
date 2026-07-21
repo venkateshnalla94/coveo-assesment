@@ -19,6 +19,8 @@ type ResultCardProps = {
   tags: string[];
   thumbnail?: string;
   title: string;
+  typeIcon?: LucideIcon;
+  typeLabel?: string;
 };
 
 const resultTypeIcons: Record<string, LucideIcon> = {
@@ -40,8 +42,10 @@ export function ResultCard({
   tags,
   thumbnail,
   title,
+  typeIcon,
+  typeLabel,
 }: ResultCardProps) {
-  const ResultTypeIcon = resultTypeIcons[resultType] ?? File;
+  const ResultTypeIcon = typeIcon ?? resultTypeIcons[resultType] ?? File;
 
   return (
     <article className="result-item">
@@ -49,7 +53,7 @@ export function ResultCard({
         <div className="result-kicker">
           <span className="result-type">
             <ResultTypeIcon aria-hidden="true" size={17} />
-            {resultType}
+            {typeLabel ?? resultType}
           </span>
         </div>
 

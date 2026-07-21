@@ -2,19 +2,56 @@
 
 import type { SearchBox } from "@coveo/headless";
 import { Search, X } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { FormEvent, KeyboardEvent, useId, useState } from "react";
 
 import { SEARCH_UI } from "@/components/search/search-ui.constants";
 import { useControllerState } from "@/lib/coveo/use-controller-state";
 
 export function SearchBoxView({ controller }: { controller: SearchBox }) {
   const state = useControllerState(controller);
-  const [isFocused, setIsFocused] = useState(false);
-  const suggestionsVisible = isFocused && state.suggestions.length > 0;
+  const suggestionsId = useId();
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const suggestionsVisible = suggestionsOpen && state.suggestions.length > 0;
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!state.value.trim()) {
+      return;
+    }
+    setSuggestionsOpen(false);
+    setActiveIndex(-1);
     controller.submit();
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Escape") {
+      setSuggestionsOpen(false);
+      setActiveIndex(-1);
+      return;
+    }
+
+    if (!suggestionsVisible) {
+      return;
+    }
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveIndex((currentIndex) => (currentIndex + 1) % state.suggestions.length);
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveIndex((currentIndex) =>
+        currentIndex <= 0 ? state.suggestions.length - 1 : currentIndex - 1,
+      );
+    }
+
+    if (event.key === "Enter" && activeIndex >= 0) {
+      event.preventDefault();
+      setSuggestionsOpen(false);
+      controller.selectSuggestion(state.suggestions[activeIndex].rawValue);
+    }
   }
 
   return (
@@ -22,15 +59,29 @@ export function SearchBoxView({ controller }: { controller: SearchBox }) {
       <form className="search-box" onSubmit={handleSubmit} role="search">
         <Search aria-hidden="true" size={20} />
         <input
+          aria-activedescendant={activeIndex >= 0 ? `${suggestionsId}-${activeIndex}` : undefined}
+          aria-autocomplete="list"
+          aria-controls={suggestionsVisible ? suggestionsId : undefined}
+          aria-expanded={suggestionsVisible}
           aria-label="Search"
           autoComplete="off"
-          onBlur={() => window.setTimeout(() => setIsFocused(false), 120)}
-          onChange={(event) => controller.updateText(event.target.value)}
+          onBlur={() =>
+            window.setTimeout(() => {
+              setSuggestionsOpen(false);
+            }, 120)
+          }
+          onChange={(event) => {
+            controller.updateText(event.target.value);
+            setActiveIndex(-1);
+            setSuggestionsOpen(true);
+          }}
           onFocus={() => {
-            setIsFocused(true);
+            setSuggestionsOpen(true);
             controller.showSuggestions();
           }}
+          onKeyDown={handleKeyDown}
           placeholder={SEARCH_UI.defaultQuery}
+          role="combobox"
           type="search"
           value={state.value}
         />
@@ -38,25 +89,39 @@ export function SearchBoxView({ controller }: { controller: SearchBox }) {
           <button
             aria-label="Clear search"
             className="icon-button"
-            onClick={() => controller.clear()}
+            onClick={() => {
+              setSuggestionsOpen(false);
+              setActiveIndex(-1);
+              controller.clear();
+            }}
             type="button"
           >
             <X aria-hidden="true" size={18} />
           </button>
         ) : null}
-        <button aria-label="Search" className="primary-button" disabled={state.isLoading} type="submit">
+        <button
+          aria-label="Search"
+          className="primary-button"
+          disabled={state.isLoading || state.value.trim().length === 0}
+          type="submit"
+        >
           <Search aria-hidden="true" size={22} />
         </button>
       </form>
 
       {suggestionsVisible ? (
-        <div className="suggestions" role="listbox">
-          {state.suggestions.map((suggestion) => (
+        <div className="suggestions" id={suggestionsId} role="listbox">
+          {state.suggestions.map((suggestion, index) => (
             <button
               key={suggestion.rawValue}
               onMouseDown={(event) => event.preventDefault()}
-              onClick={() => controller.selectSuggestion(suggestion.rawValue)}
-              aria-selected="false"
+              onClick={() => {
+                setSuggestionsOpen(false);
+                setActiveIndex(-1);
+                controller.selectSuggestion(suggestion.rawValue);
+              }}
+              aria-selected={activeIndex === index}
+              id={`${suggestionsId}-${index}`}
               role="option"
               type="button"
             >

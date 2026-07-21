@@ -17,12 +17,20 @@ import type {
   QueryError,
   QuerySummary,
   ResultList,
-  SearchBox,
+  SearchBox as HeadlessSearchBox,
   SearchEngine,
   SearchStatus,
 } from "@coveo/headless";
-import { AlertCircle, ChevronDown, List, Search } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { AlertCircle, Search } from "lucide-react";
+import {
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 
 import { ConfigurationNotice } from "@/components/shared/ConfigurationNotice";
 import { FacetPanel } from "@/components/search/facets/FacetPanel";
@@ -31,15 +39,31 @@ import {
   type SearchInsightsContent,
 } from "@/components/search/layout/SearchInsightsRail";
 import { PagerControls } from "@/components/search/PagerControls";
-import { SearchResponseFacetPanel } from "@/components/search/response/SearchResponseFacetPanel";
-import { SearchResponsePagerControls } from "@/components/search/response/SearchResponsePagerControls";
-import { SearchResponseResultList } from "@/components/search/response/SearchResponseResultList";
+import { Pagination } from "@/components/search/Pagination";
+import { DomainFacetPanel } from "@/components/search/facets/DomainFacetPanel";
+import { SearchBox } from "@/components/search/SearchBox";
 import type { SearchResponse } from "@/components/search/response/search-response-types";
-import { useSearchResponseState } from "@/components/search/response/use-search-response-state";
 import { ResultListView } from "@/components/search/results/ResultListView";
+import { SearchResults } from "@/components/search/results/SearchResults";
+import { SearchStatus as DomainSearchStatus } from "@/components/search/results/SearchStatus";
 import { SearchBoxView } from "@/components/search/SearchBoxView";
 import { SearchSummary } from "@/components/search/SearchSummary";
+import { SortControl } from "@/components/search/SortControl";
 import { SEARCH_UI } from "@/components/search/search-ui.constants";
+import { getFacetLabel, getFacetOrder } from "@/features/search/config/facets";
+import { getSearchStateResponse, searchStateReducer } from "@/features/search/models/search-state";
+import { InMemorySearchProvider } from "@/features/search/providers/in-memory-search-provider";
+import { getPaginationState } from "@/features/search/services/pagination";
+import {
+  clearSearchQueryFacet,
+  clearSearchQueryFilters,
+  DEFAULT_SEARCH_QUERY,
+  normalizeSearchQuery,
+  setSearchQueryPage,
+  setSearchQuerySort,
+  setSearchQueryText,
+  toggleSearchQueryFacet,
+} from "@/features/search/services/search-query";
 import {
   defaultSearchFeatureFlags,
   type SearchFeatureFlags,
@@ -54,7 +78,7 @@ type EngineState =
   | { status: "configuration-error" };
 
 type SearchControllers = {
-  searchBox: SearchBox;
+  searchBox: HeadlessSearchBox;
   resultList: ResultList;
   pager: Pager;
   searchStatus: SearchStatus;
@@ -350,7 +374,13 @@ function ReadySearchExperience({
             <aside className="facet-sidebar" aria-label="Search filters">
               <div className="facet-sidebar-header">
                 <h2>{SEARCH_UI.facets.title}</h2>
-                <button className="link-button" type="button">
+                <button
+                  className="link-button"
+                  onClick={() => {
+                    controllers.facets.forEach((facet) => facet.controller.deselectAll());
+                  }}
+                  type="button"
+                >
                   {SEARCH_UI.facets.clearAllLabel}
                 </button>
               </div>
@@ -365,13 +395,7 @@ function ReadySearchExperience({
               <SearchSummary controller={controllers.querySummary} />
               <div className="sort-control">
                 <span>{SEARCH_UI.sort.label}</span>
-                <button type="button">
-                  {SEARCH_UI.sort.relevanceLabel}
-                  <ChevronDown aria-hidden="true" size={16} />
-                </button>
-                <button aria-label="List view" className="header-icon-button" type="button">
-                  <List aria-hidden="true" size={19} />
-                </button>
+                <span className="sort-readonly">{SEARCH_UI.sort.relevanceLabel}</span>
               </div>
             </div>
             <ResultListView engine={engine} controller={controllers.resultList} />
@@ -396,17 +420,78 @@ function SearchResponseExperience({
   insightsContent?: SearchInsightsContent;
   searchResponse: SearchResponse;
 }) {
-  const [query, setQuery] = useState(searchResponse.query ?? "");
+  const provider = useMemo(() => new InMemorySearchProvider(searchResponse), [searchResponse]);
+  const [draftQuery, setDraftQuery] = useState(searchResponse.query ?? "");
+  const [query, setQuery] = useState(() =>
+    normalizeSearchQuery({
+      ...DEFAULT_SEARCH_QUERY,
+      query: searchResponse.query ?? DEFAULT_SEARCH_QUERY.query,
+    }),
+  );
+  const [state, dispatch] = useReducer(searchStateReducer, {
+    query,
+    response: {
+      ...searchResponse,
+      results: searchResponse.results.slice(0, query.pageSize),
+      totalCount: searchResponse.results.length,
+    },
+    status: searchResponse.results.length === 0 ? "empty" : "success",
+  });
   const showInsights = featureFlags.enableInsightsRail && Boolean(insightsContent);
-  const responseState = useSearchResponseState(searchResponse);
+  const response = getSearchStateResponse(state);
+  const pagination = getPaginationState({
+    page: state.query.page,
+    pageSize: state.query.pageSize,
+    totalCount: response?.totalCount ?? 0,
+  });
+  const activeFilterCount = Object.values(state.query.filters).reduce(
+    (count, values) => count + values.length,
+    0,
+  );
+  const sortedFacets = (response?.facets ?? [])
+    .filter((facet) => ["filetype", "source", "product"].includes(facet.field))
+    .map((facet) => ({
+      ...facet,
+      label: getFacetLabel(facet.field, facet.label),
+    }))
+    .sort((left, right) => getFacetOrder(left.field) - getFacetOrder(right.field));
+
+  function runSearch(nextQuery: typeof query) {
+    const normalizedQuery = normalizeSearchQuery(nextQuery);
+    setQuery(normalizedQuery);
+    dispatch({ type: "search-requested", query: normalizedQuery });
+
+    provider
+      .search(normalizedQuery)
+      .then((nextResponse) => {
+        dispatch({ type: "search-succeeded", response: nextResponse });
+      })
+      .catch((error: unknown) => {
+        dispatch({
+          type: "search-failed",
+          error: error instanceof Error ? error.message : "Search failed.",
+        });
+      });
+  }
+
+  function submitSearch(nextQueryText: string) {
+    runSearch(setSearchQueryText(query, nextQueryText));
+  }
+
+  function clearSearch() {
+    setDraftQuery("");
+  }
 
   return (
     <>
       <div className="search-command-bar">
-        <StartupSearchForm
-          onQueryChange={setQuery}
-          onSubmit={(event) => event.preventDefault()}
-          query={query}
+        <SearchBox
+          isLoading={state.status === "loading"}
+          onClear={clearSearch}
+          onQueryChange={setDraftQuery}
+          onSubmit={submitSearch}
+          provider={provider}
+          query={draftQuery}
         />
       </div>
 
@@ -416,48 +501,57 @@ function SearchResponseExperience({
         </div>
 
         <div className={getSearchLayoutClassName(featureFlags.enableFacets, showInsights)}>
-          {featureFlags.enableFacets ? (
-            <aside className="facet-sidebar" aria-label="Search filters">
-              <div className="facet-sidebar-header">
-                <h2>{SEARCH_UI.facets.title}</h2>
-                <button className="link-button" onClick={responseState.clearFacets} type="button">
-                  {SEARCH_UI.facets.clearAllLabel}
-                </button>
-              </div>
-              {responseState.facets.map((facet) => (
-                <SearchResponseFacetPanel
-                  facet={facet}
-                  key={facet.field}
-                  onToggleValue={responseState.toggleFacetValue}
-                />
-              ))}
-            </aside>
+          {featureFlags.enableFacets && sortedFacets.length > 0 ? (
+            <DomainFacetPanel
+              facets={sortedFacets}
+              onClearAll={() => runSearch(clearSearchQueryFilters(query))}
+              onClearFacet={(field) => runSearch(clearSearchQueryFacet(query, field))}
+              onToggleValue={(field, value) => {
+                if (value.toLowerCase() === "all" || value.toLowerCase() === "any time") {
+                  runSearch(clearSearchQueryFacet(query, field));
+                  return;
+                }
+
+                runSearch(toggleSearchQueryFacet(query, field, value));
+              }}
+            />
           ) : null}
 
-          <section className="results-column" aria-busy="false">
+          <section className="results-column" aria-busy={state.status === "loading"} tabIndex={-1}>
             <div className="results-toolbar">
-              <p className="summary-text">
-                Showing {responseState.firstResult}-{responseState.lastResult} of{" "}
-                {responseState.totalCount.toLocaleString()} results for{" "}
-                <strong>{query || searchResponse.query}</strong> in{" "}
-                {((searchResponse.durationMs ?? 0) / 1000).toFixed(2)}s
-              </p>
-              <div className="sort-control">
-                <span>{SEARCH_UI.sort.label}</span>
-                <button type="button">
-                  {SEARCH_UI.sort.relevanceLabel}
-                  <ChevronDown aria-hidden="true" size={16} />
-                </button>
-                <button aria-label="List view" className="header-icon-button" type="button">
-                  <List aria-hidden="true" size={19} />
-                </button>
-              </div>
+              <DomainSearchStatus
+                durationMs={response?.durationMs}
+                isLoading={state.status === "loading"}
+                pagination={pagination}
+                query={state.query.query}
+              />
+              <SortControl
+                onChange={(sort) => runSearch(setSearchQuerySort(query, sort))}
+                value={state.query.sort}
+              />
             </div>
-            <SearchResponseResultList results={responseState.pagedResults} />
-            <SearchResponsePagerControls
-              currentPage={responseState.currentPage}
-              maxPage={responseState.maxPage}
-              onSelectPage={responseState.selectPage}
+            <SearchResults
+              activeFilterCount={activeFilterCount}
+              error={state.status === "error" ? state.error : undefined}
+              isLoading={state.status === "loading"}
+              onClearFilters={() => runSearch(clearSearchQueryFilters(query))}
+              onRetryQuery={(nextQuery) => {
+                setDraftQuery(nextQuery);
+                runSearch(setSearchQueryText(query, nextQuery));
+              }}
+              pagination={pagination}
+              query={state.query.query}
+              response={response}
+              showStatus={false}
+            />
+            <Pagination
+              onSelectPage={(page) => {
+                runSearch(setSearchQueryPage(query, page));
+                window.requestAnimationFrame(() => {
+                  document.querySelector<HTMLElement>(".results-column")?.focus();
+                });
+              }}
+              pagination={pagination}
             />
           </section>
 

@@ -107,9 +107,13 @@ p {
 .link-button,
 .facet-value,
 .suggestions button,
+.secondary-button,
 .primary-button,
 .user-menu,
-.sort-control button {
+.sort-control button,
+.sort-control select,
+.active-filters button,
+.suggested-searches button {
   border: 0;
   border-radius: 8px;
 }
@@ -304,8 +308,15 @@ p {
   text-align: left;
 }
 
-.suggestions button:hover {
+.suggestions button:hover,
+.suggestions button[aria-selected="true"],
+.suggestion-status {
   background: var(--surface-subtle);
+}
+
+.suggestion-status {
+  color: var(--muted);
+  padding: 12px 16px;
 }
 
 .app-shell {
@@ -446,6 +457,26 @@ p {
   gap: 8px;
 }
 
+.active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+}
+
+.active-filters button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 7px 9px;
+}
+
 .facet-value {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
@@ -502,6 +533,7 @@ p {
 
 .results-column {
   min-width: 0;
+  outline: 0;
 }
 
 .results-toolbar {
@@ -537,6 +569,20 @@ p {
   color: var(--text);
   font-weight: 700;
   padding: 7px 8px;
+}
+
+.sort-control select {
+  min-height: 38px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 700;
+  padding: 0 34px 0 10px;
+}
+
+.sort-readonly {
+  color: var(--text);
+  font-weight: 700;
 }
 
 .result-stack {
@@ -767,6 +813,32 @@ p {
 .empty-state h2 {
   margin-bottom: 8px;
   color: var(--text);
+}
+
+.zero-results-actions,
+.suggested-searches {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.secondary-button,
+.suggested-searches button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 700;
+  padding: 9px 12px;
+}
+
+.suggested-searches button {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
 }
 
 .configuration-notice {

@@ -1,72 +1,81 @@
-## PR Title
-
-Use a direct behavior-focused title.
-
-Examples:
-
-- `Add safe Coveo configuration fallback UI`
-- `Enforce coverage in pre-commit workflow`
-- `Improve result field rendering`
-
 ## Summary
 
 - What changed:
-- Why it changed:
 - User/reviewer impact:
 
-## Architecture And Security
+## Why
 
-- [ ] Keeps `COVEO_PLATFORM_API_KEY` server-side only.
-- [ ] Preserves the thin token-minting route; does not turn the app into a search proxy.
-- [ ] Uses Coveo Headless controllers for browser search UI state.
-- [ ] Does not commit `.env.local`, generated output, local context, or real secrets.
-- [ ] Documents any architecture, env var, command, or workflow change.
+- Problem:
+- Decision:
 
-Notes:
+## Screenshots or Recording
 
-## Tests And Coverage
+Add screenshots, a recording, terminal output, or `N/A`.
+
+## Feature Flags
+
+- Flags changed:
+- Default state:
+- Profiles affected:
+
+## Provider Impact
+
+- [ ] Sample provider
+- [ ] Live Coveo provider
+- [ ] Generative provider
+- [ ] Trending provider
+- [ ] Analytics provider
+- [ ] No provider changes
+
+## Testing
+
+- [ ] Unit tests
+- [ ] Component tests
+- [ ] Integration tests
+- [ ] E2E tests
+- [ ] Accessibility checks
+- [ ] Responsive verification
+- [ ] Loading state
+- [ ] Empty state
+- [ ] Error state
 
 Commands run:
 
 ```text
-npm run lint
-npm run test:coverage
-npm run typecheck
-npm run build
+npm run validate
+npm run validate:full
 ```
 
-Coverage summary:
+## Security
 
-```text
-Statements:
-Branches:
-Functions:
-Lines:
-```
+- [ ] No secrets added
+- [ ] No server-only values exposed
+- [ ] External URLs validated
+- [ ] Logs contain no sensitive values
 
-Paths below 80% coverage, if any:
+## Analytics
 
-- None
+Events added or changed:
 
-## Configuration Changes
+## Demo Impact
 
-- New env vars:
-- Changed env vars:
-- Local setup impact:
-- Deployment impact:
+How does this change the showcase or presentation?
 
-## Screenshots Or Evidence
+## Architecture Impact
 
-Add screenshots, terminal output, or a short behavior note when the UI changes.
+- [ ] No architecture change
+- [ ] Architecture documentation updated
+- [ ] ADR added or updated
 
-## Merge Checklist
+## Documentation
 
-- [ ] `commit-agent` reviewed the diff.
-- [ ] `test-agent` ran or was intentionally skipped with a reason.
-- [ ] `context-agent` ran when docs/workflow/setup/security changed.
-- [ ] `npm run workflow:check` passed.
-- [ ] Known warnings or limitations are listed below.
+- [ ] README
+- [ ] Current state
+- [ ] Architecture
+- [ ] Demo script
+- [ ] Agent context
+- [ ] Not applicable
 
-Known warnings or limitations:
+## Reviewer Notes
 
-- None
+Known limitations, warnings, or follow-up:

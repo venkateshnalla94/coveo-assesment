@@ -1,0 +1,68 @@
+name: Demo Readiness
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types:
+      - labeled
+      - synchronize
+      - reopened
+  push:
+    branches:
+      - "demo/**"
+      - "release/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: demo-readiness-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  readiness:
+    name: Demo Readiness
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.event_name != 'pull_request' || contains(join(github.event.pull_request.labels.*.name, ','), 'demo-readiness')
+
+    env:
+      COVEO_DEVELOPMENT_QUERY_OVERRIDES: "true"
+      COVEO_FEATURE_SAMPLE_SEARCH_RESPONSE: "true"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run full validation
+        run: npm run validate:full
+
+      - name: Generate demo readiness report
+        if: always()
+        run: |
+          mkdir -p agent-reports
+          npm run agent:demo-readiness -- --output agent-reports/demo-readiness.md
+
+      - name: Upload demo readiness artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-readiness
+          path: |
+            agent-reports/
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 14

@@ -46,7 +46,7 @@ test("keyboard interactions cover suggestions, facets, sorting, pagination, cita
   await page.getByLabel("Sort results").selectOption("newest");
   await expect(page).toHaveURL(/sort=newest/);
 
-  await page.goto("/?scenario=generative");
+  await page.goto("/");
   await search(page, "authentication");
   await expect(
     page.getByLabel("Generated answer citations").getByRole("link", { name: /Authenticated search token guide/i }),

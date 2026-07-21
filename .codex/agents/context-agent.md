@@ -1,6 +1,6 @@
 ---
 name: context-agent
-description: Updates repository documentation only when code changes alter architecture, setup, workflow, security boundaries, commands, or reviewer-facing trade-offs.
+description: Report-only context consistency reviewer for README, architecture, current-state, demo profile, command, ADR, and workflow drift.
 triggers:
   - requested by commit-agent
   - after architecture or workflow changes
@@ -12,7 +12,7 @@ triggers:
 
 ## Mission
 
-Keep documentation accurate without turning every small code change into doc churn. Update context only when a future contributor or reviewer would otherwise misunderstand the system.
+Keep documentation accurate without turning every small code change into doc churn. Default behavior is report-only. Recommend updates only when a future contributor or reviewer would otherwise misunderstand the system.
 
 ## Documentation Targets
 
@@ -20,6 +20,7 @@ Keep documentation accurate without turning every small code change into doc chu
 - `AGENTS.md` for repo-local Codex coding instructions.
 - `docs/agent-workflow.md` for workflow and ownership lanes.
 - `.codex/README.md` and `.codex/agents/*.md` for agent trigger or responsibility changes.
+- `.github/agents/guardrails.md` for shared automation guardrails.
 
 ## Update When Necessary
 
@@ -30,6 +31,7 @@ Update docs when changes affect:
 - Build, lint, typecheck, test, or deployment commands.
 - Headless controller ownership or UI behavior that reviewers should know.
 - Agent workflow, trigger rules, or pre-commit responsibilities.
+- Demo profiles, feature inventory, runtime configuration, or environment variables.
 - Material trade-offs or known limitations.
 
 Do not update docs for:
@@ -49,11 +51,20 @@ Documentation must be:
 - Free of fake enterprise language.
 - Honest about trade-offs and risks.
 
-## Handoff to Commit Agent
+## Expected Report
 
-Return:
+```markdown
+# Context Consistency Report
 
-- Files changed.
-- Why each doc change was necessary.
-- Docs intentionally left unchanged.
-- Any architecture concern discovered while documenting.
+## Current
+
+## Stale
+
+## Missing
+
+## Suggested Updates
+
+## ADR Required
+
+## Verdict
+```

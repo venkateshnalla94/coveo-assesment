@@ -138,9 +138,11 @@ Phase 6 additions:
 
 Repo-local agent prompts live in `.codex/agents/`:
 
-- `commit-agent.md`: pre-commit reviewer for tree hygiene, architecture fit, validation, and commit readiness.
+- `code-review-agent.md`: report-only reviewer for correctness, TypeScript quality, architecture boundaries, accessibility, security, performance, analytics, tests, and demo readiness.
+- `commit-agent.md`: report-only commit reviewer for message quality, cohesive scope, unrelated changes, generated files, secret risk, tests, documentation, splitting, and recommended commit message.
 - `test-agent.md`: focused test author for changed application logic.
-- `context-agent.md`: documentation updater when architecture, setup, workflow, security, or reviewer-facing behavior changes.
+- `context-agent.md`: report-only context consistency reviewer for README, architecture, current state, demo profile, command, ADR, and workflow drift.
+- `demo-readiness-agent.md`: report-only demo readiness reviewer for functional behavior, quality, setup reliability, mock/live clarity, and presentation risk.
 
 `.codex/README.md` documents the intended default flow and non-negotiables. `AGENTS.md` also references the same agent lanes and requires `commit-agent` before committing.
 
@@ -149,6 +151,7 @@ Repo-local agent prompts live in `.codex/agents/`:
 Local scripts:
 
 - `npm run dev`
+- `npm run format:check`
 - `npm run lint`
 - `npm run test`
 - `npm run test:coverage`
@@ -156,26 +159,49 @@ Local scripts:
 - `npm run test:e2e:ui`
 - `npm run typecheck`
 - `npm run build`
+- `npm run validate`
+- `npm run validate:full`
+- `npm run secrets:scan`
 - `npm run hooks:install`
 - `npm run workflow:check`
 - `npm run workflow:precommit`
 - `npm run workflow:push`
+- `npm run agent:code-review`
+- `npm run agent:commit-review`
+- `npm run agent:context`
+- `npm run agent:demo-readiness`
 
 Git hooks:
 
-- `.githooks/pre-commit` runs `npm run workflow:precommit`.
-- `.githooks/pre-push` runs `npm run workflow:push`.
+- `.githooks/pre-commit` runs staged formatting, forbidden path detection, staged secret scanning, and staged linting.
+- `.githooks/commit-msg` validates Conventional Commits with optional scope and required non-empty subject.
+- `.githooks/pre-push` runs lint, typecheck, unit tests, coverage, build, and changed-file secret scanning. It prints the Playwright command instead of running E2E by default.
 - `scripts/install-hooks.mjs` installs committed hooks through `core.hooksPath`.
-- `scripts/pre-commit-check.mjs` checks staged or full-tree diffs, blocks likely secrets and generated/local paths, runs whitespace checks, lint, and, when code/config changed, coverage, typecheck, and build.
+- `scripts/pre-commit-check.mjs`, `scripts/commit-msg-check.mjs`, `scripts/pre-push-check.mjs`, `scripts/format-check.mjs`, `scripts/secret-scan.mjs`, and `scripts/ci-check.mjs` split hook and CI responsibilities.
+- `scripts/agent-report.mjs` generates static Markdown reports for local and GitHub-hosted report-only agent workflows.
 
 CI:
 
 - `.github/workflows/ci.yml` runs on pull requests and pushes to `main`.
-- CI uses Node 24, `npm ci`, then `npm run workflow:check`.
+- CI uses Node 24 and `npm ci`.
+- The Quality job runs format check, lint, typecheck, coverage, and build.
+- The E2E job installs Playwright Chromium and runs sample-mode Playwright tests without live Coveo credentials.
+- The Security job runs `npm audit` and the repository secret scan.
+- Workflows use concurrency cancellation, explicit read permissions by default, and short artifact retention.
+
+Additional Phase 7 workflows:
+
+- `.github/workflows/pr-review-agents.yml`: skips draft PRs, generates code-review, commit-review, and context Markdown reports, uploads artifacts, and updates one deduplicated PR comment for same-repository PRs.
+- `.github/workflows/context-update-check.yml`: path-filtered, report-only documentation consistency workflow.
+- `.github/workflows/demo-readiness.yml`: manual, PR-label, and demo/release branch workflow that runs full validation and produces a demo-readiness report.
 
 Pull request template:
 
-- `.github/pull_request_template.md` requires summary, architecture/security checklist, validation evidence, configuration impact, screenshots/evidence, merge checklist, and known limitations.
+- `.github/pull_request_template.md` captures summary, why, screenshots/evidence, feature flags, provider impact, testing, security, analytics, demo impact, architecture impact, documentation, and reviewer notes.
+
+Shared guardrails:
+
+- `.github/agents/guardrails.md` prohibits printing secrets, modifying credentials, disabling tests, lowering coverage, suppressing lint/TypeScript failures, claiming mock behavior is live Coveo behavior, committing or pushing automatically, hiding failed checks, and fabricating evidence.
 
 ## Testing
 
@@ -381,3 +407,45 @@ Remaining limitations:
 - Live Coveo browser tests remain credential-free safety checks only.
 - Real production Web Vitals require deployment telemetry.
 - The existing Coveo Headless Webpack critical-dependency warning remains unchanged.
+
+## Phase 7 Current State
+
+Phase 7 adds local workflow automation, CI, PR report automation, and agent guardrails only. It does not add live Coveo credentials, live generative integration, backend feedback persistence, Storybook, product features, full live/sample unification, or Phase 8 demo material.
+
+Executable automation:
+
+- `npm run validate`: format check, lint, typecheck, coverage, and build.
+- `npm run validate:full`: `validate`, Playwright E2E, `npm audit`, and secret scan.
+- `pre-commit`: staged formatting, staged secret scan, forbidden path checks, and staged lint.
+- `commit-msg`: Conventional Commit validation.
+- `pre-push`: lint, typecheck, unit tests, coverage, build, and changed-file secret scan.
+- `CI`: quality, E2E, and security jobs.
+- `Context Update Check`: report-only context consistency artifact.
+- `Demo Readiness`: full validation and readiness artifact on manual, labeled PR, or demo/release branch triggers.
+
+Report-only automation:
+
+- `npm run agent:code-review`
+- `npm run agent:commit-review`
+- `npm run agent:context`
+- `npm run agent:demo-readiness`
+- `.github/workflows/pr-review-agents.yml`
+
+External-agent-runtime-dependent behavior:
+
+- No external hosted AI agent execution service is currently configured.
+- GitHub PR agent automation runs static local report generation. It does not claim model-backed review.
+
+Security boundaries:
+
+- Workflows do not use `pull_request_target`.
+- Core CI uses `contents: read`.
+- PR report comments use `pull-requests: write` only in the PR-agent workflow and skip comments for forked PRs.
+- Default CI and Playwright run in sample mode without live Coveo credentials.
+- Secret scanning is heuristic and documented as defense in depth, not a guarantee.
+
+Remaining limitations:
+
+- Agent reports are static heuristics unless a real external agent runtime is introduced later.
+- Local secret scanning can miss secrets and can flag non-secrets.
+- Pre-push does not run Playwright by default; use `npm run validate:full` for full PR/demo readiness.

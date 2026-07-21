@@ -1,0 +1,96 @@
+name: PR Review Agents
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: pr-review-agents-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  report:
+    name: Agent Reports
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event.pull_request.draft == false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run static agent reports
+        env:
+          AGENT_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          mkdir -p agent-reports
+          npm run agent:code-review -- --output agent-reports/code-review.md
+          npm run agent:commit-review -- --output agent-reports/commit-review.md
+          npm run agent:context -- --output agent-reports/context.md
+
+      - name: Upload agent reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-agent-reports
+          path: agent-reports/
+          retention-days: 14
+
+      - name: Comment with report summary
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require("fs");
+            const marker = "<!-- phase-7-pr-agent-report -->";
+            const body = [
+              marker,
+              "## Phase 7 PR Agent Reports",
+              "",
+              "Static local/report-only automation completed. This repository does not currently have a hosted external AI agent runtime wired into GitHub Actions.",
+              "",
+              "<details><summary>Code review report</summary>",
+              "",
+              fs.readFileSync("agent-reports/code-review.md", "utf8"),
+              "",
+              "</details>",
+              "",
+              "<details><summary>Commit review report</summary>",
+              "",
+              fs.readFileSync("agent-reports/commit-review.md", "utf8"),
+              "",
+              "</details>",
+              "",
+              "<details><summary>Context report</summary>",
+              "",
+              fs.readFileSync("agent-reports/context.md", "utf8"),
+              "",
+              "</details>"
+            ].join("\n");
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.rest.issues.listComments({ owner, repo, issue_number, per_page: 100 });
+            const existing = comments.data.find((comment) => comment.user.type === "Bot" && comment.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }

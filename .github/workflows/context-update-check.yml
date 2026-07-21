@@ -1,0 +1,71 @@
+name: Context Update Check
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".env.example"
+      - ".github/**"
+      - ".githooks/**"
+      - "scripts/**"
+      - "playwright.config.ts"
+      - "vitest.config.ts"
+      - "eslint.config.mjs"
+  push:
+    branches:
+      - main
+    paths:
+      - "src/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".env.example"
+      - ".github/**"
+      - ".githooks/**"
+      - "scripts/**"
+      - "playwright.config.ts"
+      - "vitest.config.ts"
+      - "eslint.config.mjs"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: context-update-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  report:
+    name: Context Consistency
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate context report
+        env:
+          AGENT_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          mkdir -p agent-reports
+          npm run agent:context -- --output agent-reports/context.md
+
+      - name: Upload context report
+        uses: actions/upload-artifact@v4
+        with:
+          name: context-consistency-report
+          path: agent-reports/context.md
+          retention-days: 14

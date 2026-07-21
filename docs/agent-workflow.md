@@ -1,12 +1,16 @@
 # Agent Workflow
 
+Phase 7 details live in `docs/agent-workflows.md`. This file remains as the shorter lane overview.
+
 Use these task lanes independently. Each lane has a clear owner boundary and validation target.
 
 Concrete triggerable agents live in `.codex/agents/`:
 
+- `code-review-agent` reviews correctness, architecture, accessibility, security, performance, analytics, tests, and demo readiness.
 - `commit-agent` reviews the tree before commits and coordinates validation.
 - `test-agent` creates focused tests for changed code.
 - `context-agent` updates docs only when architecture, setup, workflow, or reviewer-facing context changes.
+- `demo-readiness-agent` reviews setup reliability, mock/live clarity, functional readiness, and presentation risk.
 
 ## 1. Repo Steward
 
@@ -15,9 +19,9 @@ Goal: keep the assessment readable for a cold reviewer.
 - Maintain small commits with direct messages.
 - Keep `.env.local` and generated build output out of git.
 - Keep `README.md`, `AGENTS.md`, and `docs/agent-workflow.md` aligned with the actual app.
-- Validate with `npm run lint`, `npm run test:coverage`, `npm run typecheck`, and `npm run build`.
+- Validate with `npm run validate` before local handoff and `npm run validate:full` before PR/demo readiness.
 - Keep `.githooks/pre-commit` and `scripts/pre-commit-check.mjs` aligned with the documented workflow.
-- Use `npm run workflow:check` to validate the full dirty tree before staging.
+- Use `npm run workflow:check` for the CI-equivalent quality gate.
 - Keep `.githooks/pre-push`, `.github/workflows/ci.yml`, and `.github/pull_request_template.md` aligned with merge expectations.
 
 Done when: repo setup, scripts, docs, and git hygiene are correct.
@@ -91,4 +95,4 @@ Use `.github/pull_request_template.md` for reviewer-facing merge context. A read
 - Configuration, deployment, and security impact.
 - Known warnings or limitations.
 
-GitHub Actions runs `npm run workflow:check` for pull requests and pushes to `main`. Local pre-push runs `npm run workflow:push`, which validates the full working tree before pushing.
+GitHub Actions runs quality, E2E, and security jobs for pull requests and pushes to `main`. Local pre-push runs `npm run workflow:push`, which validates lint, typecheck, tests, coverage, build, and changed-file secret scanning before pushing.

@@ -1,6 +1,6 @@
 ---
 name: commit-agent
-description: Pre-commit reviewer that inspects changed files, enforces the Coveo assessment architecture, coordinates test/doc agents, and commits only validated work.
+description: Report-only commit reviewer that inspects changed files, validates commit quality, flags unrelated changes, and recommends a Conventional Commit message.
 triggers:
   - before committing code
   - when asked to review staged or unstaged changes
@@ -12,14 +12,14 @@ triggers:
 
 ## Mission
 
-Protect the assessment from weak commits. Inspect the actual tree, compare the changes against the planned architecture, trigger supporting agents when needed, and only commit work that is coherent, validated, safe to show to the hiring manager, and already in an explicit commit flow.
+Protect the assessment from weak commits. Inspect the actual tree, compare the changes against the planned architecture, and report whether the commit is cohesive, validated, and safe to show to the hiring manager.
 
 ## Required Inputs
 
 - Current user request.
 - `git status --short`.
 - Relevant `git diff` or staged diff.
-- Existing architecture docs: `AGENTS.md`, `README.md`, and `docs/agent-workflow.md`.
+- Existing architecture docs: `AGENTS.md`, `README.md`, `docs/agent-workflows.md`, and `.github/agents/guardrails.md`.
 
 ## Review Checklist
 
@@ -43,23 +43,37 @@ Protect the assessment from weak commits. Inspect the actual tree, compare the c
    - Use `npm run workflow:check` when reviewing a dirty tree before files are staged.
    - If a check cannot run, record the reason directly in the final handoff.
 
-4. Agent coordination
-   - Trigger `test-agent` before commit when application code changed and a test pass has not already happened for the current diff.
-   - Trigger `context-agent` before commit when the diff changes architecture, env vars, setup commands, build behavior, security boundaries, workflow, or reviewer-facing trade-offs.
-   - Do not trigger `context-agent` for pure styling, copy edits, or tests unless they alter documented behavior.
+4. Commit message
+   - Validate Conventional Commits.
+   - Supported types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `build`, `ci`, `chore`, `revert`.
+   - Scope is optional.
+   - Subject must not be empty.
+   - Do not require issue numbers.
 
 5. Commit decision
-   - Commit only if the user asked to commit or the current task is explicitly a commit flow.
-   - Commit only if the diff is scoped, validated, and aligned with the architecture.
-   - Use a direct commit message that explains the behavior or workflow change.
-   - Do not hide known risk behind vague wording.
+   - Do not rewrite Git history automatically.
+   - Do not commit or push automatically.
+   - Suggest splitting unrelated changes.
+   - Suggest a better commit message when the current one is weak.
 
 ## Output Format
 
-Return:
+```markdown
+# Commit Review
 
-- Verdict: `ready`, `needs-tests`, `needs-docs`, `needs-fix`, or `blocked`.
-- Findings: concise file/line references for issues.
-- Triggered agents: list `test-agent` and/or `context-agent`, or `none`.
-- Validation: commands run and result.
-- Commit: hash and message, or why no commit was made.
+## Message
+
+## Scope
+
+## Unrelated Changes
+
+## Secret Risk
+
+## Test Coverage
+
+## Documentation
+
+## Suggested Split
+
+## Recommended Commit Message
+```

@@ -2,7 +2,14 @@ import { RESULT_TYPE_LABELS } from "@/components/search/search-ui.constants";
 import type { SearchResponseResult } from "@/components/search/response/search-response-types";
 import { ResultCard } from "@/components/search/results/ResultCard";
 
-function getResultType(filetype: string | undefined) {
+function getStringMetadata(result: SearchResponseResult, key: string) {
+  const value = result.metadata?.[key];
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function getResultType(result: SearchResponseResult) {
+  const filetype = getStringMetadata(result, "filetype");
+
   if (!filetype) {
     return "Content";
   }
@@ -31,20 +38,24 @@ function getDateLabel(date: string | undefined) {
 export function SearchResponseResultList({ results }: { results: SearchResponseResult[] }) {
   return (
     <div className="result-stack">
-      {results.map((result) => (
-        <ResultCard
-          clickUri={result.clickUri}
-          dateLabel={getDateLabel(result.date)}
-          excerpt={result.excerpt}
-          key={result.uniqueId}
-          meta={[result.source, result.filetype].filter((value): value is string => Boolean(value))}
-          printableUri={result.printableUri}
-          resultType={getResultType(result.filetype)}
-          tags={result.tags}
-          thumbnail={result.thumbnail}
-          title={result.title}
-        />
-      ))}
+      {results.map((result) => {
+        const filetype = getStringMetadata(result, "filetype");
+
+        return (
+          <ResultCard
+            clickUri={result.url}
+            dateLabel={getDateLabel(result.updatedAt)}
+            excerpt={result.description}
+            key={result.id}
+            meta={[result.source, filetype].filter((value): value is string => Boolean(value))}
+            printableUri={result.displayUrl ?? result.url}
+            resultType={getResultType(result)}
+            tags={result.badges ?? []}
+            thumbnail={result.imageUrl}
+            title={result.title}
+          />
+        );
+      })}
     </div>
   );
 }

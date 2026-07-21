@@ -20,11 +20,11 @@ export function SearchResponseFacetPanel({
 
       <div className="facet-values">
         {facet.values.map((value) => {
-          const isSelected = value.state === "selected";
+          const isSelected = value.selected;
 
           return (
             <button
-              aria-label={`${value.value} ${value.numberOfResults.toLocaleString()}`}
+              aria-label={`${value.label} ${value.count.toLocaleString()}`}
               aria-pressed={isSelected}
               className="facet-value"
               key={value.value}
@@ -34,8 +34,8 @@ export function SearchResponseFacetPanel({
               <span className="facet-checkbox" aria-hidden="true">
                 {isSelected ? <Check size={13} /> : null}
               </span>
-              <span>{value.value}</span>
-              <span>{value.numberOfResults.toLocaleString()}</span>
+              <span>{value.label}</span>
+              <span>{value.count.toLocaleString()}</span>
             </button>
           );
         })}

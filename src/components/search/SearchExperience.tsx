@@ -34,7 +34,7 @@ import { PagerControls } from "@/components/search/PagerControls";
 import { SearchResponseFacetPanel } from "@/components/search/response/SearchResponseFacetPanel";
 import { SearchResponsePagerControls } from "@/components/search/response/SearchResponsePagerControls";
 import { SearchResponseResultList } from "@/components/search/response/SearchResponseResultList";
-import type { CoveoSearchResponse } from "@/components/search/response/search-response-types";
+import type { SearchResponse } from "@/components/search/response/search-response-types";
 import { useSearchResponseState } from "@/components/search/response/use-search-response-state";
 import { ResultListView } from "@/components/search/results/ResultListView";
 import { SearchBoxView } from "@/components/search/SearchBoxView";
@@ -138,7 +138,7 @@ export function SearchExperience({
 }: {
   featureFlags?: SearchFeatureFlags;
   insightsContent?: SearchInsightsContent;
-  sampleSearchResponse?: CoveoSearchResponse;
+  sampleSearchResponse?: SearchResponse;
 }) {
   const [engineState, setEngineState] = useState<EngineState>({ status: "idle" });
   const [pendingQuery, setPendingQuery] = useState("");
@@ -394,9 +394,9 @@ function SearchResponseExperience({
 }: {
   featureFlags: SearchFeatureFlags;
   insightsContent?: SearchInsightsContent;
-  searchResponse: CoveoSearchResponse;
+  searchResponse: SearchResponse;
 }) {
-  const [query, setQuery] = useState(searchResponse.query);
+  const [query, setQuery] = useState(searchResponse.query ?? "");
   const showInsights = featureFlags.enableInsightsRail && Boolean(insightsContent);
   const responseState = useSearchResponseState(searchResponse);
 
@@ -440,7 +440,7 @@ function SearchResponseExperience({
                 Showing {responseState.firstResult}-{responseState.lastResult} of{" "}
                 {responseState.totalCount.toLocaleString()} results for{" "}
                 <strong>{query || searchResponse.query}</strong> in{" "}
-                {searchResponse.durationInSeconds.toFixed(2)}s
+                {((searchResponse.durationMs ?? 0) / 1000).toFixed(2)}s
               </p>
               <div className="sort-control">
                 <span>{SEARCH_UI.sort.label}</span>

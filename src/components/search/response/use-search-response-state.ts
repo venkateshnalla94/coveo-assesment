@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 
 import type {
-  CoveoSearchResponse,
+  SearchResponse,
   SearchResponseFacet,
   SearchResponseResult,
 } from "@/components/search/response/search-response-types";
@@ -12,7 +12,7 @@ type SelectedFacetValues = Record<string, string[]>;
 function getInitialSelectedFacetValues(facets: SearchResponseFacet[]) {
   return facets.reduce<SelectedFacetValues>((selectedValues, facet) => {
     const selectedFacetValues = facet.values
-      .filter((value) => value.state === "selected" && value.value !== "All")
+      .filter((value) => value.selected && value.value !== "All")
       .map((value) => value.value);
 
     if (selectedFacetValues.length > 0) {
@@ -33,7 +33,10 @@ function resultMatchesFacet(
   }
 
   if (facetField === "filetype") {
-    return selectedValues.some((value) => value.toLowerCase() === result.filetype?.toLowerCase());
+    const filetype = result.metadata?.filetype;
+    return selectedValues.some(
+      (value) => typeof filetype === "string" && value.toLowerCase() === filetype.toLowerCase(),
+    );
   }
 
   if (facetField === "source") {
@@ -43,7 +46,7 @@ function resultMatchesFacet(
   return true;
 }
 
-export function useSearchResponseState(response: CoveoSearchResponse) {
+export function useSearchResponseState(response: SearchResponse) {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedFacetValues, setSelectedFacetValues] = useState<SelectedFacetValues>(() =>
     getInitialSelectedFacetValues(response.facets),
@@ -95,14 +98,10 @@ export function useSearchResponseState(response: CoveoSearchResponse) {
       ...facet,
       values: facet.values.map((value) => ({
         ...value,
-        state:
+        selected:
           value.value === "All"
             ? selectedValues.length === 0
-              ? "selected"
-              : "idle"
-            : selectedValues.includes(value.value)
-              ? "selected"
-              : "idle",
+            : selectedValues.includes(value.value),
       })),
     } satisfies SearchResponseFacet;
   });

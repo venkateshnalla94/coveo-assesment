@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SearchExperience } from "./SearchExperience";
-import type { CoveoSearchResponse } from "./response/search-response-types";
+import type { SearchResponse } from "./response/search-response-types";
 import type { SearchInsightsContent } from "./layout/SearchInsightsRail";
 import type { SearchFeatureFlags } from "@/lib/features/search-feature-flags";
 
@@ -214,76 +214,80 @@ describe("SearchExperience startup behavior", () => {
 });
 
 describe("SearchExperience sample response mode", () => {
-  const sampleSearchResponse: CoveoSearchResponse = {
-    durationInSeconds: 0.09,
+  const sampleSearchResponse: SearchResponse = {
+    durationMs: 90,
     facets: [
       {
         field: "filetype",
+        id: "mock-facet-filetype",
         label: "Content Type",
         values: [
-          { numberOfResults: 10, state: "selected", value: "All" },
-          { numberOfResults: 4, state: "idle", value: "PDF" },
+          { count: 10, label: "All", selected: true, value: "All" },
+          { count: 4, label: "PDF", selected: false, value: "PDF" },
         ],
       },
     ],
-    firstResult: 1,
-    lastResult: 1,
     query: "digital transformation",
     results: [
       {
-        clickUri: "https://example.test/guide",
-        date: "2026-07-18T10:00:00Z",
-        excerpt: "Sample excerpt from a Coveo-shaped result.",
-        filetype: "pdf",
-        printableUri: "example.test / guide",
+        badges: ["Guide"],
+        description: "Sample excerpt from a Coveo-shaped result.",
+        displayUrl: "example.test / guide",
+        id: "sample-guide",
+        metadata: { filetype: "pdf" },
         source: "Knowledge Base",
-        tags: ["Guide"],
         title: "Sample Digital Transformation Guide",
-        uniqueId: "sample-guide",
+        type: "documentation",
+        updatedAt: "2026-07-18T10:00:00Z",
+        url: "https://example.test/guide",
       },
       {
-        clickUri: "https://example.test/web",
-        date: "2026-07-17T10:00:00Z",
-        excerpt: "Sample web result.",
-        filetype: "html",
-        printableUri: "example.test / web",
+        badges: ["Web"],
+        description: "Sample web result.",
+        displayUrl: "example.test / web",
+        id: "sample-web",
+        metadata: { filetype: "html" },
         source: "Coveo Website",
-        tags: ["Web"],
         title: "Sample Digital Transformation Web Page",
-        uniqueId: "sample-web",
+        type: "article",
+        updatedAt: "2026-07-17T10:00:00Z",
+        url: "https://example.test/web",
       },
       {
-        clickUri: "https://example.test/presentation",
-        date: "2026-07-16T10:00:00Z",
-        excerpt: "Sample presentation result.",
-        filetype: "pptx",
-        printableUri: "example.test / presentation",
+        badges: ["Deck"],
+        description: "Sample presentation result.",
+        displayUrl: "example.test / presentation",
+        id: "sample-presentation",
+        metadata: { filetype: "pptx" },
         source: "Knowledge Base",
-        tags: ["Deck"],
         title: "Sample Digital Transformation Presentation",
-        uniqueId: "sample-presentation",
+        type: "video",
+        updatedAt: "2026-07-16T10:00:00Z",
+        url: "https://example.test/presentation",
       },
       {
-        clickUri: "https://example.test/workbook",
-        date: "2026-07-15T10:00:00Z",
-        excerpt: "Sample workbook result.",
-        filetype: "xlsx",
-        printableUri: "example.test / workbook",
+        badges: ["Workbook"],
+        description: "Sample workbook result.",
+        displayUrl: "example.test / workbook",
+        id: "sample-workbook",
+        metadata: { filetype: "xlsx" },
         source: "Customer Portal",
-        tags: ["Workbook"],
         title: "Sample Digital Transformation Workbook",
-        uniqueId: "sample-workbook",
+        type: "documentation",
+        updatedAt: "2026-07-15T10:00:00Z",
+        url: "https://example.test/workbook",
       },
       {
-        clickUri: "https://example.test/playbook",
-        date: "2026-07-14T10:00:00Z",
-        excerpt: "Sample playbook result.",
-        filetype: "docx",
-        printableUri: "example.test / playbook",
+        badges: ["Doc"],
+        description: "Sample playbook result.",
+        displayUrl: "example.test / playbook",
+        id: "sample-playbook",
+        metadata: { filetype: "docx" },
         source: "Knowledge Base",
-        tags: ["Doc"],
         title: "Sample Digital Transformation Playbook",
-        uniqueId: "sample-playbook",
+        type: "documentation",
+        updatedAt: "2026-07-14T10:00:00Z",
+        url: "https://example.test/playbook",
       },
     ],
     searchHub: "sample-search-hub",
@@ -316,7 +320,7 @@ describe("SearchExperience sample response mode", () => {
     enableTopicInsight: true,
   };
 
-  it("renders sample response facets, results, and insight rail without initializing Coveo", () => {
+  it("renders sample response facets, results, and insight rail without initializing Coveo", async () => {
     render(
       <SearchExperience
         featureFlags={enabledFlags}
@@ -331,6 +335,7 @@ describe("SearchExperience sample response mode", () => {
     expect(screen.getByText("About this topic")).toBeTruthy();
     expect(screen.getByText("Related queries")).toBeTruthy();
     expect(screen.getByText("Popular content")).toBeTruthy();
+    await userEvent.click(screen.getByRole("button", { name: "Search" }));
     expect(mocks.fetchSearchTokenConfig).not.toHaveBeenCalled();
     expect(mocks.buildSearchEngine).not.toHaveBeenCalled();
   });
@@ -355,6 +360,30 @@ describe("SearchExperience sample response mode", () => {
     expect(screen.queryByText("About this topic")).toBeNull();
     expect(screen.queryByText("Related queries")).toBeNull();
     expect(screen.queryByText("Popular content")).toBeNull();
+  });
+
+  it("renders sample response mode when optional response fields are missing", () => {
+    render(
+      <SearchExperience
+        featureFlags={{ ...enabledFlags, enableFacets: false }}
+        sampleSearchResponse={{
+          facets: [],
+          results: [],
+          totalCount: 0,
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByText((_, element) =>
+        Boolean(
+          element?.classList.contains("summary-text") &&
+            element.textContent?.includes("Showing 0-0 of 0 results for") &&
+            element.textContent.includes("0.00s"),
+        ),
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText("About this topic")).toBeNull();
   });
 
   it("lets sample response facets be selected and cleared", async () => {

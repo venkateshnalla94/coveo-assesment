@@ -289,3 +289,41 @@ Phase 4 tests cover:
 - Analytics provider timestamping, disabled behavior, and safe payload construction.
 - Feature-flag resolution for enabled and disabled states.
 - Search-experience instrumentation for search, suggestions, facets, filters, sorting, pagination, result clicks, zero results, generative answers, and disabled analytics.
+
+## Phase 5 Current State
+
+Phase 5 adds platform capability infrastructure without unifying the sample and live provider paths.
+
+New platform modules:
+
+- `src/features/feature-flags/feature-flags.ts`: authoritative hierarchical `FeatureFlags` type, defaults, deterministic resolver, and known-key deep merge.
+- `src/features/feature-flags/env-feature-flags.ts`: strict boolean parsing and environment override mapping.
+- `src/features/demo-profiles/demo-profiles.ts`: typed profiles for `developer-documentation`, `customer-support`, `ecommerce`, and `minimal`.
+- `src/features/development/scenarios.ts`: typed development/test-only scenario selection.
+- `src/features/search/services/search-url-state.ts`: pure parse/serialize/normalize helpers for sample-mode URL state.
+- `src/features/search/capabilities/provider-capabilities.ts`: explicit search and generative provider capabilities.
+- `src/lib/runtime/runtime-config.ts`: central public and server-only runtime configuration parsing.
+- `src/lib/errors/application-error.ts`: shared typed error model and sanitizing mapper.
+- `src/lib/logging/logger.ts`: lightweight structured logging with redaction.
+
+Feature flag resolution order:
+
+```text
+base defaults -> environment overrides -> demo profile overrides -> development query overrides
+```
+
+Sample-mode URL state supports `q`, `page`, `sort`, `contentType`, `source`, and `product`. `profile` and `scenario` are development-only query parameters. Invalid page and sort values normalize safely; unknown facets are ignored.
+
+Live Coveo behavior remains conservative:
+
+- The Headless token path is unchanged.
+- Live sorting remains relevance-only.
+- Live generative UI is hidden because the skeleton declares no confirmed live capability.
+- Headless usage analytics remain separate from app-level analytics.
+
+Known Phase 5 limitations:
+
+- Demo profiles share the same mapped fixture file; profile-specific fixture sets are declared but not separate JSON datasets yet.
+- URL synchronization is sample-mode only.
+- Development scenarios are deterministic but lightweight; `partial` is reserved for future fixture shaping.
+- Structured logging defaults to conservative console output to avoid noisy render-time logs.

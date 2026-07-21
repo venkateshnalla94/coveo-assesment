@@ -13,6 +13,7 @@ Secured Coveo Headless search UI built with Next.js App Router and TypeScript.
 - Sample-mode generated answer with fixture citations and local feedback.
 - Fixture-backed trending content.
 - Provider-independent app analytics abstraction with local console analytics.
+- Typed hierarchical feature flags, demo profiles, URL state in sample mode, provider capability metadata, shared error mapping, runtime config parsing, and lightweight structured logging.
 - Loading, empty, and query error states.
 
 ## Architecture
@@ -51,15 +52,34 @@ COVEO_FACET_FIELDS=source,filetype
 Optional feature flags:
 
 ```bash
+COVEO_FEATURE_SAMPLE_SEARCH_RESPONSE=true
+COVEO_FEATURE_FACETS=true
+COVEO_FEATURE_FACET_CONTENT_TYPE=true
+COVEO_FEATURE_FACET_SOURCE=true
+COVEO_FEATURE_FACET_PRODUCT=true
 COVEO_FEATURE_ANALYTICS=true
+COVEO_FEATURE_ANALYTICS_EXPOSURE=true
 COVEO_FEATURE_GENERATIVE_ENABLED=true
 COVEO_FEATURE_GENERATIVE_CITATIONS=true
 COVEO_FEATURE_GENERATIVE_FEEDBACK=true
+COVEO_FEATURE_GENERATIVE_DISCLAIMER=true
 COVEO_FEATURE_GENERATIVE_STREAMING=false
 COVEO_FEATURE_TRENDING_ENABLED=true
+NEXT_PUBLIC_DEMO_PROFILE=developer-documentation
+COVEO_DEVELOPMENT_QUERY_OVERRIDES=true
 ```
 
-Sample mode defaults to enabled on the server for local review. In sample mode, generated answers, citations, feedback, trending metrics, and app analytics are mocked or local-only. Queries containing `no answer` trigger the no-answer state; queries containing `error` trigger the generative error state.
+Sample mode defaults to enabled on the server for local review. In sample mode, generated answers, citations, feedback, trending metrics, and app analytics are mocked or local-only.
+
+Feature flag resolution order is:
+
+```text
+base defaults -> environment overrides -> demo profile overrides -> development query overrides
+```
+
+Development query overrides are ignored in production. Demo profiles are `developer-documentation`, `customer-support`, `ecommerce`, and `minimal`. Select a default profile with `NEXT_PUBLIC_DEMO_PROFILE`; in development, use `?profile=ecommerce`.
+
+Sample-mode URL state supports `q`, `page`, `sort`, `contentType`, `source`, and `product`. Development-only URL parameters are `profile` and `scenario`. Supported scenarios are `default`, `loading`, `empty`, `error`, `partial`, `generative`, `generative-error`, `generative-no-answer`, `trending-empty`, and `trending-error`.
 
 4. Run locally:
 
@@ -98,6 +118,8 @@ Pull requests use `.github/pull_request_template.md` to capture title quality, t
 ## Security Notes
 
 - `COVEO_PLATFORM_API_KEY` is server-side only and must never be prefixed with `NEXT_PUBLIC_`.
+- Public runtime configuration includes environment, selected demo profile, resolved feature flags, provider capabilities, and non-secret Coveo metadata only.
+- Server-only configuration includes `COVEO_PLATFORM_API_KEY`, token endpoint overrides, and identity settings.
 - `.env.local` is ignored by git.
 - The browser receives only the generated search token and non-secret search configuration.
 - Generative live mode is not integrated with Coveo APIs in this phase. The live provider is a safe skeleton and does not expose access tokens or privileged credentials.
@@ -109,6 +131,8 @@ Pull requests use `.github/pull_request_template.md` to capture title quality, t
 - Facet fields are environment-driven because the assessment index fields are not known in this empty repo.
 - The token route supports both current and legacy Coveo search token paths to reduce setup risk across org configurations.
 - Local and production commands use Webpack because the current Turbopack build attempts to parse Coveo Headless package metadata as strict JSON.
+- Provider capabilities are explicit. Sample mode supports suggestions, facets, pagination, and relevance/newest/popularity sorting. Live Coveo Headless currently exposes relevance-only sorting and does not expose live generative controls.
+- Sample-mode URL synchronization is implemented. Live Headless routing is intentionally not forced through the sample URL state model.
 
 ## More Time
 

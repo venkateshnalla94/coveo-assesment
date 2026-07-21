@@ -9,11 +9,15 @@ import type { TrendingProvider } from "@/features/trending/providers/trending-pr
 import { getSafeTrendingUrl } from "@/features/trending/services/trending-urls";
 
 export function TrendingContent({
+  description = "Fixture metrics for sample-mode demonstration.",
   enabled,
   provider,
+  title = "Trending content",
 }: {
+  description?: string;
   enabled: boolean;
   provider: TrendingProvider;
+  title?: string;
 }) {
   const analytics = useAnalytics();
   const [state, setState] = useState<
@@ -53,12 +57,12 @@ export function TrendingContent({
   }
 
   return (
-    <section className="insight-card" aria-label="Trending content">
+    <section className="insight-card" aria-label={title}>
       <div className="insight-card-title">
         <Flame aria-hidden="true" size={18} />
-        <h2>Trending content</h2>
+        <h2>{title}</h2>
       </div>
-      <p className="muted-copy">Fixture metrics for sample-mode demonstration.</p>
+      <p className="muted-copy">{description}</p>
       {state.status === "loading" ? (
         <div className="trending-skeleton" role="status" aria-live="polite">
           <span>Loading trending content.</span>

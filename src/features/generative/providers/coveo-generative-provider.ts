@@ -1,11 +1,24 @@
 import type { GenerativeProvider } from "@/features/generative/providers/generative-provider";
 import type { GenerativeAnswer } from "@/features/generative/models/generative-models";
-import { GenerativeConfigurationError } from "@/features/generative/providers/generative-errors";
+import { GenerativeProviderError } from "@/features/generative/providers/generative-errors";
 
 export class CoveoGenerativeProvider implements GenerativeProvider {
-  async generate(): Promise<GenerativeAnswer | null> {
-    throw new GenerativeConfigurationError(
-      "Live Coveo generative answers require a supported endpoint and server-side integration.",
-    );
+  async generate(query: string): Promise<GenerativeAnswer | null> {
+    const response = await fetch("/api/coveo/generative/answer", {
+      body: JSON.stringify({ query }),
+      cache: "no-store",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    });
+
+    if (!response.ok) {
+      throw new GenerativeProviderError("Live Coveo generative answer request failed.");
+    }
+
+    const body = (await response.json().catch(() => null)) as { answer?: GenerativeAnswer | null } | null;
+    return body?.answer ?? null;
   }
 }

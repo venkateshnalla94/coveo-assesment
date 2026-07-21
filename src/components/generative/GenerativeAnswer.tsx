@@ -167,7 +167,7 @@ export function GenerativeAnswer({
             Generated answer
           </span>
           {featureFlags.enableGenerativeDisclaimer ? (
-            <p>Fixture-backed in sample mode. Verify cited sources before using the answer.</p>
+            <p>Generated from configured Coveo content. Verify cited sources before using the answer.</p>
           ) : null}
         </div>
         {state.status === "complete" ? (

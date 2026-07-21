@@ -48,9 +48,12 @@ test("keyboard interactions cover suggestions, facets, sorting, pagination, cita
 
   await page.goto("/?profile=developer-documentation");
   await search(page, "authentication");
+  await page.getByRole("button", { name: "Read full guidance and citations" }).click();
+  await page.getByRole("tab", { name: /Citations/ }).click();
   await expect(
     page.getByLabel("Generated answer citations").getByRole("link", { name: /Authenticated search token guide/i }),
   ).toBeVisible();
+  await page.getByRole("button", { name: "Close AI product guidance" }).click();
   await page.getByRole("button", { name: "Helpful", exact: true }).focus();
   await page.keyboard.press("Enter");
   await expect(page.getByText("Feedback submitted.")).toBeVisible();
@@ -71,7 +74,7 @@ for (const viewport of viewports) {
     await expect(page.getByText(/products for "welding arm"/i)).toBeVisible();
     await expect(page.getByLabel("Product filters")).toBeVisible();
     await expect(page.getByLabel("Product guidance and resources")).toBeVisible();
-    await expect(page.getByLabel("Generated answer citations")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Read full guidance and citations" })).toBeVisible();
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
     expect(overflow).toBe(false);

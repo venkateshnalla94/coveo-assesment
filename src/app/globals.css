@@ -831,6 +831,57 @@ p {
   line-height: 1.65;
 }
 
+.generative-read-more {
+  justify-self: start;
+}
+
+.generative-modal-backdrop {
+  place-items: center;
+}
+
+.generative-modal {
+  width: min(760px, 100%);
+  max-height: min(720px, calc(100vh - 48px));
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 26px 60px rgba(18, 28, 56, 0.22);
+  overflow: auto;
+}
+
+.generative-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+  padding: 12px 16px 0;
+}
+
+.generative-tabs button {
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 10px 12px;
+  font-weight: 750;
+}
+
+.generative-tabs button[aria-selected="true"] {
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--accent-strong);
+}
+
+.generative-modal-body {
+  padding: 18px;
+}
+
+.generative-modal-body p {
+  margin: 0;
+  color: #1f2a44;
+  line-height: 1.7;
+}
+
 .generative-skeleton {
   display: grid;
   gap: 10px;

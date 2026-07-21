@@ -665,6 +665,8 @@ describe("SearchExperience sample response mode", () => {
     );
 
     expect(await screen.findByText(/Fixture-backed summary/)).toBeTruthy();
+    await userEvent.click(screen.getByRole("button", { name: "Read full guidance and citations" }));
+    await userEvent.click(screen.getByRole("tab", { name: /Citations/ }));
     expect(screen.getAllByRole("link", { name: /The Ultimate Guide/ }).length).toBeGreaterThan(0);
   });
 

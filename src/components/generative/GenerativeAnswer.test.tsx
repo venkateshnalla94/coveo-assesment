@@ -49,7 +49,13 @@ describe("GenerativeAnswer", () => {
     );
 
     expect(await screen.findByText(/Fixture-backed summary/)).toBeTruthy();
+    expect(screen.queryByRole("link", { name: /The Ultimate Guide/ })).toBeNull();
+
+    await userEvent.click(screen.getByRole("button", { name: "Read full guidance and citations" }));
+    expect(screen.getByRole("dialog", { name: "AI Product Guidance" })).toBeTruthy();
+    await userEvent.click(screen.getByRole("tab", { name: /Citations/ }));
     expect(screen.getByRole("link", { name: /The Ultimate Guide/ })).toBeTruthy();
+    await userEvent.click(screen.getByRole("button", { name: "Close AI product guidance" }));
 
     await userEvent.click(screen.getByRole("button", { name: "Helpful" }));
     expect(await screen.findByText("Feedback submitted.")).toBeTruthy();
@@ -114,7 +120,11 @@ describe("GenerativeAnswer", () => {
       </AnalyticsProviderRoot>,
     );
 
-    expect(await screen.findByText("No citations are available for this answer.")).toBeTruthy();
+    expect(await screen.findByText(/Fixture-backed summary/)).toBeTruthy();
+    await userEvent.click(screen.getByRole("button", { name: "Read full guidance and citations" }));
+    await userEvent.click(screen.getByRole("tab", { name: "Citations (0)" }));
+    expect(screen.getByText("No citations are available for this answer.")).toBeTruthy();
+    await userEvent.click(screen.getByRole("button", { name: "Close AI product guidance" }));
 
     rerender(
       <AnalyticsProviderRoot enabled provider={{ track: vi.fn() }}>
@@ -131,6 +141,8 @@ describe("GenerativeAnswer", () => {
       </AnalyticsProviderRoot>,
     );
 
+    await userEvent.click(screen.getByRole("button", { name: "Read full guidance and citations" }));
+    await userEvent.click(screen.getByRole("tab", { name: "Citations (0)" }));
     expect(screen.getByText("No citations are available for this answer.")).toBeTruthy();
   });
 });

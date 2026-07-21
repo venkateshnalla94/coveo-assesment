@@ -91,9 +91,12 @@ test("generative answer renders citations and accepts positive feedback", async 
   await expect(page.locator(".search-box-wrap[data-search-ready='true']")).toBeVisible();
   await runSearch(page, "authentication");
   await expect(page.getByText(/short-lived token from the server/i)).toBeVisible();
+  await page.getByRole("button", { name: "Read full guidance and citations" }).click();
+  await page.getByRole("tab", { name: /Citations/ }).click();
   await expect(
     page.getByLabel("Generated answer citations").getByRole("link", { name: /Authenticated search token guide/i }),
   ).toBeVisible();
+  await page.getByRole("button", { name: "Close AI product guidance" }).click();
   await page.getByRole("button", { name: "Helpful", exact: true }).click();
   await expect(page.getByText("Feedback submitted.")).toBeVisible();
 });

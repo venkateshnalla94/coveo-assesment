@@ -36,8 +36,11 @@ test("suggestions, results, facets, generative, and trending states pass axe", a
   await expect(page.getByText(/products for "welding arm"/i)).toBeVisible();
   await expect(page.getByLabel("Product filters")).toBeVisible();
   await expect(page.getByLabel("Technical Resources")).toBeVisible();
+  await page.getByRole("button", { name: "Read full guidance and citations" }).click();
+  await page.getByRole("tab", { name: /Citations/ }).click();
   await expect(page.getByLabel("Generated answer citations")).toBeVisible();
   await checkA11y(page);
+  await page.getByRole("button", { name: "Close AI product guidance" }).click();
 
   await page.locator(".product-card").nth(0).getByRole("button", { name: /Compare/i }).click();
   await page.locator(".product-card").nth(0).getByRole("button", { name: /View Product/i }).click();

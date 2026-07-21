@@ -6,6 +6,8 @@
 - Runtime/UI: React `^19.2.7`, React DOM `^19.2.7`, TypeScript `^6.0.3`.
 - Coveo integration: `@coveo/headless` `^3.4.1`.
 - Icons: `lucide-react` `^1.25.0`.
+- E2E: Playwright with Chromium.
+- Automated accessibility: `@axe-core/playwright`.
 - Package manager: npm, with `package-lock.json` lockfile version 3.
 - Build mode: `next dev --webpack` and `next build --webpack`; README notes Webpack is intentional because the current Turbopack build path has Coveo Headless package metadata issues.
 - Next config: `reactStrictMode: true`.
@@ -62,9 +64,9 @@ Browser search UI -> Coveo Search API directly with short-lived token
 
 `src/components/search/SearchExperience.tsx` owns most runtime orchestration. It fetches token config only after the user submits the startup form, builds the Coveo search engine, registers Headless controllers, executes the first search, and renders search box, result list, facets, pagination, summary, errors, and insight rail.
 
-There is also a sample response path gated by feature flags. In that mode, `src/app/page.tsx` maps `src/data/sample-coveo-search-response.json` into the search domain model and passes the complete domain `SearchResponse` to `SearchExperience`. The client wraps that response in `InMemorySearchProvider`, so query submission, suggestions, facets, sorting, and numbered pagination still go through the `SearchProvider` contract. Insight content still comes from `src/data/search-insights.json`.
+There is also a sample response path gated by feature flags. In that mode, `src/app/page.tsx` selects typed profile-specific fixtures from `src/features/demo-profiles/profile-fixtures.ts` and passes the complete domain `SearchResponse` to `SearchExperience`. The client wraps that response in `InMemorySearchProvider`, so query submission, suggestions, facets, sorting, and numbered pagination still go through the `SearchProvider` contract.
 
-The main architectural weakness is that `SearchExperience` is currently both composition root and search orchestration layer. The sample-response path now has a provider/domain boundary and an explicit search-state reducer, but live UI components are still coupled directly to Coveo Headless controller types. That is intentional for Phase 3 because replacing live Headless controllers with a server-safe provider adapter would risk credentials, analytics, facets, suggestions, and pagination behavior outside the search-experience scope.
+The main architectural weakness is that `SearchExperience` is still a large composition root. Phase 6 extracted sample provider orchestration into `useSampleExperienceProviders`, but live UI components remain coupled directly to Coveo Headless controller types. That is intentional because replacing live Headless controllers without a real Coveo organization would risk credentials, analytics, facets, suggestions, and pagination behavior outside the quality scope.
 
 ```text
 UI Components
@@ -123,10 +125,14 @@ Live Coveo behavior:
 - Headless facets remain controller-driven. Clear all now deselects all registered facet controllers.
 - Live sorting remains Coveo relevance only. The UI does not expose Newest or Most Popular for live mode because no configured Headless sort controller or Coveo sort criteria are present yet.
 
-Deferred Phase 3-adjacent items:
+Phase 6 additions:
 
-- URL state synchronization is deferred. It would be useful, but forcing it now would add App Router routing risk after the search reducer/provider boundary was already changed.
-- End-to-end browser tests are not configured in this repository. Phase 3 coverage is unit/component/integration coverage through Vitest and React Testing Library.
+- Playwright E2E coverage for sample search, suggestions, facets, sorting, pagination, zero-results recovery, generative states, profiles, browser navigation, live safety, keyboard behavior, and responsive viewports.
+- Axe accessibility checks for serious and critical violations.
+- Profile-specific fixtures for developer documentation, customer support, ecommerce, and minimal.
+- Request cancellation and stale-response guards for suggestions, sample search, and token configuration fetches.
+- Stable skeleton dimensions for results, generative answers, and trending content.
+- Safer external URL handling and redacted token route errors.
 
 ## Existing Agents
 
@@ -146,6 +152,8 @@ Local scripts:
 - `npm run lint`
 - `npm run test`
 - `npm run test:coverage`
+- `npm run test:e2e`
+- `npm run test:e2e:ui`
 - `npm run typecheck`
 - `npm run build`
 - `npm run hooks:install`
@@ -177,6 +185,8 @@ Test framework:
 - jsdom environment
 - React Testing Library
 - `@vitest/coverage-v8`
+- Playwright for browser E2E
+- `@axe-core/playwright` for automated accessibility checks
 
 Coverage configuration in `vitest.config.ts` includes:
 
@@ -200,24 +210,28 @@ Existing tests cover:
 - Search state transitions, query helper behavior, pagination calculations, sort mapping, result-template fallback behavior, facet label/order configuration, and in-memory provider behavior.
 - Result field extraction.
 - Configuration notice rendering.
+- Profile-specific fixture selection.
+- Unsafe result URL handling.
+- Sample provider orchestration.
+- E2E flows for search, suggestions, facets, sorting, pagination, zero results, generative answers/errors, profile behavior, browser history, responsive layout, keyboard interaction, and credential-free live safety.
 
-Documented gaps in `docs/testing.md` include direct DOM tests for Headless-driven child components such as `SearchBoxView`, `SearchSummary`, `PagerControls`, `FacetPanel`, `ResultItem`, and `ResultListView`.
+Documentation for Phase 6 testing lives in `docs/testing-strategy.md`, `docs/accessibility.md`, `docs/security-review.md`, and `docs/performance-review.md`.
 
 ## Risks
 
 - The provider boundary is still split by runtime. Sample mode now uses a domain model, reducer, and provider-driven UI; live mode still depends directly on Coveo Headless controllers. That is acceptable for Phase 3, but it remains the next real architecture boundary to resolve.
-- `SearchExperience.tsx` is carrying too many responsibilities: token loading, engine creation, controller construction, startup state, ready state, sample mode, layout, and error rendering.
+- `SearchExperience.tsx` is still carrying live Headless responsibilities: token loading, engine creation, controller construction, startup state, ready state, layout, and error rendering.
 - Search state is explicit in sample mode but remains implicit in multiple Headless controller states in live mode.
 - Live sorting is intentionally limited to relevance until Coveo sort criteria or a Headless sort controller are configured.
 - Analytics exists through Coveo Headless configuration and result click tracking with `buildInteractiveResult`, but submit, suggestion selection, facet, sort, and pagination analytics are not surfaced as explicit app-level events.
-- Sample response mode is useful for demos and now exercises the provider/domain contract, but it still uses domain components separate from live Headless controller components.
+- Sample response mode is useful for demos and now exercises the provider/domain contract with profile-specific fixtures, but it still uses domain components separate from live Headless controller components.
 - There is a stray `src/components/search/.DS_Store` local artifact in the working tree view. It should not be committed or used as part of the app.
 - The application is now partly organized under `src/features/search`, but analytics and future demo-profile work remain deferred.
 
 ## Recommended Changes
 
 1. Decide how the live Headless path should meet the provider/domain boundary without regressing controller-owned facets, suggestions, pagination, and analytics.
-2. Extract Headless engine/controller setup out of `SearchExperience.tsx` into a focused hook or service boundary. Keep `SearchExperience` as composition and layout.
+2. Extract Headless engine/controller setup out of `SearchExperience.tsx` only after it can be verified against a real Coveo organization.
 3. Integrate live Coveo generative answers only after supported endpoints and server-side credentials are confirmed.
 4. Add live Coveo sort only after the target sort criteria are configured and can be represented honestly in Headless.
 5. Add URL synchronization only after the provider/state boundary is stable.
@@ -323,7 +337,47 @@ Live Coveo behavior remains conservative:
 
 Known Phase 5 limitations:
 
-- Demo profiles share the same mapped fixture file; profile-specific fixture sets are declared but not separate JSON datasets yet.
+- Demo profiles no longer share one mapped fixture; Phase 6 added typed profile-specific fixture sets.
 - URL synchronization is sample-mode only.
 - Development scenarios are deterministic but lightweight; `partial` is reserved for future fixture shaping.
 - Structured logging defaults to conservative console output to avoid noisy render-time logs.
+
+## Phase 6 Current State
+
+Phase 6 added quality, reliability, accessibility, security, and performance readiness without adding agent automation, Git hook changes, PR automation, CI workflow changes, Storybook, live Coveo generative integration, or backend feedback persistence.
+
+New quality files:
+
+- `playwright.config.ts`
+- `tests/e2e/search-flows.spec.ts`
+- `tests/e2e/profiles-navigation.spec.ts`
+- `tests/e2e/accessibility.spec.ts`
+- `tests/e2e/keyboard-responsive.spec.ts`
+- `docs/testing-strategy.md`
+- `docs/accessibility.md`
+- `docs/security-review.md`
+- `docs/performance-review.md`
+
+New application boundaries:
+
+- `src/components/search/use-sample-experience-providers.ts`: focused sample provider orchestration.
+- `src/features/demo-profiles/profile-fixtures.ts`: deterministic profile-specific fixtures.
+
+Phase 6 behavior:
+
+- Playwright covers the required sample-mode E2E flows without real Coveo credentials.
+- Axe checks serious and critical accessibility issues.
+- Responsive assertions cover `375x812`, `768x1024`, `1024x768`, and `1440x900`.
+- Suggestions, sample search, and token config fetching use abortable requests.
+- Sample search uses request sequencing so stale responses do not replace newer state.
+- Search results, generative answers, and trending content use more stable skeleton dimensions and accessible loading announcements.
+- Result, citation, and trending URLs are validated before navigation.
+- The search-token route redacts upstream Coveo failure details.
+- Production rejects development query overrides.
+
+Remaining limitations:
+
+- Live Headless components are still controller-driven and not fully hidden behind the provider abstraction.
+- Live Coveo browser tests remain credential-free safety checks only.
+- Real production Web Vitals require deployment telemetry.
+- The existing Coveo Headless Webpack critical-dependency warning remains unchanged.

@@ -14,7 +14,9 @@ Secured Coveo Headless search UI built with Next.js App Router and TypeScript.
 - Fixture-backed trending content.
 - Provider-independent app analytics abstraction with local console analytics.
 - Typed hierarchical feature flags, demo profiles, URL state in sample mode, provider capability metadata, shared error mapping, runtime config parsing, and lightweight structured logging.
-- Loading, empty, and query error states.
+- Loading, empty, query error, retry, accessibility, responsive, and keyboard-tested states.
+- Profile-specific sample fixtures for developer documentation, customer support, ecommerce, and minimal modes.
+- Playwright E2E and axe accessibility validation.
 
 ## Architecture
 
@@ -97,10 +99,30 @@ npm run test
 npm run test:coverage
 npm run typecheck
 npm run build
+npm run test:e2e
+npm audit
 npm run workflow:check
 ```
 
 Run `npm run test` for focused Vitest coverage around token handling and result rendering logic. Run `npm run test:coverage` to enforce the current 80% coverage threshold for testable application logic.
+
+Install the Playwright browser before the first E2E run:
+
+```bash
+npx playwright install chromium
+```
+
+Run browser E2E tests with:
+
+```bash
+npm run test:e2e
+```
+
+Open Playwright UI mode with:
+
+```bash
+npm run test:e2e:ui
+```
 
 Install local Git hooks with:
 
@@ -122,6 +144,9 @@ Pull requests use `.github/pull_request_template.md` to capture title quality, t
 - Server-only configuration includes `COVEO_PLATFORM_API_KEY`, token endpoint overrides, and identity settings.
 - `.env.local` is ignored by git.
 - The browser receives only the generated search token and non-secret search configuration.
+- Coveo token route failures are redacted before returning to the browser.
+- Result links, generated-answer citations, and trending links validate external URLs before rendering navigable links.
+- User-controlled query and URL parameter values are normalized and rendered through React text nodes.
 - Generative live mode is not integrated with Coveo APIs in this phase. The live provider is a safe skeleton and does not expose access tokens or privileged credentials.
 - Anonymous identity is used by default. A real application would resolve the signed-in user's security identity before minting the token.
 
@@ -133,6 +158,15 @@ Pull requests use `.github/pull_request_template.md` to capture title quality, t
 - Local and production commands use Webpack because the current Turbopack build attempts to parse Coveo Headless package metadata as strict JSON.
 - Provider capabilities are explicit. Sample mode supports suggestions, facets, pagination, and relevance/newest/popularity sorting. Live Coveo Headless currently exposes relevance-only sorting and does not expose live generative controls.
 - Sample-mode URL synchronization is implemented. Live Headless routing is intentionally not forced through the sample URL state model.
+- Sample provider orchestration is extracted from `SearchExperience.tsx`; live Headless controller setup remains in place until it can be validated with real Coveo credentials.
+- The existing Coveo Headless Webpack critical-dependency warning may remain during build. It is not suppressed because the source is the third-party package bundle, not application code.
+
+## Quality Documentation
+
+- `docs/testing-strategy.md`
+- `docs/accessibility.md`
+- `docs/security-review.md`
+- `docs/performance-review.md`
 
 ## More Time
 
@@ -141,5 +175,5 @@ Pull requests use `.github/pull_request_template.md` to capture title quality, t
 - Add live Coveo generative answer integration after supported endpoints and server-side credentials are confirmed.
 - Persist generative feedback to a backend service.
 - Add a search hub switcher to demonstrate relevance context changes.
-- Add DOM or browser-level tests for Headless-driven React components after real Coveo credentials are validated.
+- Broaden live Coveo browser tests after real credentials and indexed fields are available.
 - Deploy to Vercel and add the live URL here.

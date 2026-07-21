@@ -9,7 +9,7 @@ Browser UI -> /api/search-token -> Coveo token endpoint
 Browser UI -> Coveo Search API with short-lived token
 ```
 
-Sample mode uses `InMemorySearchProvider` over mapped fixture data. Live mode still uses Coveo Headless controllers directly because replacing controller behavior without real Coveo validation would risk facets, suggestions, pagination, and existing usage analytics.
+Sample mode uses `InMemorySearchProvider` over typed, profile-specific fixture data. Live mode still uses Coveo Headless controllers directly because replacing controller behavior without real Coveo validation would risk facets, suggestions, pagination, and existing usage analytics.
 
 Sample-mode search state is synchronized with URL parameters:
 
@@ -51,7 +51,7 @@ Development query overrides are disabled in production.
 
 ## Demo Profiles
 
-Profiles live outside UI components in `src/features/demo-profiles/demo-profiles.ts`.
+Profiles live outside UI components in `src/features/demo-profiles/demo-profiles.ts`. Profile fixture selection lives in `src/features/demo-profiles/profile-fixtures.ts`.
 
 Supported profiles:
 
@@ -61,6 +61,8 @@ Supported profiles:
 - `minimal`
 
 Unknown profile IDs fall back to `developer-documentation`.
+
+Each profile supplies deterministic provider-driven data for results, suggestions, facets, trending content, and generative behavior where enabled. UI components consume provider contracts and do not branch on profile IDs.
 
 ## Provider Capabilities
 
@@ -130,3 +132,27 @@ Typed scenarios are supported in development and test only:
 - `trending-error`
 
 Production ignores scenario query parameters.
+
+## Phase 6 Quality Boundaries
+
+`SearchExperience.tsx` remains the composition point, but sample provider construction is extracted into `useSampleExperienceProviders`. That keeps profile fixtures, optional generative/trending providers, feedback provider setup, and scenario-specific mock behavior out of the render component while avoiding a risky live Headless rewrite.
+
+Request reliability uses lightweight primitives:
+
+- Suggestions use `AbortController` plus request sequencing.
+- Sample search uses `AbortController` plus request sequencing.
+- Search token configuration fetch accepts an abort signal.
+- Stale sample search and generative responses are prevented from replacing newer user state.
+
+Security-sensitive boundaries:
+
+- The token route redacts Coveo token-minting failure details before sending errors to the browser.
+- Result, citation, and trending URLs are validated before rendering external links.
+- Development query overrides remain unavailable in production.
+
+Quality validation:
+
+- Playwright E2E tests cover deterministic sample flows and credential-free live safety gates.
+- `@axe-core/playwright` checks serious and critical accessibility violations.
+- Responsive assertions cover `375x812`, `768x1024`, `1024x768`, and `1440x900`.
+- No Phase 7 workflow, hook, PR, or CI automation was added as part of this phase.

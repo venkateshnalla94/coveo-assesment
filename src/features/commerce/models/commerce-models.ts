@@ -105,6 +105,13 @@ export interface ProductNumericalRangeFacet extends ProductFacetBase {
     max: number;
     increment: number;
   };
+  // The dynamically-selected continuous range (star rating threshold, price slider position),
+  // as opposed to a selection of one of Coveo's server-generated `values` buckets.
+  selectedRange?: {
+    start: number;
+    end: number;
+    endInclusive: boolean;
+  };
   values: ProductRangeFacetValue[];
 }
 

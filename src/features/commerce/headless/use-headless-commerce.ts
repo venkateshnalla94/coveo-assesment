@@ -415,13 +415,10 @@ function toggleFacetValue(
 
 function toggleRangeValue(facets: FacetGenerator["facets"], field: string, start: number, end: number) {
   const facet = facets.find((item) => item.state.field === field && item.state.type === "numericalRange");
-  const value = (facet as NumericFacet | undefined)?.state.values.find(
-    (item) => item.start === start && item.end === end,
-  );
 
-  if (value) {
-    (facet as NumericFacet).toggleSelect(value);
-  }
+  // Dynamic facets (price slider, star rating) apply an arbitrary continuous range rather than
+  // toggling one of Coveo's server-generated buckets, so this always replaces the current range.
+  (facet as NumericFacet | undefined)?.setRanges([{ end, endInclusive: true, start, state: "selected" }]);
 }
 
 function waitForSuggestions(searchBox: SearchBox, signal?: AbortSignal): Promise<SearchSuggestion[]> {

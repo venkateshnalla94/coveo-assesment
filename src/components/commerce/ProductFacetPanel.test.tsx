@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -9,7 +9,7 @@ import {
 } from "@/components/commerce/ProductFacetPanel";
 
 describe("ProductFacetPanel", () => {
-  it("renders regular and range facets with accessible controls", async () => {
+  it("renders regular facets and a dynamic price range slider", async () => {
     const onToggleFacetValue = vi.fn();
     const onToggleRange = vi.fn();
 
@@ -24,7 +24,7 @@ describe("ProductFacetPanel", () => {
             values: [{ count: 2, label: "NexBot Robotics", selected: false, value: "NexBot Robotics" }],
           },
           {
-            domain: { increment: 0, max: 100, min: 10 },
+            domain: { increment: 1, max: 100, min: 10 },
             field: "ec_price",
             id: "ec_price",
             label: "Price",
@@ -40,10 +40,53 @@ describe("ProductFacetPanel", () => {
     );
 
     await userEvent.click(screen.getByRole("button", { name: /NexBot Robotics 2/i }));
-    await userEvent.click(screen.getByRole("button", { name: /£10-£100/i }));
+
+    const [minSlider, maxSlider] = screen.getAllByRole("slider");
+    fireEvent.change(minSlider, { target: { value: "25" } });
+    fireEvent.change(maxSlider, { target: { value: "80" } });
 
     expect(onToggleFacetValue).toHaveBeenCalledWith("ec_brand", "NexBot Robotics", "regular");
-    expect(onToggleRange).toHaveBeenCalledWith("ec_price", 10, 100);
+    expect(onToggleRange).toHaveBeenCalledWith("ec_price", 25, 100);
+    expect(onToggleRange).toHaveBeenCalledWith("ec_price", 25, 80);
+  });
+
+  it("selects a star-rating threshold and clears it on repeat click", async () => {
+    const onToggleRange = vi.fn();
+    const onClearFacet = vi.fn();
+    const ratingFacet = {
+      domain: { increment: 1, max: 5, min: 0 },
+      field: "ec_rating",
+      id: "ec_rating",
+      label: "Rating",
+      type: "numericalRange" as const,
+      values: [],
+    };
+
+    const { rerender } = render(
+      <ProductFacetPanel
+        facets={[ratingFacet]}
+        onClearAll={vi.fn()}
+        onClearFacet={onClearFacet}
+        onToggleFacetValue={vi.fn()}
+        onToggleRange={onToggleRange}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "3 stars & up" }));
+    expect(onToggleRange).toHaveBeenCalledWith("ec_rating", 3, 5);
+
+    rerender(
+      <ProductFacetPanel
+        facets={[{ ...ratingFacet, selectedRange: { end: 5, endInclusive: true, start: 3 } }]}
+        onClearAll={vi.fn()}
+        onClearFacet={onClearFacet}
+        onToggleFacetValue={vi.fn()}
+        onToggleRange={onToggleRange}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "3 stars & up" }));
+    expect(onClearFacet).toHaveBeenCalledWith("ec_rating");
   });
 
   it("removes a single facet value when its breadcrumb chip is clicked, not the whole facet", async () => {

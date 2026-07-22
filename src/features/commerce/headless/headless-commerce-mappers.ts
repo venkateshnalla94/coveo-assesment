@@ -47,6 +47,11 @@ type HeadlessFacetLike = {
       min: number;
       max: number;
     };
+    manualRange?: {
+      start: number;
+      end: number;
+      endInclusive: boolean;
+    };
   };
 };
 
@@ -197,6 +202,7 @@ function mapHeadlessFacet(facet: HeadlessFacetLike): ProductFacet | undefined {
       ...base,
       type: "numericalRange",
       ...(state.domain ? { domain: { ...state.domain, increment: 1 } } : {}),
+      ...(state.manualRange ? { selectedRange: state.manualRange } : {}),
       values: state.values
         .map((rawFacetValue): ProductRangeFacetValue | undefined => {
           const value = asRecord(rawFacetValue);

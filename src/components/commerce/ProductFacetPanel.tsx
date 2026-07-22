@@ -1,10 +1,13 @@
-import { Check, ChevronDown, X } from "lucide-react";
+import { Check, ChevronDown, Star, X } from "lucide-react";
+import { useState, type CSSProperties } from "react";
 
 import type {
   ProductFacet,
   ProductFacetSelection,
   ProductNumericalRangeFacet,
 } from "@/features/commerce/models/commerce-models";
+
+const RATING_STARS = [1, 2, 3, 4, 5];
 
 export function ProductFacetPanel({
   facets,
@@ -21,15 +24,23 @@ export function ProductFacetPanel({
 }) {
   const activeFilters = facets.flatMap((facet) => {
     if (facet.type === "numericalRange") {
-      return facet.values
-        .filter((value) => value.selected)
-        .map((value) => ({
-          key: `${facet.field}-${value.start}-${value.end}`,
-          label: `${facet.label}: ${formatRangeValue(facet, value.start, value.end)}`,
+      // Dynamic ranges (price slider, star rating) live in `selectedRange`, separate from the
+      // server-generated `values` buckets, since selecting one deselects the other on Coveo's side.
+      const selected = facet.selectedRange ?? facet.values.find((value) => value.selected);
+
+      if (!selected) {
+        return [];
+      }
+
+      return [
+        {
+          key: `${facet.field}-${selected.start}-${selected.end}`,
+          label: `${facet.label}: ${formatRangeValue(facet, selected.start, selected.end)}`,
           // Numeric range facets only ever have one active value, so clearing the field is
           // equivalent to removing this one selection.
           onRemove: () => onClearFacet(facet.field),
-        }));
+        },
+      ];
     }
 
     return facet.values
@@ -76,7 +87,18 @@ export function ProductFacetPanel({
             </div>
           </div>
 
-          {facet.type === "numericalRange" ? (
+          {facet.type === "numericalRange" && facet.field === "ec_rating" ? (
+            <RatingFacetControl
+              facet={facet}
+              onClear={() => onClearFacet(facet.field)}
+              onSelect={(start, end) => onToggleRange(facet.field, start, end)}
+            />
+          ) : facet.type === "numericalRange" && facet.field === "ec_price" && facet.domain ? (
+            <PriceRangeFacetControl
+              facet={facet}
+              onChange={(start, end) => onToggleRange(facet.field, start, end)}
+            />
+          ) : facet.type === "numericalRange" ? (
             <div className="facet-values">
               {facet.values.map((value) => (
                 <button
@@ -174,6 +196,10 @@ export function toggleProductRangeSelection(
 }
 
 function facetHasSelection(facet: ProductFacet) {
+  if (facet.type === "numericalRange") {
+    return Boolean(facet.selectedRange) || facet.values.some((value) => value.selected);
+  }
+
   return facet.values.some((value) => value.selected);
 }
 
@@ -183,7 +209,7 @@ function formatRangeValue(facet: ProductNumericalRangeFacet, start: number, end:
   }
 
   if (facet.field === "ec_rating") {
-    return `${start.toFixed(1)}-${end.toFixed(1)}`;
+    return `${start}+ stars`;
   }
 
   return `${start}-${end}`;
@@ -195,4 +221,112 @@ function formatCurrency(value: number) {
     maximumFractionDigits: value % 1 === 0 ? 0 : 2,
     style: "currency",
   }).format(value);
+}
+
+function RatingFacetControl({
+  facet,
+  onClear,
+  onSelect,
+}: {
+  facet: ProductNumericalRangeFacet;
+  onClear: () => void;
+  onSelect: (start: number, end: number) => void;
+}) {
+  const [hovered, setHovered] = useState<number | undefined>(undefined);
+  const max = facet.domain?.max ?? 5;
+  const selectedStart = facet.selectedRange?.start;
+  const highlightThreshold = hovered ?? selectedStart;
+
+  return (
+    <div className="facet-rating" onMouseLeave={() => setHovered(undefined)} role="group" aria-label="Minimum rating">
+      {RATING_STARS.map((star) => {
+        const isActive = highlightThreshold !== undefined && star <= highlightThreshold;
+
+        return (
+          <button
+            aria-label={`${star} star${star === 1 ? "" : "s"} & up`}
+            aria-pressed={selectedStart !== undefined && star <= selectedStart}
+            className="facet-rating-star"
+            key={star}
+            onClick={() => (selectedStart === star ? onClear() : onSelect(star, max))}
+            onMouseEnter={() => setHovered(star)}
+            type="button"
+          >
+            <Star aria-hidden="true" fill={isActive ? "currentColor" : "none"} size={18} />
+          </button>
+        );
+      })}
+      <span className="facet-rating-label">{selectedStart !== undefined ? `${selectedStart}+ stars` : "Any rating"}</span>
+    </div>
+  );
+}
+
+function PriceRangeFacetControl({
+  facet,
+  onChange,
+}: {
+  facet: ProductNumericalRangeFacet;
+  onChange: (start: number, end: number) => void;
+}) {
+  const domain = facet.domain!;
+  const externalRange: [number, number] = [facet.selectedRange?.start ?? domain.min, facet.selectedRange?.end ?? domain.max];
+  const [appliedRange, setAppliedRange] = useState(externalRange);
+  const [range, setRange] = useState(externalRange);
+
+  // Re-sync local (draggable) state when the facet's applied range changes externally, e.g. after
+  // "Clear" or a page navigation restores search parameters. Adjusting state during render (rather
+  // than in an effect) avoids an extra render pass; see https://react.dev/learn/you-might-not-need-an-effect.
+  if (externalRange[0] !== appliedRange[0] || externalRange[1] !== appliedRange[1]) {
+    setAppliedRange(externalRange);
+    setRange(externalRange);
+  }
+
+  const [min, max] = range;
+  const span = domain.max - domain.min || 1;
+  const percent = (value: number) => ((value - domain.min) / span) * 100;
+
+  const handleMinChange = (value: number) => {
+    const next: [number, number] = [Math.min(value, max), max];
+    setRange(next);
+    onChange(next[0], next[1]);
+  };
+
+  const handleMaxChange = (value: number) => {
+    const next: [number, number] = [min, Math.max(value, min)];
+    setRange(next);
+    onChange(next[0], next[1]);
+  };
+
+  return (
+    <div className="facet-price-slider">
+      <div
+        className="range-slider"
+        style={{ "--range-end": `${percent(max)}%`, "--range-start": `${percent(min)}%` } as CSSProperties}
+      >
+        <div className="range-slider-track" />
+        <div className="range-slider-fill" />
+        <input
+          aria-label="Minimum price"
+          max={domain.max}
+          min={domain.min}
+          onChange={(event) => handleMinChange(Number(event.target.value))}
+          step={domain.increment}
+          type="range"
+          value={min}
+        />
+        <input
+          aria-label="Maximum price"
+          max={domain.max}
+          min={domain.min}
+          onChange={(event) => handleMaxChange(Number(event.target.value))}
+          step={domain.increment}
+          type="range"
+          value={max}
+        />
+      </div>
+      <p className="range-domain">
+        {formatCurrency(min)} - {formatCurrency(max)}
+      </p>
+    </div>
+  );
 }

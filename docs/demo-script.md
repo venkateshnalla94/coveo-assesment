@@ -4,9 +4,9 @@
 
 ## 0:00-2:00: RoboMotion And The Problem
 
-RoboMotion sells industrial robotics products into manufacturing contexts where buyers need confidence before they shortlist equipment. The problem is not just keyword search. A buyer needs to narrow a large catalog by application, compatible robot series, price, rating, and available technical guidance.
+RoboMotion sells industrial robotics products into manufacturing contexts where buyers need confidence before they shortlist equipment. The problem is not just keyword search. A buyer needs to narrow a large catalog by category, brand, price, rating, and — critically — confirmed compatibility with the robot series they already own.
 
-Position the app as a product discovery experience, not a generic search demo.
+Position the app as a product discovery experience, not a generic search demo. The narrative is fitment, not spec-sheet comparison: a systems integrator's real question is "will this part work with the arm I already have?" That is the strongest story this catalog can tell, and `compatible_robot_series` is a first-class facet for exactly that reason.
 
 ## 2:00-6:00: Search `welding arm`
 
@@ -29,7 +29,7 @@ Explain that the product path is live Headless Commerce against the Commerce API
 Apply the five validated facets:
 
 - Category
-- Compatible Robots
+- Compatible Robot Series
 - Brand
 - Price
 - Rating
@@ -90,12 +90,17 @@ Explain:
 - Headless Commerce owns product search behavior and analytics
 - RGA and resources fail independently from product search
 
+## Address The Data Model Directly
+
+Say this before moving to production next steps, not as an apology:
+
+"This demo runs on a standard Commerce catalog rather than a purpose-built engineering spec index — which is realistic, since in a live engagement I wouldn't control the source schema either. I verified directly against the live API which fields are actually indexed and facetable, and built the discovery experience around those: category, brand, price, rating, and compatible robot series. Here's what I'd ask the catalog team to add if I could shape the source."
+
 ## 19:00-20:00: Production Evolution
 
 Close with customer value and production next steps:
 
-- structured manufacturing specifications
-- more facets for payload, reach, certifications, and controller compatibility
+- structured manufacturing specifications (payload, reach, precision, mounting, certifications, controller compatibility) added to the index as facetable fields
 - production CTA integrations
 - identity-aware search
 - analytics dashboards
@@ -105,7 +110,7 @@ Close with customer value and production next steps:
 
 1. Open with the buyer problem: narrow a robotics catalog quickly and safely.
 2. Search `welding arm`, show suggestions, result count, cards, price, rating, stock, and compatibility.
-3. Apply category, compatible robots, brand, price, and rating facets; mention relevance-only sorting and pagination.
+3. Apply category, compatible robot series, brand, price, and rating facets; mention relevance-only sorting and pagination.
 4. Compare three products and open one product detail drawer.
 5. Show AI Product Guidance and Technical Resources; state clearly that RGA is guidance, not recommendations.
 6. Close with the architecture and auth boundary: Headless Commerce for products, RGA for guidance, Search API for resources, no credential fallback.

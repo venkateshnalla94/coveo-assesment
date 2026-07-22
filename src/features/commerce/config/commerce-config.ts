@@ -8,7 +8,10 @@ export const COMMERCE_DEFAULTS = {
 };
 
 export const COMMERCE_FACET_LABELS: Record<string, string> = {
-  compatible_robot_series: "Compatible Robots",
+  // Matches the "Compatible Robot Series" label used on product cards and the comparison
+  // table, since compatible_with_robots is a distinct (non-facetable) field shown as
+  // "Compatible Robots" elsewhere — keeping the two apart avoids implying they're the same data.
+  compatible_robot_series: "Compatible Robot Series",
   ec_brand: "Brand",
   ec_category: "Category",
   ec_price: "Price",

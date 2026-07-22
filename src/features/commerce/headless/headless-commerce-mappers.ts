@@ -95,6 +95,12 @@ export function mapHeadlessProduct(product: HeadlessProductLike, index: number):
     compatibleJoints: asStringArray(getField(product, "compatible_with_joints")),
     compatiblePartsSkus: asStringArray(getField(product, "compatible_parts_skus")),
     ...(asString(product.excerpt) ? { excerpt: asString(product.excerpt) } : {}),
+    ...(product.nameHighlights && product.nameHighlights.length > 0
+      ? { nameHighlights: product.nameHighlights }
+      : {}),
+    ...(product.excerptHighlights && product.excerptHighlights.length > 0
+      ? { excerptHighlights: product.excerptHighlights }
+      : {}),
     providerMetadata: {
       ...(asString(product.permanentid) ? { permanentId: asString(product.permanentid) } : {}),
       rawResultType: "commerce-product",

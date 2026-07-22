@@ -84,7 +84,7 @@ export function ProductResultCard({
           </div>
           {product.compatibleRobotSeries.length > 0 ? (
             <div>
-              <dt>Compatible Robots</dt>
+              <dt>Compatible Robot Series</dt>
               <dd>{product.compatibleRobotSeries.slice(0, 3).join(", ")}</dd>
             </div>
           ) : null}

@@ -10,12 +10,11 @@ Validated states:
 
 - Default page.
 - Search suggestions open.
-- Results displayed.
-- Facets displayed.
-- Zero results.
+- Product results displayed.
+- Product facets displayed.
 - Generative answer.
 - Technical resources.
-- Minimal profile.
+- Product details drawer.
 
 No rule is disabled globally. If a future rule needs an exception, scope it to the smallest selector and document the reason in the test.
 
@@ -28,7 +27,7 @@ Keyboard coverage verifies:
 - Enter submits the highlighted suggestion or current query.
 - Escape closes suggestions.
 - Facet controls are reachable and toggle by keyboard.
-- Sorting is focusable and updates the result state.
+- Relevance sorting is displayed as read-only live Commerce state.
 - Pagination controls are reachable and update active page state.
 - Generative citations and feedback controls are keyboard reachable.
 - Retry actions are reachable.
@@ -42,4 +41,4 @@ The responsive E2E suite checks that search, suggestions, facets, results, gener
 
 ## Known Limitations
 
-The app does not yet run a manual screen-reader pass against real Coveo data. Live Headless controller states are covered indirectly through existing component structure and credential-free safety checks.
+The app does not yet run a manual screen-reader pass against real Coveo data. Live Headless Commerce states are covered through Playwright, but that is not a substitute for assistive-technology testing with real users.

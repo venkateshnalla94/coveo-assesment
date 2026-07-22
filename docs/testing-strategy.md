@@ -3,7 +3,7 @@
 ## Layers
 
 - Vitest covers runtime config, auth boundaries, Headless Commerce mapping, product UI, RGA components, Technical Resources, logging, and security helpers.
-- `npm run test:coverage` enforces 80% per-file thresholds for included application logic.
+- `npm run test:coverage` enforces 80% global thresholds for included application logic.
 - Playwright covers the live RoboMotion product discovery workflow against the local Next.js app.
 - Axe checks fail on serious or critical accessibility violations.
 
@@ -60,7 +60,7 @@ The Playwright suite covers:
 - responsive layouts at `375x812`, `768x1024`, `1024x768`, and `1440x900`
 - axe accessibility checks for the core product discovery states
 
-E2E no longer depends on runtime profiles, synthetic scenarios, sample search mode, or direct Commerce proxy routes.
+E2E depends on the active Headless Commerce path and does not use removed profile, scenario, or proxy routes.
 
 ## Known Gaps
 

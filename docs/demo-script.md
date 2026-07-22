@@ -1,0 +1,111 @@
+# Demo Script
+
+## 20-Minute Version
+
+## 0:00-2:00: RoboMotion And The Problem
+
+RoboMotion sells industrial robotics products into manufacturing contexts where buyers need confidence before they shortlist equipment. The problem is not just keyword search. A buyer needs to narrow a large catalog by application, compatible robot series, price, rating, and available technical guidance.
+
+Position the app as a product discovery experience, not a generic search demo.
+
+## 2:00-6:00: Search `welding arm`
+
+Type `wel` and show query suggestions. Submit `welding arm`.
+
+Show:
+
+- result count
+- product cards
+- price and promo price where present
+- rating
+- stock
+- category and brand
+- compatible robot series
+
+Explain that the product path is live Headless Commerce against the Commerce API.
+
+## 6:00-10:00: Facets, Pagination, And Sorting
+
+Apply the five validated facets:
+
+- Category
+- Compatible Robots
+- Brand
+- Price
+- Rating
+
+Explain the facet types:
+
+- hierarchical facets for category-style narrowing
+- regular facets for brand and compatible robot series
+- numerical-range facets for price and rating
+
+Show pagination and explain that sorting is intentionally relevance-only because that is the only live sort returned by the validated Commerce configuration.
+
+## 10:00-13:00: Comparison
+
+Select up to three products for comparison. Open the comparison drawer.
+
+Explain the customer value: a buyer moves from a broad catalog to a confident shortlist without losing compatibility and commercial context.
+
+## 13:00-15:00: Product Details
+
+Open a product details drawer.
+
+Show:
+
+- descriptions
+- images
+- compatibility fields
+- product URL
+- Contact Sales and Request Quote actions
+
+Clarify that these CTAs are demo interactions until connected to production CRM or commerce systems.
+
+## 15:00-17:00: AI Guidance And Resources
+
+Show AI Product Guidance and Technical Resources.
+
+Explain that RGA is grounded in content/blog material and supports technical research. It does not pick products and is not a product recommendation engine. Technical Resources use the Search API independently from Commerce products.
+
+## 17:00-19:00: Architecture, Auth, Analytics, Failure Isolation
+
+Use the architecture summary:
+
+```text
+Next.js UI
+├── Headless Commerce
+│   └── Coveo Commerce API
+├── Generative Provider
+│   └── RGA
+└── Content Provider
+    └── Coveo Search API
+```
+
+Explain:
+
+- anonymous assessment mode uses the public anonymous API key
+- secured production mode uses `/api/search-token`
+- there is no credential fallback
+- Headless Commerce owns product search behavior and analytics
+- RGA and resources fail independently from product search
+
+## 19:00-20:00: Production Evolution
+
+Close with customer value and production next steps:
+
+- structured manufacturing specifications
+- more facets for payload, reach, certifications, and controller compatibility
+- production CTA integrations
+- identity-aware search
+- analytics dashboards
+- configured Commerce sorting and recommendations
+
+## 5-Minute Version
+
+1. Open with the buyer problem: narrow a robotics catalog quickly and safely.
+2. Search `welding arm`, show suggestions, result count, cards, price, rating, stock, and compatibility.
+3. Apply category, compatible robots, brand, price, and rating facets; mention relevance-only sorting and pagination.
+4. Compare three products and open one product detail drawer.
+5. Show AI Product Guidance and Technical Resources; state clearly that RGA is guidance, not recommendations.
+6. Close with the architecture and auth boundary: Headless Commerce for products, RGA for guidance, Search API for resources, no credential fallback.

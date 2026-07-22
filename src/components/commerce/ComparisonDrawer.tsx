@@ -28,10 +28,6 @@ export function ComparisonDrawer({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
 
-  if (products.length === 0) {
-    return null;
-  }
-
   const rows = getComparisonRows(products);
 
   return (
@@ -43,31 +39,35 @@ export function ComparisonDrawer({
             <X aria-hidden="true" size={18} />
           </button>
         </div>
-        <div className="comparison-table-wrap">
-          <table className="comparison-table">
-            <thead>
-              <tr>
-                <th scope="col">Field</th>
-                {products.map((product) => (
-                  <th scope="col" key={product.id}>
-                    <span>{product.id}</span>
-                    <small>{product.title}</small>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.label}>
-                  <th scope="row">{row.label}</th>
-                  {row.values.map((value, index) => (
-                    <td key={`${row.label}-${products[index].id}`}>{value || "Not available"}</td>
+        {products.length === 0 ? (
+          <p className="comparison-empty-state">Add products to compare to see them side by side.</p>
+        ) : (
+          <div className="comparison-table-wrap">
+            <table className="comparison-table">
+              <thead>
+                <tr>
+                  <th scope="col">Field</th>
+                  {products.map((product) => (
+                    <th scope="col" key={product.id}>
+                      <span>{product.title}</span>
+                      <small>{product.id}</small>
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr key={row.label}>
+                    <th scope="row">{row.label}</th>
+                    {row.values.map((value, index) => (
+                      <td key={`${row.label}-${products[index].id}`}>{value || "Not available"}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
     </div>
   );

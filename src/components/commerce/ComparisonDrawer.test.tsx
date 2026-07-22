@@ -1,8 +1,12 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ComparisonDrawer } from "@/components/commerce/ComparisonDrawer";
 import type { ProductResult } from "@/features/commerce/models/commerce-models";
+
+afterEach(() => {
+  cleanup();
+});
 
 describe("ComparisonDrawer", () => {
   it("compares only confirmed product fields", () => {
@@ -29,5 +33,14 @@ describe("ComparisonDrawer", () => {
     expect(screen.getByRole("dialog", { name: "Compare products" })).toBeTruthy();
     expect(screen.getByRole("rowheader", { name: "Compatible Robot Series" })).toBeTruthy();
     expect(screen.queryByText("Payload")).toBeNull();
+    expect(screen.getByRole("columnheader", { name: /Product 1/ })).toBeTruthy();
+  });
+
+  it("shows a zero-state instead of disappearing when opened with no products", () => {
+    render(<ComparisonDrawer onClose={vi.fn()} products={[]} />);
+
+    expect(screen.getByRole("dialog", { name: "Compare products" })).toBeTruthy();
+    expect(screen.getByText(/Add products to compare/i)).toBeTruthy();
+    expect(screen.queryByRole("table")).toBeNull();
   });
 });

@@ -17,6 +17,9 @@ import {
 } from "@/features/generative/services/generative-state";
 import type { SearchFeatureFlags } from "@/lib/features/search-feature-flags";
 
+const STREAMING_CHARACTER_INTERVAL_MS = 24;
+const STREAMING_CHARACTERS_PER_TICK = 1;
+
 export function GenerativeAnswer({
   feedbackProvider,
   featureFlags,
@@ -53,6 +56,7 @@ export function GenerativeAnswer({
     }
 
     let isCurrent = true;
+    let streamingTimer: number | undefined;
     lastRequestedQuery.current = trimmedQuery;
     trackedStateKey.current = "";
     dispatch({ type: "requested", query: trimmedQuery });
@@ -70,34 +74,44 @@ export function GenerativeAnswer({
           return;
         }
 
-        if (featureFlags.enableGenerativeStreaming) {
-          dispatch({
-            type: "streamed",
-            query: trimmedQuery,
-            partialAnswer: answer.answer.slice(0, Math.ceil(answer.answer.length / 2)),
-            citations: featureFlags.enableGenerativeCitations ? answer.citations : [],
-          });
-          window.setTimeout(() => {
-            if (isCurrent) {
-              dispatch({
-                type: "completed",
-                answer: {
-                  ...answer,
-                  citations: featureFlags.enableGenerativeCitations ? answer.citations : [],
-                },
-              });
+        const completedAnswer = {
+          ...answer,
+          citations: featureFlags.enableGenerativeCitations ? answer.citations : [],
+        };
+
+        if (featureFlags.enableGenerativeStreaming && !prefersReducedMotion()) {
+          let visibleCharacters = 0;
+
+          const revealNextChunk = () => {
+            if (!isCurrent) {
+              return;
             }
-          }, 60);
+
+            visibleCharacters = Math.min(
+              visibleCharacters + STREAMING_CHARACTERS_PER_TICK,
+              answer.answer.length,
+            );
+
+            dispatch({
+              type: "streamed",
+              query: trimmedQuery,
+              partialAnswer: answer.answer.slice(0, visibleCharacters),
+              citations: [],
+            });
+
+            if (visibleCharacters >= answer.answer.length) {
+              dispatch({ type: "completed", answer: completedAnswer });
+              return;
+            }
+
+            streamingTimer = window.setTimeout(revealNextChunk, STREAMING_CHARACTER_INTERVAL_MS);
+          };
+
+          revealNextChunk();
           return;
         }
 
-        dispatch({
-          type: "completed",
-          answer: {
-            ...answer,
-            citations: featureFlags.enableGenerativeCitations ? answer.citations : [],
-          },
-        });
+        dispatch({ type: "completed", answer: completedAnswer });
       })
       .catch((error: unknown) => {
         if (isCurrent) {
@@ -111,6 +125,9 @@ export function GenerativeAnswer({
 
     return () => {
       isCurrent = false;
+      if (streamingTimer) {
+        window.clearTimeout(streamingTimer);
+      }
     };
   }, [
     analytics,
@@ -183,6 +200,7 @@ export function GenerativeAnswer({
         <GenerativeAnswerContent
           answer={state.partialAnswer}
           citations={state.citations}
+          isStreaming
           query={state.query}
         />
       ) : null}
@@ -205,5 +223,13 @@ export function GenerativeAnswer({
         <GenerativeError message={state.message} onRetry={retry} />
       ) : null}
     </section>
+  );
+}
+
+function prefersReducedMotion() {
+  return (
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
   );
 }

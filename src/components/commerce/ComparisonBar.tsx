@@ -22,7 +22,9 @@ export function ComparisonBar({
   return (
     <section className="comparison-bar" aria-label="Product comparison">
       <div>
-        <strong>{products.length} products selected</strong>
+        <strong>
+          {products.length} {products.length === 1 ? "product" : "products"} selected
+        </strong>
         <p>You can compare up to 3 products.</p>
         <button className="link-button" onClick={onClear} type="button">
           Clear all

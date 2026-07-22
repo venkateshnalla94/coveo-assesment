@@ -8,9 +8,15 @@ type SearchTokenResponse = {
   searchHub?: string;
   pipeline?: string;
   facetFields?: string[];
+  code?: string;
   error?: string;
-  status?: number;
-  detail?: string;
+  upstream?: {
+    endpoint: string;
+    errorCode?: string;
+    responseShape: string;
+    service: string;
+    status: number;
+  };
 };
 
 type TokenRequestPayload = {
@@ -39,6 +45,8 @@ function clearCoveoEnv() {
 }
 
 function setRequiredEnv() {
+  process.env.COVEO_AUTH_MODE = "search-token";
+  process.env.COVEO_AUTHENTICATED_SEARCH_API_KEY = "authenticated-search-key";
   process.env.COVEO_ORGANIZATION_ID = "example-org";
   process.env.COVEO_PLATFORM_API_KEY = "test-api-key";
 }
@@ -63,7 +71,39 @@ describe("GET /api/search-token", () => {
 
     expect(response.status).toBe(500);
     expect(response.headers.get("Cache-Control")).toBe("no-store, max-age=0");
-    expect(body.error).toBe("Missing required environment variable: COVEO_ORGANIZATION_ID");
+    expect(body.code).toBe("CONFIGURATION_ERROR");
+    expect(body.error).toBe("Missing required environment variable: COVEO_AUTH_MODE");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("returns a typed configuration error when search-token mode is not enabled", async () => {
+    process.env.COVEO_AUTH_MODE = "anonymous-api-key";
+    const fetchMock = vi.fn<typeof fetch>();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await GET();
+    const body = await responseBody(response);
+
+    expect(response.status).toBe(400);
+    expect(body).toEqual({
+      code: "CONFIGURATION_ERROR",
+      error: "/api/search-token is only available when COVEO_AUTH_MODE=search-token.",
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("requires a server-only authenticated-search key in search-token mode", async () => {
+    setRequiredEnv();
+    delete process.env.COVEO_AUTHENTICATED_SEARCH_API_KEY;
+    const fetchMock = vi.fn<typeof fetch>();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await GET();
+    const body = await responseBody(response);
+
+    expect(response.status).toBe(500);
+    expect(body.code).toBe("CONFIGURATION_ERROR");
+    expect(body.error).toBe("Missing required environment variable: COVEO_AUTHENTICATED_SEARCH_API_KEY");
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -96,6 +136,7 @@ describe("GET /api/search-token", () => {
       facetFields: ["source", "filetype", "author"],
     });
     expect(JSON.stringify(body)).not.toContain("test-api-key");
+    expect(JSON.stringify(body)).not.toContain("authenticated-search-key");
 
     expect(fetchMock).toHaveBeenCalledWith(
       "https://example-org.org.coveo.com/rest/search/v2/token?organizationId=example-org",
@@ -110,7 +151,7 @@ describe("GET /api/search-token", () => {
 
     expect(requestInit.headers).toMatchObject({
       Accept: "application/json",
-      Authorization: "Bearer test-api-key",
+      Authorization: "Bearer authenticated-search-key",
       "Content-Type": "application/json",
     });
     expect(payload).toEqual({
@@ -131,7 +172,10 @@ describe("GET /api/search-token", () => {
     setRequiredEnv();
 
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
-      new Response("invalid privileges", { status: 401 }),
+      new Response(JSON.stringify({ code: "INVALID_API_KEY", message: "redacted by route" }), {
+        headers: { "Content-Type": "application/json" },
+        status: 401,
+      }),
     );
     vi.stubGlobal("fetch", fetchMock);
 
@@ -141,10 +185,17 @@ describe("GET /api/search-token", () => {
     expect(response.status).toBe(502);
     expect(response.headers.get("Cache-Control")).toBe("no-store, max-age=0");
     expect(body).toEqual({
+      code: "TOKEN_MINT_FAILED",
       error: "Unable to mint Coveo search token.",
-      status: 401,
+      upstream: {
+        endpoint: "search-v2-token",
+        errorCode: "INVALID_API_KEY",
+        responseShape: "object:code,message",
+        service: "search-token",
+        status: 401,
+      },
     });
-    expect(JSON.stringify(body)).not.toContain("invalid privileges");
+    expect(JSON.stringify(body)).not.toContain("redacted by route");
   });
 
   it("uses an explicit token endpoint override when configured", async () => {
@@ -219,7 +270,14 @@ describe("GET /api/search-token", () => {
     expect(response.status).toBe(502);
     expect(response.headers.get("Cache-Control")).toBe("no-store, max-age=0");
     expect(body).toEqual({
+      code: "TOKEN_RESPONSE_INVALID",
       error: "Coveo token response did not include a token.",
+      upstream: {
+        endpoint: "search-v2-token",
+        responseShape: "object:",
+        service: "search-token",
+        status: 200,
+      },
     });
   });
 });

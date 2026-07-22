@@ -82,12 +82,18 @@ export function ProductRightRail({
   );
   const feedbackProvider = useMemo(() => new InMemoryFeedbackProvider(), []);
   const trendingProvider = useMemo(
-    () => (sampleMode ? new MockTrendingProvider(technicalResources) : new CoveoContentTrendingProvider(query)),
+    () =>
+      sampleMode
+        ? new MockTrendingProvider(technicalResources)
+        : new CoveoContentTrendingProvider(query),
     [query, sampleMode],
   );
 
   return (
-    <aside className="insights-rail product-right-rail" aria-label="Product guidance and resources">
+    <aside
+      className="insights-rail product-right-rail"
+      aria-label="Product guidance and resources"
+    >
       <section className="insight-card guidance-summary">
         <div className="insight-card-title">
           <Sparkles aria-hidden="true" size={18} />
@@ -116,7 +122,7 @@ export function ProductRightRail({
           enableGenerativeCitations: true,
           enableGenerativeDisclaimer: true,
           enableGenerativeFeedback: true,
-          enableGenerativeStreaming: false,
+          enableGenerativeStreaming: true,
         }}
         provider={generativeProvider}
         query={query}

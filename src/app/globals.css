@@ -144,6 +144,10 @@ p {
   padding: 0 max(24px, calc((100vw - 1500px) / 2));
 }
 
+.main-header > * {
+  min-width: 0;
+}
+
 .brand,
 .footer-brand {
   display: inline-flex;
@@ -169,6 +173,8 @@ p {
   align-items: stretch;
   gap: 30px;
   height: 82px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .primary-nav a {
@@ -261,6 +267,7 @@ p {
 
 .search-box input {
   min-width: 0;
+  max-width: 100%;
   border: 0;
   outline: 0;
   color: var(--text);
@@ -396,11 +403,13 @@ p {
 }
 
 .search-context-row span {
+  max-width: 100%;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--surface);
   color: var(--muted);
   font-size: 0.78rem;
+  overflow-wrap: anywhere;
   padding: 6px 10px;
 }
 
@@ -415,6 +424,7 @@ p {
 }
 
 .facet-sidebar {
+  min-width: 0;
   overflow: hidden;
 }
 
@@ -496,6 +506,7 @@ p {
 }
 
 .facet-value span:nth-child(2) {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -831,8 +842,32 @@ p {
   line-height: 1.65;
 }
 
+.generative-streaming-text::after {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 3px;
+  border-radius: 999px;
+  background: var(--accent);
+  vertical-align: -0.12em;
+  animation: generative-cursor-blink 0.9s steps(2, start) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .generative-streaming-text::after {
+    animation: none;
+  }
+}
+
 .generative-read-more {
   justify-self: start;
+}
+
+@keyframes generative-cursor-blink {
+  50% {
+    opacity: 0;
+  }
 }
 
 .generative-modal-backdrop {
@@ -1298,17 +1333,31 @@ p {
 .product-meta-grid dd {
   display: flex;
   align-items: center;
+  min-width: 0;
   gap: 4px;
   margin: 3px 0 0;
   color: var(--text);
   font-size: 0.86rem;
   font-weight: 750;
+  overflow-wrap: anywhere;
 }
 
 .product-card-actions {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 10px;
+}
+
+.product-card-actions button,
+.comparison-bar,
+.comparison-chip,
+.citation-item,
+.citation-item a,
+.citation-item span,
+.trending-list a,
+.trending-list span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .primary-text-button {
@@ -1681,6 +1730,8 @@ p {
     order: 3;
     height: 48px;
     overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-inline: contain;
   }
 
   .header-actions {
@@ -1764,6 +1815,11 @@ p {
 
   .search-box {
     grid-template-columns: auto minmax(0, 1fr) auto auto;
+    gap: 6px;
+  }
+
+  .search-command-bar {
+    padding-inline: 12px;
   }
 
   .app-shell {
@@ -1776,6 +1832,18 @@ p {
 
   .results-toolbar {
     display: grid;
+  }
+
+  .pager {
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 4px;
+    overscroll-behavior-inline: contain;
+  }
+
+  .search-context-row {
+    justify-content: flex-start;
   }
 
   .sort-control {

@@ -23,6 +23,10 @@ import {
   type GenerativeProviderCapabilities,
   type SearchProviderCapabilities,
 } from "@/features/search/capabilities/provider-capabilities";
+import {
+  isCoveoAuthMode,
+  type CoveoAuthMode,
+} from "@/features/commerce/headless/commerce-auth";
 
 export type RuntimeEnvironment = "development" | "test" | "production";
 export type SearchProviderMode = "mock" | "coveo";
@@ -34,6 +38,9 @@ export interface RuntimeConfig {
   scenario: DevelopmentScenario;
   featureFlags: FeatureFlags;
   coveo: {
+    anonymousSearchApiKeyConfigured: boolean;
+    authMode?: CoveoAuthMode;
+    authenticatedSearchApiKeyConfigured: boolean;
     organizationId?: string;
     searchEndpoint?: string;
     tokenConfigured: boolean;
@@ -49,6 +56,7 @@ export interface RuntimeConfig {
 
 export interface ServerOnlyRuntimeConfig {
   coveo: {
+    authenticatedSearchApiKey?: string;
     platformApiKey?: string;
     searchTokenEndpoint?: string;
     userId: string;
@@ -64,6 +72,7 @@ export function resolveRuntimeConfig({
   searchParams?: Record<string, string | string[] | undefined>;
 } = {}): RuntimeConfig {
   const runtimeEnvironment = normalizeEnvironment(environment.NODE_ENV);
+  const authMode = resolveCoveoAuthMode(environment.COVEO_AUTH_MODE);
   const envOverrides = getEnvironmentFeatureFlagOverrides(environment);
   const queryOverridesEnabled =
     runtimeEnvironment !== "production" &&
@@ -85,6 +94,7 @@ export function resolveRuntimeConfig({
           envOverrides.generative?.enabled ??
           envOverrides.demo?.sampleSearchResponse ??
           true,
+        streaming: envOverrides.generative?.streaming ?? true,
       },
     },
     environment: envOverrides,
@@ -110,11 +120,19 @@ export function resolveRuntimeConfig({
           : coveoHeadlessCapabilities,
     },
     coveo: {
+      anonymousSearchApiKeyConfigured: Boolean(
+        optional(environment.NEXT_PUBLIC_COVEO_ANONYMOUS_SEARCH_API_KEY),
+      ),
+      authMode,
+      authenticatedSearchApiKeyConfigured: Boolean(
+        optional(environment.COVEO_AUTHENTICATED_SEARCH_API_KEY),
+      ),
       organizationId: optional(environment.COVEO_ORGANIZATION_ID),
       searchEndpoint: optional(environment.COVEO_SEARCH_TOKEN_ENDPOINT),
       tokenConfigured: Boolean(
         optional(environment.COVEO_ORGANIZATION_ID) &&
-        optional(environment.COVEO_PLATFORM_API_KEY),
+          authMode === "search-token" &&
+          optional(environment.COVEO_AUTHENTICATED_SEARCH_API_KEY),
       ),
     },
     demoProfile: profile,
@@ -138,6 +156,9 @@ export function resolveServerOnlyRuntimeConfig(
 ): ServerOnlyRuntimeConfig {
   return {
     coveo: {
+      authenticatedSearchApiKey: optional(
+        environment.COVEO_AUTHENTICATED_SEARCH_API_KEY,
+      ),
       identityProvider:
         optional(environment.COVEO_IDENTITY_PROVIDER) ??
         "Email Security Provider",
@@ -152,6 +173,22 @@ export function normalizeEnvironment(
   value: string | undefined,
 ): RuntimeEnvironment {
   return value === "production" || value === "test" ? value : "development";
+}
+
+function resolveCoveoAuthMode(value: string | undefined): CoveoAuthMode | undefined {
+  const normalized = optional(value);
+
+  if (!normalized) {
+    return undefined;
+  }
+
+  if (!isCoveoAuthMode(normalized)) {
+    throw new Error(
+      "COVEO_AUTH_MODE must be either anonymous-api-key or search-token.",
+    );
+  }
+
+  return normalized;
 }
 
 function getQueryFeatureFlagOverrides(
@@ -212,6 +249,8 @@ export const fallbackRuntimeConfig: RuntimeConfig = {
     search: inMemorySearchCapabilities,
   },
   coveo: {
+    anonymousSearchApiKeyConfigured: false,
+    authenticatedSearchApiKeyConfigured: false,
     tokenConfigured: false,
   },
   demoProfile: resolveDemoProfile(DEFAULT_DEMO_PROFILE_ID),
@@ -223,6 +262,11 @@ export const fallbackRuntimeConfig: RuntimeConfig = {
     defaults: {
       ...defaultFeatureFlags,
       demo: { ...defaultFeatureFlags.demo, sampleSearchResponse: true },
+      generative: {
+        ...defaultFeatureFlags.generative,
+        enabled: true,
+        streaming: true,
+      },
     },
   }),
   scenario: DEFAULT_DEVELOPMENT_SCENARIO,

@@ -4,8 +4,8 @@ Secured Coveo Headless search UI built with Next.js App Router and TypeScript.
 
 ## What is Built
 
-- Thin server route that mints short-lived Coveo search tokens.
-- Browser-side Coveo Headless engine that queries Coveo Search API directly.
+- Explicit Coveo auth modes for public anonymous Headless Commerce or server-minted search tokens.
+- Browser-side Coveo Headless Commerce engine that queries the public catalog directly in anonymous mode.
 - Search box with query suggestions.
 - Result list with click analytics through `buildInteractiveResult`.
 - Configurable facets.
@@ -23,19 +23,19 @@ Secured Coveo Headless search UI built with Next.js App Router and TypeScript.
 ## Architecture
 
 ```text
-React app -> /api/search-token -> Coveo token endpoint
-React app -> Coveo Search API directly with short-lived token
+Anonymous mode: React app -> Coveo Headless Commerce -> Coveo Commerce API
+Search-token mode: React app -> /api/search-token -> Coveo token endpoint
 ```
 
-The backend is not a search proxy. It only protects the privileged authenticated-search API key and mints scoped tokens. Coveo already hosts and scales the Search API, query pipelines, ranking, and analytics. Proxying every query would add latency and operational ownership without value for this assessment.
+The backend is not a general search proxy. In `search-token` mode, `/api/search-token` protects a server-only authenticated-search key and mints scoped tokens. In `anonymous-api-key` mode, Headless Commerce uses the explicitly public anonymous key directly for public catalog discovery. Coveo already hosts and scales the APIs, query pipelines, ranking, and analytics.
 
-The RoboMotion product experience uses a separate secure Commerce route:
+The direct Commerce route is retained as rollback:
 
 ```text
 Product UI -> /api/coveo/commerce/search -> Coveo Commerce Search API
 ```
 
-The server route keeps `COVEO_PLATFORM_API_KEY` server-side, sends Commerce context, and maps returned products into a product domain model before client UI renders them. Supporting technical content and generated guidance remain separate from Commerce product search.
+That server route keeps `COVEO_PLATFORM_API_KEY` server-side, sends Commerce context, and maps returned products into a product domain model before client UI renders them. Supporting technical content and generated guidance remain separate from Commerce product search.
 
 ## Setup
 
@@ -55,7 +55,10 @@ cp .env.example .env.local
 
 ```bash
 COVEO_ORGANIZATION_ID=
+COVEO_AUTH_MODE=anonymous-api-key
+NEXT_PUBLIC_COVEO_ANONYMOUS_SEARCH_API_KEY=
 COVEO_PLATFORM_API_KEY=
+COVEO_AUTHENTICATED_SEARCH_API_KEY=
 COVEO_SEARCH_HUB=
 COVEO_PIPELINE=
 COVEO_FACET_FIELDS=source,filetype
@@ -81,6 +84,11 @@ COVEO_CONTENT_PIPELINE=default
 Commerce facets are returned by the Commerce API and mapped in application code; they are not configured through `COVEO_FACET_FIELDS`.
 
 For real browser testing, set `COVEO_FEATURE_SAMPLE_SEARCH_RESPONSE=false`. Products call `/api/coveo/commerce/search`, query suggestions call `/api/coveo/commerce/suggestions`, RGA calls `/api/coveo/generative/answer`, and technical resources call `/api/coveo/content/search`. All four routes keep `COVEO_PLATFORM_API_KEY` server-side.
+
+Headless Commerce supports two explicit authentication modes:
+
+- `COVEO_AUTH_MODE=anonymous-api-key` initializes browser-side Headless Commerce with `NEXT_PUBLIC_COVEO_ANONYMOUS_SEARCH_API_KEY`. This mode is valid only for public anonymous catalog data and must be explicitly configured; app code never falls back to `COVEO_PLATFORM_API_KEY`.
+- `COVEO_AUTH_MODE=search-token` preserves `/api/search-token`, but requires a separate server-only `COVEO_AUTHENTICATED_SEARCH_API_KEY` capable of minting search tokens. The supplied assessment credential is described as an Anonymous Search API key, so it can execute anonymous Commerce queries but should not be assumed to mint identity-bearing search tokens.
 
 Optional feature flags:
 

@@ -15,7 +15,7 @@ describe("getSearchFeatureFlags", () => {
       enableGenerativeCitations: true,
       enableGenerativeDisclaimer: true,
       enableGenerativeFeedback: true,
-      enableGenerativeStreaming: false,
+      enableGenerativeStreaming: true,
       enableInsightsRail: true,
       enablePopularContent: true,
       enableRelatedQueries: true,

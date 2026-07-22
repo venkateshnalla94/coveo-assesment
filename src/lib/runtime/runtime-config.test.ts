@@ -11,6 +11,8 @@ describe("runtime config", () => {
   it("resolves public runtime config without serializing secrets", () => {
     const config = resolveRuntimeConfig({
       environment: {
+        COVEO_AUTH_MODE: "search-token",
+        COVEO_AUTHENTICATED_SEARCH_API_KEY: "private-token-minting-key",
         COVEO_ORGANIZATION_ID: "org",
         COVEO_PLATFORM_API_KEY: "secret",
         COVEO_FEATURE_SAMPLE_SEARCH_RESPONSE: "false",
@@ -24,7 +26,40 @@ describe("runtime config", () => {
     expect(config.demoProfile.id).toBe("minimal");
     expect(config.scenario).toBe("default");
     expect(config.searchProvider).toBe("coveo");
+    expect(config.coveo.authMode).toBe("search-token");
+    expect(config.coveo.tokenConfigured).toBe(true);
     expect(JSON.stringify(config)).not.toContain("secret");
+    expect(JSON.stringify(config)).not.toContain("private-token-minting-key");
+  });
+
+  it("resolves anonymous API key mode only from the explicit public variable", () => {
+    const config = resolveRuntimeConfig({
+      environment: {
+        COVEO_AUTH_MODE: "anonymous-api-key",
+        COVEO_ORGANIZATION_ID: "org",
+        COVEO_PLATFORM_API_KEY: "server-only-key",
+        NEXT_PUBLIC_COVEO_ANONYMOUS_SEARCH_API_KEY: "public-anonymous-key",
+        NODE_ENV: "production",
+      },
+    });
+
+    expect(config.coveo.authMode).toBe("anonymous-api-key");
+    expect(config.coveo.anonymousSearchApiKeyConfigured).toBe(true);
+    expect(config.coveo.authenticatedSearchApiKeyConfigured).toBe(false);
+    expect(config.coveo.tokenConfigured).toBe(false);
+    expect(JSON.stringify(config)).not.toContain("server-only-key");
+    expect(JSON.stringify(config)).not.toContain("public-anonymous-key");
+  });
+
+  it("rejects invalid Coveo auth modes", () => {
+    expect(() =>
+      resolveRuntimeConfig({
+        environment: {
+          COVEO_AUTH_MODE: "platform-key",
+          NODE_ENV: "production",
+        },
+      }),
+    ).toThrow("COVEO_AUTH_MODE must be either anonymous-api-key or search-token.");
   });
 
   it("allows development profile and scenario query overrides", () => {
@@ -123,9 +158,14 @@ describe("runtime config", () => {
     expect(
       resolveServerOnlyRuntimeConfig({
         COVEO_PLATFORM_API_KEY: "secret",
+        COVEO_AUTHENTICATED_SEARCH_API_KEY: "authenticated",
         COVEO_USER_ID: "user",
       }).coveo,
-    ).toMatchObject({ platformApiKey: "secret", userId: "user" });
+    ).toMatchObject({
+      authenticatedSearchApiKey: "authenticated",
+      platformApiKey: "secret",
+      userId: "user",
+    });
   });
 
   it("normalizes environment names and exposes fallback config", () => {

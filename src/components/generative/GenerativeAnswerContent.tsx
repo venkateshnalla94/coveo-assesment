@@ -12,11 +12,13 @@ export function GenerativeAnswerContent({
   answer,
   citations,
   compact = true,
+  isStreaming = false,
   query,
 }: {
   answer: string;
   citations: GenerativeCitation[];
   compact?: boolean;
+  isStreaming?: boolean;
   query: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -63,18 +65,22 @@ export function GenerativeAnswerContent({
   }
 
   return (
-    <div className="generative-content">
-      <p>{getCompactAnswer(answer)}</p>
-      <button
-        className="secondary-button generative-read-more"
-        onClick={() => setIsOpen(true)}
-        ref={triggerRef}
-        type="button"
-      >
-        Read full guidance and citations
-      </button>
+    <div aria-busy={isStreaming} aria-live="polite" className="generative-content">
+      <p className={isStreaming ? "generative-streaming-text" : undefined}>
+        {isStreaming ? answer : getCompactAnswer(answer)}
+      </p>
+      {isStreaming ? null : (
+        <button
+          className="secondary-button generative-read-more"
+          onClick={() => setIsOpen(true)}
+          ref={triggerRef}
+          type="button"
+        >
+          Read full guidance and citations
+        </button>
+      )}
 
-      {isOpen ? (
+      {isOpen && !isStreaming ? (
         <div className="drawer-backdrop generative-modal-backdrop" role="presentation">
           <section
             aria-labelledby={titleId}

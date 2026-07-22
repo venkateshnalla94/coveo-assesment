@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -38,6 +38,7 @@ function renderGenerative({
 
 describe("GenerativeAnswer", () => {
   afterEach(() => {
+    vi.useRealTimers();
     cleanup();
   });
 
@@ -86,6 +87,8 @@ describe("GenerativeAnswer", () => {
   });
 
   it("supports streaming-like progressive display", async () => {
+    vi.useFakeTimers();
+
     render(
       <AnalyticsProviderRoot enabled provider={{ track: vi.fn() }}>
         <GenerativeAnswer
@@ -95,13 +98,32 @@ describe("GenerativeAnswer", () => {
             enableGenerativeAnswers: true,
             enableGenerativeStreaming: true,
           }}
-          provider={new MockGenerativeProvider()}
+          provider={
+            new MockGenerativeProvider({
+              answer: {
+                answer: "Streaming answer text.",
+                citations: [],
+              },
+            })
+          }
           query="digital transformation"
         />
       </AnalyticsProviderRoot>,
     );
 
-    expect(await screen.findByText(/Fixture-backed summary/)).toBeTruthy();
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(screen.getByText("S")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Read full guidance and citations" })).toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(1_000);
+    });
+
+    expect(screen.getByText("Streaming answer text.")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Read full guidance and citations" })).toBeTruthy();
   });
 
   it("can suppress citations without making sourced claims", async () => {

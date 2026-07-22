@@ -44,12 +44,17 @@ type HeadlessFacetLike = {
   };
 };
 
-export function mapHeadlessProduct(product: HeadlessProductLike, index: number): ProductResult {
-  const id =
+export function resolveProductId(product: HeadlessProductLike, index: number): string {
+  return (
     asString(product.ec_product_id) ??
     asString(product.permanentid) ??
     asString(getField(product, "ec_product_id")) ??
-    `commerce-product-${index + 1}`;
+    `commerce-product-${index + 1}`
+  );
+}
+
+export function mapHeadlessProduct(product: HeadlessProductLike, index: number): ProductResult {
+  const id = resolveProductId(product, index);
   const fullDescription = asString(product.ec_description) ?? asString(getField(product, "ec_description"));
   const description =
     asString(product.ec_shortdesc) ??

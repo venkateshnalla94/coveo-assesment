@@ -8,6 +8,7 @@ import {
   getOrganizationEndpoints,
   type CategoryFacet,
   type CommerceEngine,
+  type DidYouMean,
   type FacetGenerator,
   type NumericFacet,
   type Pagination,
@@ -26,7 +27,9 @@ import {
   mapHeadlessFacets,
   mapHeadlessPagination,
   mapHeadlessProduct,
+  resolveProductId,
 } from "@/features/commerce/headless/headless-commerce-mappers";
+import type { Analytics } from "@/features/analytics/analytics";
 import type { ProductSearchResponse } from "@/features/commerce/models/commerce-models";
 import type { SearchSuggestion } from "@/features/search/models/search-models";
 import { fetchSearchTokenConfig } from "@/lib/coveo/search-token";
@@ -41,6 +44,7 @@ type CommerceControllerBundle = {
   summary: Summary;
   sort: Sort;
   facetGenerator: FacetGenerator;
+  didYouMean: DidYouMean;
 };
 
 type CommerceAdapterSnapshot =
@@ -67,15 +71,18 @@ type CommerceAdapterSnapshot =
     };
 
 export function useHeadlessCommerce({
+  analytics,
   authConfig,
   enabled,
   initialQuery = "welding arm",
 }: {
+  analytics?: Analytics;
   authConfig: HeadlessCommerceAuthConfig;
   enabled: boolean;
   initialQuery?: string;
 }) {
   const bundleRef = useRef<CommerceControllerBundle | null>(null);
+  const [retryToken, setRetryToken] = useState(0);
   const [snapshot, setSnapshot] = useState<CommerceAdapterSnapshot>(() =>
     authConfig.mode === "configuration-error"
       ? {
@@ -114,6 +121,7 @@ export function useHeadlessCommerce({
           token: resolvedAuth.token,
         });
         bundleRef.current = bundle;
+        analytics?.attachRelay(bundle.engine.relay);
 
         const updateSnapshot = () => {
           if (isCurrent) {
@@ -154,9 +162,10 @@ export function useHeadlessCommerce({
         window.clearTimeout(snapshotTimer);
       }
       unsubscribe?.();
+      analytics?.attachRelay(undefined);
       bundleRef.current = null;
     };
-  }, [authConfig, enabled, initialQuery]);
+  }, [analytics, authConfig, enabled, initialQuery, retryToken]);
 
   const suggestionsProvider = useMemo(
     () => ({
@@ -186,6 +195,19 @@ export function useHeadlessCommerce({
       }
     },
     clearQuery: () => bundleRef.current?.searchBox.clear(),
+    retry: () => {
+      const bundle = bundleRef.current;
+
+      if (bundle) {
+        // Re-issues the current query/facet state as-is; no need to rebuild the engine.
+        bundle.searchBox.submit();
+        return;
+      }
+
+      // No bundle means engine/token setup itself failed (e.g. token mint failure). Re-running
+      // the init effect re-fetches a fresh token before retrying.
+      setRetryToken((count) => count + 1);
+    },
     selectPage: (page: number) => bundleRef.current?.pagination.selectPage(Math.max(0, page)),
     submitSearch: (query: string) => {
       const trimmedQuery = query.trim();
@@ -204,6 +226,18 @@ export function useHeadlessCommerce({
     },
     toggleRange: (field: string, start: number, end: number) => {
       toggleRangeValue(bundleRef.current?.facetGenerator.facets ?? [], field, start, end);
+    },
+    trackProductClick: (productId: string) => {
+      const bundle = bundleRef.current;
+      const rawProduct = bundle?.search.state.products.find(
+        (product, index) => resolveProductId(product, index) === productId,
+      );
+
+      if (!bundle || !rawProduct) {
+        return;
+      }
+
+      bundle.search.interactiveProduct({ options: { product: rawProduct } }).select();
     },
     updateQuery: (query: string) => bundleRef.current?.searchBox.updateText(query),
     ...snapshot,
@@ -249,6 +283,7 @@ function createCommerceControllers({
   });
 
   return {
+    didYouMean: search.didYouMean(),
     engine,
     facetGenerator: search.facetGenerator(),
     pagination,
@@ -329,10 +364,20 @@ function readCommerceSnapshot(bundle: CommerceControllerBundle): CommerceAdapter
 function buildSearchResponse(bundle: CommerceControllerBundle): ProductSearchResponse {
   const products = bundle.search.state.products.map(mapHeadlessProduct);
   const pagination = mapHeadlessPagination(bundle.pagination.state);
+  const didYouMeanState = bundle.didYouMean.state;
 
   return {
     appliedSort: "relevance",
     availableSorts: bundle.sort.state.availableSorts.length > 0 ? ["relevance"] : ["relevance"],
+    ...(didYouMeanState.wasAutomaticallyCorrected
+      ? {
+          didYouMean: {
+            correctedTo: didYouMeanState.wasCorrectedTo,
+            originalQuery: didYouMeanState.originalQuery,
+            wasAutomaticallyCorrected: true,
+          },
+        }
+      : {}),
     facets: mapHeadlessFacets(bundle.facetGenerator.facets),
     pagination,
     products,

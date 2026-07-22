@@ -1,5 +1,6 @@
 "use client";
 
+import type { Relay } from "@coveo/headless/commerce";
 import {
   createContext,
   useContext,
@@ -45,6 +46,8 @@ export interface AnalyticsEvent<TPayload = Record<string, unknown>> {
 
 export interface AnalyticsProvider {
   track(event: AnalyticsEvent): void | Promise<void>;
+  /** Attaches (or detaches, via `undefined`) the live engine's Relay client once the engine exists. */
+  attachRelay?(relay: Relay | undefined): void;
 }
 
 export class ConsoleAnalyticsProvider implements AnalyticsProvider {
@@ -53,9 +56,37 @@ export class ConsoleAnalyticsProvider implements AnalyticsProvider {
   }
 }
 
+/**
+ * Search-submit, facet-select, and pagination events are already logged natively by the
+ * Headless commerce engine (analytics.enabled: true). This provider only needs to forward the
+ * app-level events that have no native equivalent (compare, details, CTA clicks) onto the same
+ * Relay client so they land in the same Coveo Event stream and can feed ML/ART.
+ */
 export class CoveoAnalyticsProvider implements AnalyticsProvider {
-  track(): void {
-    // Coveo Headless owns live usage analytics in the current architecture.
+  private relay: Relay | undefined;
+  private queue: AnalyticsEvent[] = [];
+
+  attachRelay(relay: Relay | undefined): void {
+    this.relay = relay;
+
+    if (relay && this.queue.length > 0) {
+      const pending = this.queue;
+      this.queue = [];
+      pending.forEach((event) => this.emit(relay, event));
+    }
+  }
+
+  track(event: AnalyticsEvent): void {
+    if (!this.relay) {
+      this.queue.push(event);
+      return;
+    }
+
+    this.emit(this.relay, event);
+  }
+
+  private emit(relay: Relay, event: AnalyticsEvent): void {
+    relay.emit(`robomotion/${event.name}`, { ...event.payload, timestamp: event.timestamp });
   }
 }
 
@@ -65,9 +96,11 @@ class NoopAnalyticsProvider implements AnalyticsProvider {
 
 export type Analytics = {
   track: (name: AnalyticsEventName, payload?: Record<string, unknown>) => void;
+  attachRelay: (relay: Relay | undefined) => void;
 };
 
 const noopAnalytics: Analytics = {
+  attachRelay: () => {},
   track: () => {},
 };
 
@@ -83,9 +116,10 @@ export function AnalyticsProviderRoot({
   provider: AnalyticsProvider;
 }) {
   const analytics = useMemo<Analytics>(() => {
-    const resolvedProvider = enabled ? provider : new NoopAnalyticsProvider();
+    const resolvedProvider: AnalyticsProvider = enabled ? provider : new NoopAnalyticsProvider();
 
     return {
+      attachRelay: (relay) => resolvedProvider.attachRelay?.(relay),
       track: (name, payload) => {
         void resolvedProvider.track({
           name,

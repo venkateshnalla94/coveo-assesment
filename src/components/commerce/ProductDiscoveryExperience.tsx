@@ -51,7 +51,7 @@ function HeadlessProductDiscoveryContent({
   initialQuery: string;
 }) {
   const analytics = useAnalytics();
-  const commerce = useHeadlessCommerce({ authConfig, enabled: true, initialQuery });
+  const commerce = useHeadlessCommerce({ analytics, authConfig, enabled: true, initialQuery });
   const [comparedProducts, setComparedProducts] = useState<ProductResult[]>([]);
   const [comparisonOpen, setComparisonOpen] = useState(false);
   const [detailsProduct, setDetailsProduct] = useState<ProductResult | null>(null);
@@ -86,6 +86,7 @@ function HeadlessProductDiscoveryContent({
 
   function openDetails(product: ProductResult) {
     analytics.track("product_details_opened", { productId: product.id });
+    commerce.trackProductClick(product.id);
     setDetailsProduct(product);
   }
 
@@ -130,7 +131,12 @@ function HeadlessProductDiscoveryContent({
 
           <section className="results-column product-results-column" aria-busy={commerce.status === "loading"} tabIndex={-1}>
             <div className="results-toolbar">
-              <ProductStatus isLoading={commerce.status === "loading"} pagination={pagination} query={commerce.query} />
+              <ProductStatus
+                didYouMean={response?.didYouMean}
+                isLoading={commerce.status === "loading"}
+                pagination={pagination}
+                query={commerce.query}
+              />
               <div className="sort-control">
                 <span>Sort by</span>
                 <span className="sort-readonly">Relevance</span>
@@ -141,6 +147,16 @@ function HeadlessProductDiscoveryContent({
               <div className="inline-error" role="alert">
                 <AlertCircle aria-hidden="true" size={18} />
                 <span>{commerce.message}</span>
+                <button
+                  className="secondary-button"
+                  onClick={() => {
+                    analytics.track("commerce_search_submitted", { mode: "retry", query: commerce.query });
+                    commerce.retry();
+                  }}
+                  type="button"
+                >
+                  Retry
+                </button>
               </div>
             ) : null}
 

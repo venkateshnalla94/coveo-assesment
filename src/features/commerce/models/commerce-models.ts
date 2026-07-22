@@ -106,12 +106,18 @@ export type ProductFacet =
   | ProductHierarchicalFacet
   | ProductNumericalRangeFacet;
 
+export interface ProductDidYouMean {
+  originalQuery: string;
+  correctedTo: string;
+  wasAutomaticallyCorrected: boolean;
+}
+
 export interface ProductSearchResponse {
   products: ProductResult[];
   facets: ProductFacet[];
   pagination: ProductPagination;
   totalCount: number;
-  queryCorrection?: unknown;
+  didYouMean?: ProductDidYouMean;
   availableSorts: string[];
   appliedSort: string;
 }

@@ -7,15 +7,13 @@ describe("feature flag resolution", () => {
   it("deep merges known boolean keys in deterministic precedence order", () => {
     const resolved = resolveFeatureFlags({
       defaults: defaultFeatureFlags,
-      developmentOverrides: { generative: { enabled: false } },
       environment: { generative: { enabled: true }, insights: { topic: false } },
-      profile: { facets: { product: false }, generative: { citations: false } },
     });
 
-    expect(resolved.generative.enabled).toBe(false);
-    expect(resolved.generative.citations).toBe(false);
+    expect(resolved.generative.enabled).toBe(true);
+    expect(resolved.generative.citations).toBe(true);
     expect(resolved.insights.topic).toBe(false);
-    expect(resolved.facets.product).toBe(false);
+    expect(resolved.facets.product).toBe(true);
     expect(resolved.facets.source).toBe(true);
   });
 

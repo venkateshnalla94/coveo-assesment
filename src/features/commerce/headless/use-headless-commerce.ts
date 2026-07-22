@@ -5,6 +5,7 @@ import {
   buildRelevanceSortCriterion,
   buildSearch,
   buildSearchBox,
+  getOrganizationEndpoints,
   type CategoryFacet,
   type CommerceEngine,
   type FacetGenerator,
@@ -30,7 +31,6 @@ import type { ProductSearchResponse } from "@/features/commerce/models/commerce-
 import type { SearchSuggestion } from "@/features/search/models/search-models";
 import { fetchSearchTokenConfig } from "@/lib/coveo/search-token";
 
-const COVEO_EU_PLATFORM_URL = "https://platform-eu.cloud.coveo.com";
 const SUGGESTION_WAIT_TIMEOUT_MS = 900;
 
 type CommerceControllerBundle = {
@@ -236,7 +236,7 @@ function createCommerceControllers({
         },
       },
       organizationId,
-      platformUrl: COVEO_EU_PLATFORM_URL,
+      organizationEndpoints: getOrganizationEndpoints(organizationId),
       ...(renewAccessToken ? { renewAccessToken } : {}),
     },
   });

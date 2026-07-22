@@ -3,7 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 
 import type { SearchSuggestion } from "@/features/search/models/search-models";
-import type { SearchProvider } from "@/features/search/providers/search-provider";
+
+export type SuggestionsProvider = {
+  getSuggestions: (
+    query: string,
+    options?: { signal?: AbortSignal },
+  ) => Promise<SearchSuggestion[]>;
+};
 
 export function useSearchSuggestions({
   enabled,
@@ -11,7 +17,7 @@ export function useSearchSuggestions({
   query,
 }: {
   enabled: boolean;
-  provider: Pick<SearchProvider, "getSuggestions">;
+  provider: SuggestionsProvider;
   query: string;
 }) {
   const [isLoading, setIsLoading] = useState(false);

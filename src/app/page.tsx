@@ -14,10 +14,7 @@ export default async function Home({
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const runtimeConfig = resolveRuntimeConfig({ searchParams: await searchParams });
-  const featureFlags = {
-    ...toSearchFeatureFlags(runtimeConfig.featureFlags),
-    enableSampleSearchResponse: false,
-  };
+  const featureFlags = toSearchFeatureFlags(runtimeConfig.featureFlags);
   const commerceAuthConfig = resolveHeadlessCommerceAuthConfig(runtimeConfig);
 
   return (

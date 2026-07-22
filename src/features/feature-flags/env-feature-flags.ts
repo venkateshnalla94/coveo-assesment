@@ -38,9 +38,6 @@ export function getEnvironmentFeatureFlagOverrides(
       enabled: readBooleanOverride(environment, "COVEO_FEATURE_ANALYTICS"),
       featureExposure: readBooleanOverride(environment, "COVEO_FEATURE_ANALYTICS_EXPOSURE"),
     },
-    demo: {
-      sampleSearchResponse: readBooleanOverride(environment, "COVEO_FEATURE_SAMPLE_SEARCH_RESPONSE"),
-    },
     facets: {
       contentType: readBooleanOverride(environment, "COVEO_FEATURE_FACET_CONTENT_TYPE"),
       enabled: readBooleanOverride(environment, "COVEO_FEATURE_FACETS"),

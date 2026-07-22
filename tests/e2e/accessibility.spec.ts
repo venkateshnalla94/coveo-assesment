@@ -39,15 +39,6 @@ test("default RoboMotion page has no serious accessibility violations", async ({
 
 test("suggestions, product results, facets, RGA, and details pass axe", async ({ page }) => {
   await page.route("**/api/search-token", (route) => route.fulfill({ contentType: "application/json", status: 502, body: "{}" }));
-  await page.route("**/api/coveo/commerce/suggestions", (route) =>
-    route.fulfill({
-      contentType: "application/json",
-      status: 200,
-      body: JSON.stringify({
-        suggestions: [{ id: "welding-arm", label: "welding arm", value: "welding arm" }],
-      }),
-    }),
-  );
 
   await openProductDiscovery(page);
   await page.getByRole("combobox", { name: "Search" }).click();

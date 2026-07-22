@@ -1,6 +1,13 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-import type { PaginationState } from "@/features/search/services/pagination";
+export type PaginationState = {
+  currentPage: number;
+  firstResult: number;
+  lastResult: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+};
 
 export function Pagination({
   onSelectPage,

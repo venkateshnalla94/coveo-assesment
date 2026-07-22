@@ -22,15 +22,6 @@ async function search(page: import("@playwright/test").Page, query: string) {
 
 test("keyboard interactions cover suggestions, facets, comparison, product details, and feedback", async ({ page }) => {
   await page.route("**/api/search-token", (route) => route.fulfill({ contentType: "application/json", status: 502, body: "{}" }));
-  await page.route("**/api/coveo/commerce/suggestions", (route) =>
-    route.fulfill({
-      contentType: "application/json",
-      status: 200,
-      body: JSON.stringify({
-        suggestions: [{ id: "welding-arm", label: "welding arm", value: "welding arm" }],
-      }),
-    }),
-  );
 
   await openProductDiscovery(page);
   const input = page.getByRole("combobox", { name: "Search" });

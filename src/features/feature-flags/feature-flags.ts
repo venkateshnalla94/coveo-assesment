@@ -35,9 +35,6 @@ export interface FeatureFlags {
     enabled: boolean;
     featureExposure: boolean;
   };
-  demo: {
-    sampleSearchResponse: boolean;
-  };
 }
 
 export type FeatureFlagOverrides = {
@@ -48,9 +45,6 @@ export const defaultFeatureFlags: Readonly<FeatureFlags> = Object.freeze({
   analytics: Object.freeze({
     enabled: true,
     featureExposure: true,
-  }),
-  demo: Object.freeze({
-    sampleSearchResponse: false,
   }),
   facets: Object.freeze({
     contentType: true,
@@ -97,7 +91,6 @@ export function mergeFeatureFlags(
 
     return {
       analytics: { ...current.analytics, ...pickBooleanOverrides(override.analytics) },
-      demo: { ...current.demo, ...pickBooleanOverrides(override.demo) },
       facets: { ...current.facets, ...pickBooleanOverrides(override.facets) },
       generative: { ...current.generative, ...pickBooleanOverrides(override.generative) },
       insights: { ...current.insights, ...pickBooleanOverrides(override.insights) },
@@ -110,16 +103,12 @@ export function mergeFeatureFlags(
 
 export function resolveFeatureFlags({
   defaults,
-  developmentOverrides,
   environment,
-  profile,
 }: {
   defaults: FeatureFlags;
   environment?: FeatureFlagOverrides;
-  profile?: FeatureFlagOverrides;
-  developmentOverrides?: FeatureFlagOverrides;
 }) {
-  return mergeFeatureFlags(defaults, environment, profile, developmentOverrides);
+  return mergeFeatureFlags(defaults, environment);
 }
 
 function pickBooleanOverrides<T extends Record<string, boolean>>(input: Partial<T> | undefined) {
@@ -135,7 +124,6 @@ function pickBooleanOverrides<T extends Record<string, boolean>>(input: Partial<
 function cloneFeatureFlags(flags: FeatureFlags): FeatureFlags {
   return {
     analytics: { ...flags.analytics },
-    demo: { ...flags.demo },
     facets: { ...flags.facets },
     generative: { ...flags.generative },
     insights: { ...flags.insights },

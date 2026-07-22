@@ -9,7 +9,7 @@ import type { TrendingProvider } from "@/features/trending/providers/trending-pr
 import { getSafeTrendingUrl } from "@/features/trending/services/trending-urls";
 
 export function TrendingContent({
-  description = "Fixture metrics for sample-mode demonstration.",
+  description = "Supporting content for product evaluation.",
   enabled,
   provider,
   title = "Trending content",

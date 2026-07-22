@@ -7,26 +7,24 @@ describe("getSearchFeatureFlags", () => {
     vi.unstubAllEnvs();
   });
 
-  it("enables demo composition by default", () => {
+  it("resolves the live product-discovery flags by default", () => {
     expect(getSearchFeatureFlags()).toEqual({
       enableAnalytics: true,
       enableFacets: true,
-      enableGenerativeAnswers: true,
+      enableGenerativeAnswers: false,
       enableGenerativeCitations: true,
       enableGenerativeDisclaimer: true,
       enableGenerativeFeedback: true,
-      enableGenerativeStreaming: true,
+      enableGenerativeStreaming: false,
       enableInsightsRail: true,
       enablePopularContent: true,
       enableRelatedQueries: true,
-      enableSampleSearchResponse: true,
       enableTopicInsight: true,
       enableTrendingContent: true,
     });
   });
 
-  it("applies strict env booleans before the default demo profile", () => {
-    vi.stubEnv("COVEO_FEATURE_SAMPLE_SEARCH_RESPONSE", "false");
+  it("applies strict env booleans", () => {
     vi.stubEnv("COVEO_FEATURE_FACETS", "0");
     vi.stubEnv("COVEO_FEATURE_INSIGHTS_RAIL", "off");
     vi.stubEnv("COVEO_FEATURE_TOPIC_INSIGHT", "yes");
@@ -42,16 +40,15 @@ describe("getSearchFeatureFlags", () => {
 
     expect(getSearchFeatureFlags()).toEqual({
       enableAnalytics: false,
-      enableFacets: true,
+      enableFacets: false,
       enableGenerativeAnswers: true,
-      enableGenerativeCitations: true,
-      enableGenerativeDisclaimer: true,
+      enableGenerativeCitations: false,
+      enableGenerativeDisclaimer: false,
       enableGenerativeFeedback: true,
       enableGenerativeStreaming: true,
-      enableInsightsRail: true,
+      enableInsightsRail: false,
       enablePopularContent: true,
       enableRelatedQueries: true,
-      enableSampleSearchResponse: false,
       enableTopicInsight: true,
       enableTrendingContent: false,
     });

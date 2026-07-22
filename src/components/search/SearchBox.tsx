@@ -5,9 +5,11 @@ import { FormEvent, KeyboardEvent, useEffect, useId, useRef, useState } from "re
 
 import { SearchSuggestions } from "@/components/search/SearchSuggestions";
 import { SEARCH_UI } from "@/components/search/search-ui.constants";
-import { useSearchSuggestions } from "@/components/search/use-search-suggestions";
+import {
+  type SuggestionsProvider,
+  useSearchSuggestions,
+} from "@/components/search/use-search-suggestions";
 import type { SearchSuggestion } from "@/features/search/models/search-models";
-import type { SearchProvider } from "@/features/search/providers/search-provider";
 
 export function SearchBox({
   isLoading,
@@ -23,7 +25,7 @@ export function SearchBox({
   onQueryChange: (query: string) => void;
   onSuggestionSelected?: (suggestion: SearchSuggestion) => void;
   onSubmit: (query: string) => void;
-  provider: Pick<SearchProvider, "getSuggestions">;
+  provider: SuggestionsProvider;
   query: string;
 }) {
   const suggestionsId = useId();

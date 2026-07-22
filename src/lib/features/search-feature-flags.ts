@@ -11,7 +11,6 @@ export type SearchFeatureFlags = {
   enableInsightsRail: boolean;
   enablePopularContent: boolean;
   enableRelatedQueries: boolean;
-  enableSampleSearchResponse: boolean;
   enableTopicInsight: boolean;
   enableTrendingContent: boolean;
 };
@@ -27,7 +26,6 @@ export const defaultSearchFeatureFlags: SearchFeatureFlags = {
   enableInsightsRail: true,
   enablePopularContent: true,
   enableRelatedQueries: true,
-  enableSampleSearchResponse: false,
   enableTopicInsight: true,
   enableTrendingContent: true,
 };
@@ -44,7 +42,6 @@ export function toSearchFeatureFlags(flags: FeatureFlags): SearchFeatureFlags {
     enableInsightsRail: flags.insights.enabled,
     enablePopularContent: flags.insights.popularContent,
     enableRelatedQueries: flags.insights.relatedQueries,
-    enableSampleSearchResponse: flags.demo.sampleSearchResponse,
     enableTopicInsight: flags.insights.topic,
     enableTrendingContent: flags.trending.enabled,
   };
@@ -55,9 +52,6 @@ export function fromSearchFeatureFlags(flags: SearchFeatureFlags): FeatureFlags 
     analytics: {
       enabled: flags.enableAnalytics,
       featureExposure: true,
-    },
-    demo: {
-      sampleSearchResponse: flags.enableSampleSearchResponse,
     },
     facets: {
       contentType: flags.enableFacets,

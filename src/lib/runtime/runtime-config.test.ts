@@ -8,28 +8,25 @@ import {
 } from "./runtime-config";
 
 describe("runtime config", () => {
-  it("resolves public runtime config without serializing secrets", () => {
+  it("resolves public search-token runtime config without serializing secrets", () => {
     const config = resolveRuntimeConfig({
       environment: {
         COVEO_AUTH_MODE: "search-token",
         COVEO_AUTHENTICATED_SEARCH_API_KEY: "private-token-minting-key",
         COVEO_ORGANIZATION_ID: "org",
         COVEO_PLATFORM_API_KEY: "secret",
-        COVEO_FEATURE_SAMPLE_SEARCH_RESPONSE: "false",
-        NEXT_PUBLIC_DEMO_PROFILE: "minimal",
         NODE_ENV: "production",
       },
       searchParams: { profile: "ecommerce", scenario: "error" },
     });
 
     expect(config.environment).toBe("production");
-    expect(config.demoProfile.id).toBe("minimal");
-    expect(config.scenario).toBe("default");
-    expect(config.searchProvider).toBe("coveo");
     expect(config.coveo.authMode).toBe("search-token");
     expect(config.coveo.tokenConfigured).toBe(true);
     expect(JSON.stringify(config)).not.toContain("secret");
     expect(JSON.stringify(config)).not.toContain("private-token-minting-key");
+    expect(JSON.stringify(config)).not.toContain("profile");
+    expect(JSON.stringify(config)).not.toContain("scenario");
   });
 
   it("resolves anonymous API key mode only from the explicit public variable", () => {
@@ -62,96 +59,25 @@ describe("runtime config", () => {
     ).toThrow("COVEO_AUTH_MODE must be either anonymous-api-key or search-token.");
   });
 
-  it("allows development profile and scenario query overrides", () => {
+  it("ignores obsolete query profile, scenario, and flag overrides", () => {
     const config = resolveRuntimeConfig({
       environment: {
-        COVEO_DEVELOPMENT_QUERY_OVERRIDES: "true",
-        NODE_ENV: "development",
-        NEXT_PUBLIC_DEMO_PROFILE: "minimal",
-      },
-      searchParams: { profile: "ecommerce", scenario: "trending-error" },
-    });
-
-    expect(config.demoProfile.id).toBe("ecommerce");
-    expect(config.scenario).toBe("trending-error");
-  });
-
-  it("applies development feature query overrides when enabled", () => {
-    const config = resolveRuntimeConfig({
-      environment: {
-        COVEO_DEVELOPMENT_QUERY_OVERRIDES: "true",
-        NODE_ENV: "test",
-      },
-      searchParams: { flags: "no-generative,no-trending" },
-    });
-
-    expect(config.featureFlags.generative.enabled).toBe(false);
-    expect(config.featureFlags.trending.enabled).toBe(false);
-  });
-
-  it("ignores unknown query flag overrides", () => {
-    const config = resolveRuntimeConfig({
-      environment: {
-        COVEO_DEVELOPMENT_QUERY_OVERRIDES: "true",
-        NODE_ENV: "test",
-      },
-      searchParams: { flags: "unknown" },
-    });
-
-    expect(config.featureFlags.trending.enabled).toBe(true);
-  });
-
-  it("supports explicit positive development feature overrides", () => {
-    const config = resolveRuntimeConfig({
-      environment: {
-        COVEO_DEVELOPMENT_QUERY_OVERRIDES: "true",
         COVEO_FEATURE_GENERATIVE_ENABLED: "false",
         COVEO_FEATURE_TRENDING_ENABLED: "false",
         NODE_ENV: "test",
       },
-      searchParams: { flags: "generative,trending" },
-    });
-
-    expect(config.featureFlags.generative.enabled).toBe(true);
-    expect(config.featureFlags.trending.enabled).toBe(true);
-  });
-
-  it("allows development-only sample/live provider overrides", () => {
-    const liveConfig = resolveRuntimeConfig({
-      environment: {
-        COVEO_DEVELOPMENT_QUERY_OVERRIDES: "true",
-        NODE_ENV: "test",
+      searchParams: {
+        flags: "generative,trending,sample",
+        profile: "ecommerce",
+        scenario: "error",
       },
-      searchParams: { flags: "live" },
-    });
-    const sampleConfig = resolveRuntimeConfig({
-      environment: {
-        COVEO_DEVELOPMENT_QUERY_OVERRIDES: "true",
-        COVEO_FEATURE_SAMPLE_SEARCH_RESPONSE: "false",
-        NODE_ENV: "test",
-      },
-      searchParams: { flags: "sample" },
     });
 
-    expect(liveConfig.searchProvider).toBe("coveo");
-    expect(sampleConfig.searchProvider).toBe("mock");
-  });
-
-  it("rejects development query overrides in production", () => {
-    const config = resolveRuntimeConfig({
-      environment: {
-        COVEO_DEVELOPMENT_QUERY_OVERRIDES: "true",
-        COVEO_FEATURE_SAMPLE_SEARCH_RESPONSE: "true",
-        NEXT_PUBLIC_DEMO_PROFILE: "developer-documentation",
-        NODE_ENV: "production",
-      },
-      searchParams: { flags: "live,no-generative", profile: "ecommerce", scenario: "error" },
-    });
-
-    expect(config.demoProfile.id).toBe("developer-documentation");
-    expect(config.scenario).toBe("default");
-    expect(config.searchProvider).toBe("mock");
-    expect(config.featureFlags.generative.enabled).toBe(true);
+    expect(config.featureFlags.generative.enabled).toBe(false);
+    expect(config.featureFlags.trending.enabled).toBe(false);
+    expect(config).not.toHaveProperty("demoProfile");
+    expect(config).not.toHaveProperty("scenario");
+    expect(config).not.toHaveProperty("searchProvider");
   });
 
   it("keeps server-only secrets separate", () => {
@@ -172,6 +98,6 @@ describe("runtime config", () => {
     expect(normalizeEnvironment("test")).toBe("test");
     expect(normalizeEnvironment("production")).toBe("production");
     expect(normalizeEnvironment("preview")).toBe("development");
-    expect(fallbackRuntimeConfig.searchProvider).toBe("mock");
+    expect(fallbackRuntimeConfig.featureFlags.trending.enabled).toBe(true);
   });
 });

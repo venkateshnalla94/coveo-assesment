@@ -46,6 +46,37 @@ describe("ProductFacetPanel", () => {
     expect(onToggleRange).toHaveBeenCalledWith("ec_price", 10, 100);
   });
 
+  it("removes a single facet value when its breadcrumb chip is clicked, not the whole facet", async () => {
+    const onToggleFacetValue = vi.fn();
+    const onClearFacet = vi.fn();
+
+    render(
+      <ProductFacetPanel
+        facets={[
+          {
+            field: "ec_brand",
+            id: "ec_brand",
+            label: "Brand",
+            type: "regular",
+            values: [
+              { count: 2, label: "NexBot Robotics", selected: true, value: "NexBot Robotics" },
+              { count: 1, label: "Acme Robotics", selected: true, value: "Acme Robotics" },
+            ],
+          },
+        ]}
+        onClearAll={vi.fn()}
+        onClearFacet={onClearFacet}
+        onToggleFacetValue={onToggleFacetValue}
+        onToggleRange={vi.fn()}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /Brand: NexBot Robotics/i }));
+
+    expect(onToggleFacetValue).toHaveBeenCalledWith("ec_brand", "NexBot Robotics", "regular");
+    expect(onClearFacet).not.toHaveBeenCalled();
+  });
+
   it("toggles facet selections", () => {
     expect(toggleProductFacetSelection([], "ec_brand", "NexBot Robotics", "regular")).toEqual([
       { field: "ec_brand", type: "regular", values: ["NexBot Robotics"] },

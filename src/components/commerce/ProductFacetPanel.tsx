@@ -24,14 +24,22 @@ export function ProductFacetPanel({
       return facet.values
         .filter((value) => value.selected)
         .map((value) => ({
-          field: facet.field,
+          key: `${facet.field}-${value.start}-${value.end}`,
           label: `${facet.label}: ${formatRangeValue(facet, value.start, value.end)}`,
+          // Numeric range facets only ever have one active value, so clearing the field is
+          // equivalent to removing this one selection.
+          onRemove: () => onClearFacet(facet.field),
         }));
     }
 
     return facet.values
       .filter((value) => value.selected)
-      .map((value) => ({ field: facet.field, label: `${facet.label}: ${value.label}` }));
+      .map((value) => ({
+        key: `${facet.field}-${value.value}`,
+        label: `${facet.label}: ${value.label}`,
+        // Multi-select facets: removing a chip should deselect only that value, not the whole facet.
+        onRemove: () => onToggleFacetValue(facet.field, value.value, facet.type),
+      }));
   });
 
   return (
@@ -46,7 +54,7 @@ export function ProductFacetPanel({
       {activeFilters.length > 0 ? (
         <div className="active-filters" aria-label="Active product filters">
           {activeFilters.map((filter) => (
-            <button key={`${filter.field}-${filter.label}`} onClick={() => onClearFacet(filter.field)} type="button">
+            <button key={filter.key} onClick={filter.onRemove} type="button">
               {filter.label}
               <X aria-hidden="true" size={14} />
             </button>

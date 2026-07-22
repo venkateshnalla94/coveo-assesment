@@ -20,6 +20,11 @@ export interface ProductSearchRequest {
   facets: ProductFacetSelection[];
 }
 
+export interface ProductTextHighlight {
+  offset: number;
+  length: number;
+}
+
 export interface ProductResult {
   id: string;
   title: string;
@@ -40,6 +45,8 @@ export interface ProductResult {
   compatibleJoints: string[];
   compatiblePartsSkus: string[];
   excerpt?: string;
+  nameHighlights?: ProductTextHighlight[];
+  excerptHighlights?: ProductTextHighlight[];
   providerMetadata?: {
     permanentId?: string;
     rawResultType?: string;

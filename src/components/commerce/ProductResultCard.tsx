@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { ExternalLink, GitCompareArrows, Star } from "lucide-react";
 
+import { HighlightedText } from "@/components/commerce/HighlightedText";
 import {
   formatPrice,
   formatRating,
@@ -56,9 +57,17 @@ export function ProductResultCard({
       <div className="product-card-body">
         <div>
           {product.brand ? <p className="product-brand">{product.brand}</p> : null}
-          <h2>{product.title}</h2>
+          <h2>
+            <HighlightedText highlights={product.nameHighlights} text={product.title} />
+          </h2>
           {category ? <p className="product-category">{category}</p> : null}
-          <p className="product-description">{product.description}</p>
+          <p className="product-description">
+            {product.excerpt && product.excerptHighlights ? (
+              <HighlightedText highlights={product.excerptHighlights} text={product.excerpt} />
+            ) : (
+              product.description
+            )}
+          </p>
         </div>
 
         <dl className="product-meta-grid">

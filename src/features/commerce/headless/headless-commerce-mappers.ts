@@ -6,6 +6,7 @@ import type {
   ProductPagination,
   ProductRangeFacetValue,
   ProductResult,
+  ProductTextHighlight,
 } from "@/features/commerce/models/commerce-models";
 
 type RawRecord = Record<string, unknown>;
@@ -27,6 +28,11 @@ type HeadlessProductLike = {
   ec_shortdesc?: string | null;
   ec_thumbnails?: string[];
   excerpt?: string | null;
+  // Wire field name from the raw Commerce API response. Coveo's published `Product` type
+  // spells this `excerptsHighlights`, but the actual response payload uses `excerptHighlights`
+  // (verified against a live `/commerce/v2/search` response).
+  excerptHighlights?: ProductTextHighlight[];
+  nameHighlights?: ProductTextHighlight[];
   permanentid?: string;
 };
 

@@ -1420,6 +1420,14 @@ p {
   -webkit-line-clamp: 3;
 }
 
+.product-card mark,
+.product-description mark {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
 .product-meta-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

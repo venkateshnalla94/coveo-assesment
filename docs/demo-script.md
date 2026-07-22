@@ -40,13 +40,13 @@ Explain the facet types:
 - regular facets for brand and compatible robot series
 - numerical-range facets for price and rating
 
-Show pagination and explain that sorting is intentionally relevance-only because that is the only live sort returned by the validated Commerce configuration.
+Show pagination and address sorting head-on: it's relevance-only because that's the only `availableSorts` entry the Merchandising Hub interface config returns — confirmed by inspecting the raw Commerce API response, not assumed. Frame it as a platform-config lever, not a gap: "here's what I'd turn on for `ec_price`/`ec_rating` field sorting on the listing config in a live engagement."
 
 ## 10:00-13:00: Comparison
 
 Select up to three products for comparison. Open the comparison drawer.
 
-Explain the customer value: a buyer moves from a broad catalog to a confident shortlist without losing compatibility and commercial context.
+Explain the customer value: a buyer moves from a broad catalog to a confident shortlist without losing compatibility and commercial context. This is the same broad-to-specific shape as a payload/reach comparison would be on a purpose-built spec index — it just narrows on the dimensions this catalog actually has: category, brand, price, rating, and compatible robot series, rather than on manufacturing specs the index doesn't carry.
 
 ## 13:00-15:00: Product Details
 

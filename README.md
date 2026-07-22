@@ -102,7 +102,7 @@ npm audit
 
 ## Known Limitations
 
-- Live sorting is relevance-only because the validated Commerce response exposes only relevance sorting.
+- Live sorting is relevance-only: verified directly against the raw `/commerce/v2/search` response (`sort.availableSorts` returns only `{sortCriteria: "relevance"}`), so this is a Merchandising Hub interface-config gap, not an unwired frontend control. In a live engagement I'd enable field sorting for `ec_price`/`ec_rating` on the commerce listing config rather than build a dropdown against options the platform doesn't offer.
 - Payload, reach, precision, mounting, certification, industry, controller, and datasheet fields are not available as consistent structured catalog fields.
 - RGA is grounded in blog/content material and is not a product recommendation engine.
 - Commerce Product Recommendations and Product Listings are not configured.

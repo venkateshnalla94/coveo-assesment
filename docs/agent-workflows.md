@@ -127,7 +127,7 @@ Agent definitions live in `.codex/agents/`. Shared guardrails live in `.github/a
 `CI` runs on pull requests and pushes to `main`:
 
 - Quality: format check, lint, typecheck, coverage, build.
-- E2E: installs Playwright Chromium and runs sample-mode Playwright tests.
+- E2E: installs Playwright Chromium and runs the active product-discovery Playwright tests.
 - Security: `npm audit` and secret scan.
 
 `PR Review Agents` runs on opened, synchronized, reopened, and ready-for-review pull requests. It skips draft PRs. It uploads Markdown reports and updates one deduplicated PR comment for same-repository PRs. Forked PRs still get report artifacts but do not receive a write-token comment.
@@ -147,12 +147,7 @@ permissions:
 
 The PR agent workflow adds `pull-requests: write` only to update a deduplicated comment, and only comments for same-repository PRs. Workflows do not use `pull_request_target` and do not require live Coveo credentials.
 
-Default E2E runs in deterministic sample mode with:
-
-```text
-COVEO_FEATURE_SAMPLE_SEARCH_RESPONSE=true
-COVEO_DEVELOPMENT_QUERY_OVERRIDES=true
-```
+Default E2E runs against the active RoboMotion product discovery app and requires valid local Coveo configuration for the live Headless Commerce path.
 
 ## Guardrails
 

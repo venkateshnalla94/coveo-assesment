@@ -1,39 +1,30 @@
-# ADR 0004: Platform Configuration Boundary
+# ADR 0004: Runtime Configuration Boundary
 
 ## Status
 
-Accepted
+Updated
 
 ## Context
 
-Phase 5 needs feature flags, demo profiles, URL state, runtime configuration, error mapping, observability, provider capabilities, and development scenarios. Adding each concern directly to UI components would make `SearchExperience` harder to maintain and would increase the risk of destabilizing the live Coveo Headless path.
+The final application needs explicit Coveo auth mode selection, public/server-only credential separation, feature flags, error handling, observability, and security-conscious runtime parsing.
 
 ## Decision
 
-Create a typed platform boundary made of pure modules:
+Keep a central runtime configuration boundary in `src/lib/runtime/runtime-config.ts`.
 
-- Hierarchical `FeatureFlags` with deterministic resolution.
-- Typed `DemoProfile` definitions outside UI components.
-- Central `RuntimeConfig` with separate public and server-only configuration.
-- Sample-mode URL state helpers for parsing, serialization, and normalization.
-- Explicit provider capability metadata.
-- Shared `ApplicationError` mapping.
-- Lightweight structured logging.
-- Typed development scenarios disabled in production.
+It resolves:
 
-Feature resolution order is:
+- environment
+- feature flags
+- Coveo auth mode
+- non-secret organization metadata
+- configured credential presence
 
-```text
-base defaults -> environment overrides -> demo profile overrides -> development query overrides
-```
-
-Development query overrides are allowed only outside production and only when explicitly enabled or running in development.
+It does not own product fixtures, synthetic runtime branches, or obsolete generic search state.
 
 ## Consequences
 
-- UI components consume resolved configuration instead of reading environment variables.
-- Public runtime config does not include private Coveo API keys or token endpoint credentials.
-- Profile and scenario behavior can be tested without rendering the full application.
-- Sample-mode URL synchronization is deterministic and does not force live Headless routing behavior.
-- Provider capabilities replace some hard-coded sample/live assumptions, but Phase 5 deliberately avoids a major provider-path unification.
-- Live Coveo sorting and live generative answers remain unavailable until supported configuration is confirmed.
+- Public runtime config does not include private Coveo API keys.
+- Anonymous Commerce mode uses only the public anonymous key.
+- Search-token mode uses only the authenticated server key.
+- Removed rollback and fixture paths cannot be activated through configuration.

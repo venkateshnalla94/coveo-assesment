@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-Phase 4 requires generated answers, citations, feedback, and clear mock/live separation. The existing `SearchProvider` already handles search results, suggestions, facets, sorting, and pagination. Adding generated answers to that interface would conflate separate capabilities and make live Coveo integration harder to reason about.
+Generated answers, citations, and feedback have different ownership from Commerce product search. Adding generated answers to the product discovery path would conflate separate capabilities and make live Coveo integration harder to reason about.
 
 ## Decision
 
@@ -16,13 +16,13 @@ Create a separate `GenerativeProvider` with:
 generate(query: string): Promise<GenerativeAnswer | null>
 ```
 
-Use a discriminated `GenerativeState` union for UI workflow state. Add `MockGenerativeProvider` for deterministic sample behavior and `CoveoGenerativeProvider` as a safe skeleton that throws a typed configuration error.
+Use a discriminated `GenerativeState` union for UI workflow state. `CoveoGenerativeProvider` calls the server-side RGA route, while test helpers can provide deterministic answer, no-answer, and error behavior.
 
 Feedback is modeled behind a separate `FeedbackProvider` so persistence can be added later.
 
 ## Consequences
 
-- Search provider responsibilities stay narrow.
+- Product discovery responsibilities stay narrow.
 - The UI consumes normalized generative domain models, not raw provider payloads.
-- Sample mode can demonstrate answer, no-answer, error, feedback, and citation behavior.
-- Live mode does not fabricate answers or expose client-side credentials.
+- RGA can demonstrate answer, no-answer, error, feedback, and citation behavior without claiming to recommend products.
+- Live mode does not expose client-side privileged credentials.

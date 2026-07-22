@@ -224,13 +224,12 @@ ${staleRisks.length > 0 ? "needs-context-review" : "current"}
 function demoReadinessReport() {
   const hasE2E = allFiles.some((file) => file.startsWith("tests/e2e/"));
   const hasCi = allFiles.includes(".github/workflows/ci.yml");
-  const hasSampleDefaults = read("playwright.config.ts").includes("COVEO_FEATURE_SAMPLE_SEARCH_RESPONSE");
 
   return `# Demo Readiness Report
 
 ## Overall Status
 
-${hasE2E && hasCi && hasSampleDefaults ? "ready-with-notes" : "not-ready"}
+${hasE2E && hasCi ? "ready-with-notes" : "not-ready"}
 
 This is a static readiness report. Final demo confidence still requires \`npm run validate:full\`.
 
@@ -252,25 +251,24 @@ ${hasE2E ? "- None detected by static checks." : "- No E2E suite detected."}
 
 ## Security
 
-- Demo must run without live Coveo credentials.
+- Demo requires valid Coveo credentials and must not print them.
 - Run \`npm run secrets:scan\` before publishing.
 
 ## Analytics
 
-- Sample analytics must remain clearly local/mock.
 - Live Coveo analytics claims must stay limited to confirmed Headless behavior.
 
 ## Storytelling
 
-- Profile-specific story should be clear for developer documentation, customer support, ecommerce, and minimal profiles.
+- RoboMotion product discovery, RGA, and Technical Resources should be described as separate capabilities.
 
 ## Setup Reliability
 
-${hasSampleDefaults ? "- Playwright config sets deterministic sample mode." : "- Sample-mode Playwright configuration not detected."}
+- Playwright runs against the active product discovery app.
 
 ## Mock vs Live Clarity
 
-- Do not claim sample generated answers, trending metrics, or local feedback are live Coveo capabilities.
+- Do not claim RGA selects Commerce products or that unconfirmed product fields exist.
 
 ## Final Recommendation
 

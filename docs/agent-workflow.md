@@ -43,17 +43,17 @@ Done when: `/api/search-token` returns a token with valid env values and a safe 
 
 Trigger: ask `commit-agent` to review changes before commit. It must trigger `test-agent` if this route changed and no relevant tests were run or updated.
 
-## 3. Headless Engine Implementer
+## 3. Headless Commerce Implementer
 
-Goal: initialize Coveo Headless once and let the browser query Coveo directly.
+Goal: keep RoboMotion product discovery on the validated Headless Commerce path.
 
-- Own `src/components/search/SearchExperience.tsx`.
-- Build the engine with the generated token.
+- Own `src/components/commerce/ProductDiscoveryExperience.tsx` and `src/features/commerce/headless/use-headless-commerce.ts`.
+- Build the Commerce engine with the selected explicit auth mode.
 - Configure token renewal.
-- Register controllers before the first search runs.
+- Register Commerce controllers before the first product search runs.
 - Keep analytics enabled.
 
-Done when: first search executes and controller state updates in the UI.
+Done when: first product search executes, suggestions work, facets update, and pagination works.
 
 Trigger: ask `commit-agent` to review changes before commit. It must trigger `context-agent` if the token-vs-direct-search boundary changed.
 
@@ -61,12 +61,12 @@ Trigger: ask `commit-agent` to review changes before commit. It must trigger `co
 
 Goal: deliver the minimum complete product surface.
 
-- Own `SearchBoxView`, `ResultListView`, `ResultItem`, `FacetPanel`, `PagerControls`, and `SearchSummary`.
+- Own `SearchBox`, `SearchSuggestions`, `Pagination`, and Commerce product components.
 - Keep every data-driven area covered by loading, empty, and error states.
-- Use Headless controllers directly instead of raw Search API fetches.
-- Log result clicks with `buildInteractiveResult`.
+- Use Headless Commerce controllers for product data.
+- Keep RGA and Technical Resources isolated from product selection.
 
-Done when: search, suggestions, results, facets, pagination, and click-through work.
+Done when: product search, suggestions, results, facets, pagination, comparison, and details work.
 
 Trigger: ask `commit-agent` to review changes before commit. It must trigger `test-agent` for non-trivial logic changes that need focused Vitest coverage.
 

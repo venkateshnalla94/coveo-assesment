@@ -2,67 +2,68 @@
 
 ## Layers
 
-- Unit and component tests use Vitest, jsdom, and React Testing Library.
-- Coverage is enforced through `npm run test:coverage` with 80% per-file thresholds for included application logic.
-- End-to-end tests use Playwright against the local Next.js app in sample mode. The default E2E suite does not require Coveo credentials.
-- Accessibility checks use `@axe-core/playwright` and fail on serious or critical violations.
+- Vitest covers runtime config, auth boundaries, Headless Commerce mapping, product UI, RGA components, Technical Resources, logging, and security helpers.
+- `npm run test:coverage` enforces 80% per-file thresholds for included application logic.
+- Playwright covers the live RoboMotion product discovery workflow against the local Next.js app.
+- Axe checks fail on serious or critical accessibility violations.
 
 ## Commands
 
 ```bash
+npm run format:check
 npm run lint
 npm run typecheck
 npm run test
 npm run test:coverage
 npm run build
 npm run test:e2e
+npm run validate
+npm run secrets:scan
 npm audit
 ```
 
-Install the browser used by the E2E suite with:
+Install Chromium before the first Playwright run:
 
 ```bash
 npx playwright install chromium
 ```
 
-Interactive Playwright debugging is available through:
+## Unit And Component Coverage
 
-```bash
-npm run test:e2e:ui
-```
+Retained coverage includes:
+
+- Headless Commerce mappers
+- anonymous auth and search-token config boundaries
+- products, summary, facets, price/rating ranges, pagination, and relevance sorting
+- comparison and details drawer behavior
+- RGA answer rendering, citations, feedback, errors, and no-answer states
+- Technical Resources rendering and provider behavior
+- error isolation
+- security boundaries
+- accessibility-oriented component behavior
+
+Tests that only covered removed generic demo behavior were deleted.
 
 ## E2E Coverage
 
 The Playwright suite covers:
 
-- Basic sample search and URL synchronization.
-- Query suggestions, arrow navigation, Enter selection, and Escape dismissal.
-- Facets, sorting, clearing filters, and pagination.
-- Zero-results recovery.
-- Generative answer loading, citations, feedback, no-answer, and error states.
-- Demo profiles for developer documentation, customer support, ecommerce, and minimal.
-- Browser back and forward restoration in sample mode.
-- Live safety without credentials: internal live routes fail safely when server-side credentials are absent and live sorting remains relevance-only.
-- Responsive assertions at `375x812`, `768x1024`, `1024x768`, and `1440x900`.
+- product discovery startup
+- live query submission
+- query suggestions through Headless Commerce
+- facets and clearing filters
+- pagination when available
+- comparison drawer
+- product details drawer
+- isolated RGA and Technical Resources failures
+- keyboard navigation
+- responsive layouts at `375x812`, `768x1024`, `1024x768`, and `1440x900`
+- axe accessibility checks for the core product discovery states
 
-## Accessibility
-
-Automated accessibility checks run in Playwright using axe against:
-
-- Default search page.
-- Suggestions-open state.
-- Results and facets.
-- Zero-results state.
-- Generative answer state.
-- Technical resources.
-- Minimal profile.
-
-The suite fails on serious or critical violations. No global axe rules are disabled.
+E2E no longer depends on runtime profiles, synthetic scenarios, sample search mode, or direct Commerce proxy routes.
 
 ## Known Gaps
 
-- The E2E suite uses deterministic sample fixtures by default. It intentionally does not require real Coveo credentials.
-- RoboMotion product-discovery E2E uses the deterministic sample Commerce provider by default. Live Commerce validation is intentionally separate because it requires local credentials and external network access.
-- Live Coveo behavior is covered only for safety gates that can be verified without secrets.
-- No visual-regression platform is configured. Responsive checks assert layout usability and horizontal overflow instead of maintaining image baselines.
-- Product comparison and product details drawers are covered by component tests and Playwright accessibility checks in sample mode.
+- E2E requires valid local Coveo configuration for the live Headless Commerce path.
+- There is no visual-regression service; responsive tests assert usability and horizontal overflow.
+- Build may report the known Coveo Headless Webpack warning.

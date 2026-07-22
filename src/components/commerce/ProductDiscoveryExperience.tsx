@@ -25,9 +25,11 @@ import type { SearchFeatureFlags } from "@/lib/features/search-feature-flags";
 export function ProductDiscoveryExperience({
   commerceAuthConfig,
   featureFlags,
+  initialQuery = "welding arm",
 }: {
   commerceAuthConfig: HeadlessCommerceAuthConfig;
   featureFlags: SearchFeatureFlags;
+  initialQuery?: string;
 }) {
   const analyticsProvider = useMemo(
     () => new CoveoAnalyticsProvider(),
@@ -36,18 +38,20 @@ export function ProductDiscoveryExperience({
 
   return (
     <AnalyticsProviderRoot enabled={featureFlags.enableAnalytics} provider={analyticsProvider}>
-      <HeadlessProductDiscoveryContent authConfig={commerceAuthConfig} />
+      <HeadlessProductDiscoveryContent authConfig={commerceAuthConfig} initialQuery={initialQuery} />
     </AnalyticsProviderRoot>
   );
 }
 
 function HeadlessProductDiscoveryContent({
   authConfig,
+  initialQuery,
 }: {
   authConfig: HeadlessCommerceAuthConfig;
+  initialQuery: string;
 }) {
   const analytics = useAnalytics();
-  const commerce = useHeadlessCommerce({ authConfig, enabled: true });
+  const commerce = useHeadlessCommerce({ authConfig, enabled: true, initialQuery });
   const [comparedProducts, setComparedProducts] = useState<ProductResult[]>([]);
   const [comparisonOpen, setComparisonOpen] = useState(false);
   const [detailsProduct, setDetailsProduct] = useState<ProductResult | null>(null);

@@ -1,4 +1,6 @@
 import { Bell, ExternalLink, HelpCircle, LayoutGrid, X } from "lucide-react";
+import Link from "next/link";
+import type { ReactNode } from "react";
 
 import { SEARCH_UI } from "@/components/search/search-ui.constants";
 
@@ -20,16 +22,20 @@ export function Header() {
       </div>
 
       <header className="main-header">
-        <a aria-label="Coveo home" className="brand" href="#">
+        <Link aria-label="RoboMotion home" className="brand" href="/">
           <span className="brand-mark" aria-hidden="true" />
           <span>{SEARCH_UI.brandLabel}</span>
-        </a>
+        </Link>
 
         <nav className="primary-nav" aria-label="Primary navigation">
           {SEARCH_UI.navItems.map((item) => (
-            <a aria-current={item.active ? "page" : undefined} href={item.href} key={item.label}>
+            <LinkOrAnchor
+              ariaCurrent={item.active ? "page" : undefined}
+              href={item.href}
+              key={item.label}
+            >
               {item.label}
-            </a>
+            </LinkOrAnchor>
           ))}
         </nav>
 
@@ -47,5 +53,29 @@ export function Header() {
         </div>
       </header>
     </>
+  );
+}
+
+function LinkOrAnchor({
+  ariaCurrent,
+  children,
+  href,
+}: {
+  ariaCurrent?: "page";
+  children: ReactNode;
+  href: string;
+}) {
+  if (href.startsWith("/")) {
+    return (
+      <Link aria-current={ariaCurrent} href={href}>
+        {children}
+      </Link>
+    );
+  }
+
+  return (
+    <a aria-current={ariaCurrent} href={href}>
+      {children}
+    </a>
   );
 }

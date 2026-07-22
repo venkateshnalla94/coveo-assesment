@@ -6,6 +6,8 @@ Customer-facing industrial robotics product discovery for RoboMotion Industries,
 
 This project helps manufacturing buyers search a large RoboMotion catalog, narrow results by real Commerce facets, compare products, inspect compatibility, and use technical guidance without mixing content guidance with product ranking.
 
+The home page is a lightweight search entry point. Full live Coveo Commerce product discovery runs at `/catalog`.
+
 ## Customer Problem
 
 Industrial robotics buyers rarely know the exact SKU they need at the start of discovery. They need to narrow a large catalog by category, brand, compatible robot series, price, and rating, then compare a small shortlist against application fit, compatibility, stock, and supporting technical resources.
@@ -40,7 +42,7 @@ Next.js UI
     └── Coveo Search API
 ```
 
-Product search, suggestions, facets, pagination, summaries, and relevance sorting are handled by Headless Commerce in the browser. AI Product Guidance and Technical Resources are isolated server-backed paths, not Commerce product recommendation paths.
+The `/` route uses Headless Commerce query suggestions and sends buyers into `/catalog?q=<query>`. Live product search, facets, pagination, summaries, and relevance sorting are handled by Headless Commerce in the browser on `/catalog`. AI Product Guidance and Technical Resources are isolated server-backed paths, not Commerce product recommendation paths.
 
 ## Authentication
 
@@ -70,7 +72,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open `http://localhost:3000` for the search entry page or `http://localhost:3000/catalog` for the full product catalog.
 
 Required baseline environment:
 

@@ -6,7 +6,8 @@ Ready for submission based on the latest completed validation.
 
 ## Functional Readiness
 
-- Product discovery page loads directly.
+- Search entry page loads directly.
+- Product discovery catalog loads at `/catalog`.
 - `welding arm` product search returns live Commerce products.
 - Result summary, product cards, relevance sorting, and pagination are covered.
 - Comparison supports up to three products.

@@ -12,6 +12,7 @@ import {
 import type { SearchSuggestion } from "@/features/search/models/search-models";
 
 export function SearchBox({
+  autoFocus = true,
   isLoading,
   onClear,
   onQueryChange,
@@ -20,6 +21,7 @@ export function SearchBox({
   provider,
   query,
 }: {
+  autoFocus?: boolean;
   isLoading: boolean;
   onClear: () => void;
   onQueryChange: (query: string) => void;
@@ -43,8 +45,10 @@ export function SearchBox({
 
   useEffect(() => {
     wrapperRef.current?.setAttribute("data-search-ready", "true");
-    inputRef.current?.focus();
-  }, []);
+    if (autoFocus) {
+      inputRef.current?.focus();
+    }
+  }, [autoFocus]);
 
   function submitQuery(nextQuery = query) {
     const trimmedQuery = nextQuery.trim();
@@ -111,7 +115,7 @@ export function SearchBox({
           aria-expanded={showSuggestions}
           aria-label="Search"
           autoComplete="off"
-          autoFocus
+          autoFocus={autoFocus}
           disabled={isLoading}
           ref={inputRef}
           onBlur={() => window.setTimeout(() => setSuggestionsOpen(false), 120)}

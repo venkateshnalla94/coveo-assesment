@@ -13,12 +13,14 @@ import type { ProductResult } from "@/features/commerce/models/commerce-models";
 
 export function ProductResultCard({
   compareDisabled,
+  imagePriority = false,
   isCompared,
   onCompare,
   onOpenDetails,
   product,
 }: {
   compareDisabled: boolean;
+  imagePriority?: boolean;
   isCompared: boolean;
   onCompare: (product: ProductResult) => void;
   onOpenDetails: (product: ProductResult) => void;
@@ -31,7 +33,16 @@ export function ProductResultCard({
     <article className="product-card">
       <div className="product-image-wrap">
         {product.imageUrl ? (
-          <img alt="" className="product-image" loading="lazy" src={product.imageUrl} />
+          <img
+            alt=""
+            className="product-image"
+            decoding="async"
+            fetchPriority={imagePriority ? "high" : "auto"}
+            height={172}
+            loading={imagePriority ? "eager" : "lazy"}
+            src={product.imageUrl}
+            width={320}
+          />
         ) : (
           <span>No image</span>
         )}

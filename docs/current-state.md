@@ -19,6 +19,8 @@ Technical Resources -> Search API
 
 Active routes:
 
+- `src/app/page.tsx`
+- `src/app/catalog/page.tsx`
 - `src/app/api/search-token/route.ts`
 - `src/app/api/coveo/generative/answer/route.ts`
 - `src/app/api/coveo/content/search/route.ts`
@@ -49,6 +51,8 @@ There is no silent fallback between credentials or provider paths.
 
 ## Confirmed Commerce Behavior
 
+- `/` is a search entry page with Headless Commerce query suggestions and popular search links.
+- `/catalog` owns the live Headless Commerce product discovery workflow.
 - `welding arm` returns 226 products.
 - Query suggestions work.
 - All five Commerce facets work: category, compatible robot series, brand, price, and rating.

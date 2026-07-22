@@ -14,7 +14,7 @@ export function ProductGrid({
 }) {
   return (
     <div className="product-grid" role="list">
-      {products.map((product) => {
+      {products.map((product, index) => {
         const isCompared = comparedProducts.some((item) => item.id === product.id);
 
         return (
@@ -22,6 +22,7 @@ export function ProductGrid({
             <ProductResultCard
               compareDisabled={comparedProducts.length >= 3}
               isCompared={isCompared}
+              imagePriority={index < 3}
               onCompare={onCompare}
               onOpenDetails={onOpenDetails}
               product={product}

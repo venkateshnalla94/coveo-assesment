@@ -24,7 +24,9 @@
 
 ## Live Demo
 
-- [ ] Page loads directly.
+- [ ] Search entry page loads directly.
+- [ ] Popular search links navigate to `/catalog`.
+- [ ] `/catalog` loads directly.
 - [ ] `welding arm` query works.
 - [ ] Suggestions appear.
 - [ ] All five facets work.

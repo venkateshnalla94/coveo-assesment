@@ -8,7 +8,7 @@ const viewports = [
 ];
 
 async function openProductDiscovery(page: import("@playwright/test").Page) {
-  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await page.goto("/catalog", { waitUntil: "domcontentloaded" });
   await expect(page.locator(".search-box-wrap[data-search-ready='true']")).toBeVisible();
 }
 

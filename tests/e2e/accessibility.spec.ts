@@ -3,7 +3,6 @@ import { expect, test } from "@playwright/test";
 
 async function checkA11y(page: import("@playwright/test").Page) {
   await expect(page).toHaveTitle(/RoboMotion Industries Product Discovery/);
-  await expect(page.locator(".search-box-wrap[data-search-ready='true']")).toBeVisible();
   await page.waitForTimeout(500);
   const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
   const seriousViolations = results.violations.filter((violation) =>
@@ -14,7 +13,7 @@ async function checkA11y(page: import("@playwright/test").Page) {
 }
 
 async function openProductDiscovery(page: import("@playwright/test").Page) {
-  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await page.goto("/catalog", { waitUntil: "domcontentloaded" });
   await expect(page.locator(".search-box-wrap[data-search-ready='true']")).toBeVisible();
 }
 
@@ -26,7 +25,13 @@ async function search(page: import("@playwright/test").Page, query: string) {
   await page.getByRole("button", { name: "Search", exact: true }).click();
 }
 
-test("default RoboMotion page has no serious accessibility violations", async ({ page }) => {
+test("search home has no serious accessibility violations", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("heading", { name: "Find the right RoboMotion products faster" })).toBeVisible();
+  await checkA11y(page);
+});
+
+test("default RoboMotion catalog has no serious accessibility violations", async ({ page }) => {
   await page.route("**/api/search-token", (route) =>
     route.fulfill({ contentType: "application/json", status: 502, body: "{}" }),
   );

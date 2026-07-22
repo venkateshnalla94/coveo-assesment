@@ -9,14 +9,14 @@ export const SEARCH_UI = {
     pageSize: 4,
   },
   announcementLink: {
-    href: "#",
+    href: "/catalog",
     label: "Industrial robotics resources",
   },
   brandLabel: "RoboMotion Industries",
   copyright: "© 2024 Coveo Solutions Inc. All rights reserved.",
   footerLinks: ["Privacy Policy", "Terms of Use", "Support", "Contact Us"],
   navItems: [
-    { href: "#", label: "Products", active: true },
+    { href: "/catalog", label: "Products", active: true },
     { href: "#", label: "Solutions" },
     { href: "#", label: "Industries" },
     { href: "#", label: "Resources" },

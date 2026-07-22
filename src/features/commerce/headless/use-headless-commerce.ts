@@ -382,7 +382,14 @@ function toggleRangeValue(facets: FacetGenerator["facets"], field: string, start
 function waitForSuggestions(searchBox: SearchBox, signal?: AbortSignal): Promise<SearchSuggestion[]> {
   return new Promise((resolve) => {
     const timers: { timeout?: number } = {};
+    let hasFinished = false;
+    let sawLoading = searchBox.state.isLoadingSuggestions;
     const finish = () => {
+      if (hasFinished) {
+        return;
+      }
+
+      hasFinished = true;
       if (timers.timeout) {
         window.clearTimeout(timers.timeout);
       }
@@ -396,15 +403,21 @@ function waitForSuggestions(searchBox: SearchBox, signal?: AbortSignal): Promise
       );
     };
     const unsubscribe = searchBox.subscribe(() => {
-      if (!searchBox.state.isLoadingSuggestions || signal?.aborted) {
+      if (signal?.aborted) {
+        finish();
+        return;
+      }
+
+      if (searchBox.state.isLoadingSuggestions) {
+        sawLoading = true;
+        return;
+      }
+
+      if (sawLoading || searchBox.state.suggestions.length > 0) {
         finish();
       }
     });
 
     timers.timeout = window.setTimeout(finish, SUGGESTION_WAIT_TIMEOUT_MS);
-
-    if (!searchBox.state.isLoadingSuggestions || signal?.aborted) {
-      finish();
-    }
   });
 }

@@ -14,9 +14,11 @@ Next.js UI
 
 The application is a customer-facing RoboMotion product discovery experience. Product search uses `@coveo/headless/commerce`; AI Product Guidance uses RGA; Technical Resources use the Coveo Search API.
 
+The `/` route is a search entry page. It initializes Headless Commerce query suggestions and navigates into `/catalog?q=<query>` without rendering product listings on the home page.
+
 ## Headless Commerce Engine Lifecycle
 
-`src/components/commerce/ProductDiscoveryExperience.tsx` owns the product discovery page composition. It passes the selected auth mode into `useHeadlessCommerce`.
+`src/app/catalog/page.tsx` owns the live product catalog route. `src/components/commerce/ProductDiscoveryExperience.tsx` owns the product discovery page composition and passes the selected auth mode and initial query into `useHeadlessCommerce`.
 
 `src/features/commerce/headless/use-headless-commerce.ts` owns the Headless Commerce lifecycle:
 
@@ -24,7 +26,7 @@ The application is a customer-facing RoboMotion product discovery experience. Pr
 - build the Commerce engine
 - configure analytics context
 - build the search, search box, pagination, summary, relevance sort, and facet generator controllers
-- submit the initial `welding arm` query
+- submit the initial catalog query, defaulting to `welding arm`
 - subscribe to engine state changes
 - expose a UI-safe product discovery API
 

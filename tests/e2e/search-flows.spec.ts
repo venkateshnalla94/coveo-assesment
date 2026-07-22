@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-async function openProductDiscovery(page: import("@playwright/test").Page, path = "/") {
+async function openProductDiscovery(page: import("@playwright/test").Page, path = "/catalog") {
   await page.goto(path, { waitUntil: "domcontentloaded" });
   await expect(page.locator(".search-box-wrap[data-search-ready='true']")).toBeVisible();
 }
@@ -13,12 +13,37 @@ async function search(page: import("@playwright/test").Page, query: string) {
   await page.getByRole("button", { name: "Search", exact: true }).click();
 }
 
-test("RoboMotion product discovery opens directly and returns products", async ({ page }) => {
-  await openProductDiscovery(page);
+test("search home sends popular searches to the catalog", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveTitle(/RoboMotion Industries Product Discovery/);
+  await expect(page.getByRole("heading", { name: "Find the right RoboMotion products faster" })).toBeVisible();
+
+  await page.getByRole("link", { name: "welding arm" }).click();
+  await expect(page).toHaveURL(/\/catalog\?q=welding%20arm$/);
+  await expect(page.locator(".search-box-wrap[data-search-ready='true']")).toBeVisible();
+  await expect(page.getByText(/products for "welding arm"/i)).toBeVisible();
+});
+
+test("search home shows query suggestions before opening the catalog", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await expect(page.locator(".search-box-wrap[data-search-ready='true']")).toBeVisible();
+
+  const input = page.getByRole("combobox", { name: "Search" });
+  await input.click();
+  await input.fill("wel");
+  await expect(page.getByRole("option").first()).toBeVisible();
+
+  await input.press("ArrowDown");
+  await input.press("Enter");
+  await expect(page).toHaveURL(/\/catalog\?q=/);
+  await expect(page.locator(".search-box-wrap[data-search-ready='true']")).toBeVisible();
+});
+
+test("RoboMotion product catalog opens directly and returns products", async ({ page }) => {
+  await openProductDiscovery(page, "/catalog?q=welding%20arm");
   await expect(page).toHaveTitle(/RoboMotion Industries Product Discovery/);
   await expect(page.getByRole("banner").getByText("RoboMotion Industries", { exact: true })).toBeVisible();
 
-  await search(page, "welding arm");
   await expect(page.getByText(/products for "welding arm"/i)).toBeVisible();
   await expect(page.locator(".product-card").first()).toBeVisible();
   expect(await page.locator(".product-card").count()).toBeGreaterThanOrEqual(2);

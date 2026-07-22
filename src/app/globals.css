@@ -321,6 +321,114 @@ p {
   text-align: left;
 }
 
+.search-home {
+  display: grid;
+  flex: 1;
+  align-items: center;
+  width: min(1120px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 72px 0;
+}
+
+.search-home-panel {
+  display: grid;
+  gap: 22px;
+  max-width: 780px;
+}
+
+.search-home-eyebrow {
+  margin: 0;
+  color: var(--accent-strong);
+  font-size: 0.78rem;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.search-home h1 {
+  max-width: 720px;
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(2.2rem, 4vw, 4rem);
+  line-height: 1.04;
+}
+
+.search-home-summary {
+  max-width: 640px;
+  margin: 0;
+  color: #36435f;
+  font-size: 1.08rem;
+  line-height: 1.55;
+}
+
+.search-home-form {
+  display: grid;
+  gap: 10px;
+  max-width: 720px;
+}
+
+.search-home-form label {
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 750;
+}
+
+.search-home-input-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  border: 1px solid #c6d0e1;
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 10px 24px rgba(18, 28, 56, 0.08);
+  overflow: hidden;
+}
+
+.search-home-input-row:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+.search-home-input-row input {
+  min-width: 0;
+  height: 58px;
+  border: 0;
+  outline: 0;
+  color: var(--text);
+  font-size: 1.02rem;
+  padding: 0 18px;
+}
+
+.search-home-submit {
+  width: auto;
+  min-width: 108px;
+  min-height: 58px;
+  padding: 0 20px;
+}
+
+.popular-searches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.popular-searches a {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  border: 1px solid #cdd6e6;
+  border-radius: 999px;
+  background: var(--surface);
+  color: #25304b;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 8px 14px;
+}
+
+.popular-searches a:hover {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
 .suggestions button:hover,
 .suggestions button[aria-selected="true"],
 .suggestion-status {
@@ -1820,6 +1928,21 @@ p {
 
   .search-command-bar {
     padding-inline: 12px;
+  }
+
+  .search-home {
+    width: min(100% - 24px, 1120px);
+    align-items: start;
+    padding: 40px 0;
+  }
+
+  .search-home-input-row {
+    grid-template-columns: 1fr;
+  }
+
+  .search-home-submit {
+    width: 100%;
+    border-radius: 0 0 8px 8px;
   }
 
   .app-shell {

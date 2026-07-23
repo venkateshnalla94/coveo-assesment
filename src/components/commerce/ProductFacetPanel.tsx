@@ -285,16 +285,19 @@ function PriceRangeFacetControl({
   const span = domain.max - domain.min || 1;
   const percent = (value: number) => ((value - domain.min) / span) * 100;
 
+  // Only update local (visual) state while dragging; the range is committed - via onChange, which
+  // triggers the actual query - on pointerup/keyup so a fast drag doesn't fire a burst of
+  // overlapping requests with no ordering guarantee between their responses.
   const handleMinChange = (value: number) => {
-    const next: [number, number] = [Math.min(value, max), max];
-    setRange(next);
-    onChange(next[0], next[1]);
+    setRange([Math.min(value, max), max]);
   };
 
   const handleMaxChange = (value: number) => {
-    const next: [number, number] = [min, Math.max(value, min)];
-    setRange(next);
-    onChange(next[0], next[1]);
+    setRange([min, Math.max(value, min)]);
+  };
+
+  const commitRange = () => {
+    onChange(range[0], range[1]);
   };
 
   return (
@@ -309,7 +312,10 @@ function PriceRangeFacetControl({
           aria-label="Minimum price"
           max={domain.max}
           min={domain.min}
+          onBlur={commitRange}
           onChange={(event) => handleMinChange(Number(event.target.value))}
+          onKeyUp={commitRange}
+          onPointerUp={commitRange}
           step={domain.increment}
           type="range"
           value={min}
@@ -318,7 +324,10 @@ function PriceRangeFacetControl({
           aria-label="Maximum price"
           max={domain.max}
           min={domain.min}
+          onBlur={commitRange}
           onChange={(event) => handleMaxChange(Number(event.target.value))}
+          onKeyUp={commitRange}
+          onPointerUp={commitRange}
           step={domain.increment}
           type="range"
           value={max}

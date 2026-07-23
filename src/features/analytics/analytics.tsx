@@ -25,6 +25,8 @@ export type AnalyticsEventName =
   | "generative_citation_clicked"
   | "generative_feedback_submitted"
   | "trending_content_clicked"
+  | "trending_article_opened"
+  | "trending_source_visited"
   | "feature_flag_exposure"
   | "commerce_search_submitted"
   | "commerce_product_clicked"

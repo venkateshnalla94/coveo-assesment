@@ -68,6 +68,8 @@ Show AI Product Guidance and Technical Resources.
 
 Explain that RGA is grounded in content/blog material and supports technical research. It does not pick products and is not a product recommendation engine. Technical Resources use the Search API independently from Commerce products.
 
+Click a Technical Resources card to open its `/blog/[id]` article page — full article body, author/date/category/tags, and a "View original source" link out to the original blog. This shows the same content result carrying more than a title and an excerpt.
+
 ## 17:00-19:00: Architecture, Auth, Analytics, Failure Isolation
 
 Use the architecture summary:

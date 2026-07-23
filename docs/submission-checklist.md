@@ -35,6 +35,7 @@
 - [ ] Product details open and close.
 - [ ] RGA appears or fails independently.
 - [ ] Technical Resources appear or fail independently.
+- [ ] Clicking a Technical Resources card opens `/blog/[id]` with the full article and a working "View original source" link; an unknown id renders the 404 page.
 - [ ] Mobile layout is usable.
 - [ ] Keyboard-only navigation is usable.
 

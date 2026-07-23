@@ -56,7 +56,7 @@ AI Product Guidance uses RGA through the server-side generated-answer route. RGA
 
 ## Technical Resources
 
-Technical Resources use the Coveo Search API through a separate server route. Failures are isolated from product discovery.
+Technical Resources use the Coveo Search API through a separate server route. Failures are isolated from product discovery. Clicking a card opens `/blog/[id]`, a server-rendered article page with the full sanitized article body and a link out to the original source (see ADR 0007). This report's test/coverage snapshot below predates that change; regenerate via `npm run agent:demo-readiness` before final submission.
 
 ## Accessibility
 

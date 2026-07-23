@@ -38,6 +38,7 @@ Retained coverage includes:
 - comparison and details drawer behavior
 - RGA answer rendering, citations, feedback, errors, and no-answer states
 - Technical Resources rendering and provider behavior
+- Coveo content mapping and HTML sanitization for article bodies (`src/lib/coveo/content-search.ts`)
 - error isolation
 - security boundaries
 - accessibility-oriented component behavior
@@ -67,3 +68,4 @@ E2E depends on the active Headless Commerce path and does not use removed profil
 - E2E requires valid local Coveo configuration for the live Headless Commerce path.
 - There is no visual-regression service; responsive tests assert usability and horizontal overflow.
 - Build may report the known Coveo Headless Webpack warning.
+- The `/blog/[id]` article detail page has Vitest coverage for its data layer (mapping, sanitization) but no Playwright E2E coverage yet.

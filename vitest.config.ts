@@ -38,6 +38,7 @@ export default defineConfig({
         "src/features/trending/providers/coveo-content-trending-provider.ts",
         "src/features/trending/providers/mock-trending-provider.ts",
         "src/features/trending/services/trending-urls.ts",
+        "src/lib/coveo/content-search.ts",
         "src/lib/errors/application-error.ts",
         "src/lib/logging/logger.ts",
         "src/lib/runtime/runtime-config.ts",

@@ -21,6 +21,7 @@ Active routes:
 
 - `src/app/page.tsx`
 - `src/app/catalog/page.tsx`
+- `src/app/blog/[id]/page.tsx` (Technical Resources article detail page)
 - `src/app/api/search-token/route.ts`
 - `src/app/api/coveo/generative/answer/route.ts`
 - `src/app/api/coveo/content/search/route.ts`

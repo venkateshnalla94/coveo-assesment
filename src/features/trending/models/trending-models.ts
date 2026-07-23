@@ -10,4 +10,12 @@ export interface TrendingItem {
   trendPercentage?: number;
   reason?: string;
   timeWindow?: string;
+  author?: string;
+  publishedAt?: string;
+  category?: string;
+  tags?: string[];
+  imageUrl?: string;
+  wordCount?: number;
+  /** Sanitized article body HTML. Only populated by a single-article fetch, never in list results. */
+  body?: string;
 }

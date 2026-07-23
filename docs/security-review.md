@@ -10,7 +10,7 @@
 - Token-like log metadata is sanitized by shared logger and error helpers.
 - Authorization headers and raw access tokens are not logged by app code.
 - User-controlled query values are rendered through React text nodes.
-- The app does not use `dangerouslySetInnerHTML`.
+- The `/blog/[id]` article page renders one exception to plain-text rendering: the full Technical Resources article body, which is untrusted third-party HTML from an external blog source. It is sanitized server-side with `sanitize-html` (`fetchTrendingArticle` in `src/lib/coveo/content-search.ts`) — an allowlist of basic content tags/attributes, links forced to `target="_blank" rel="noopener noreferrer"` — before being rendered client-side with `dangerouslySetInnerHTML`. No other app code uses `dangerouslySetInnerHTML`.
 - Product, citation, and resource URLs are validated before rendering navigable links.
 - External links that open in a new tab use safe `rel` attributes.
 - `.env.example` contains placeholders only.
@@ -21,6 +21,7 @@ Security-focused tests cover:
 
 - explicit anonymous and search-token credential boundaries
 - unsafe citation and resource URLs
+- article body HTML sanitization (script tags stripped, links forced to safe `target`/`rel`)
 - token-like log metadata redaction
 - redacted search-token route failures
 - secret scanning

@@ -9,7 +9,8 @@ Next.js UI
 ├── Generative Provider
 │   └── RGA
 └── Content Provider
-    └── Coveo Search API
+    ├── Coveo Search API
+    └── /blog/[id] (article detail page)
 ```
 
 The application is a customer-facing RoboMotion product discovery experience. Product search uses `@coveo/headless/commerce`; AI Product Guidance uses RGA; Technical Resources use the Coveo Search API.
@@ -109,7 +110,15 @@ Technical Resources:
 
 ```text
 TrendingContent -> CoveoContentTrendingProvider -> /api/coveo/content/search -> Coveo Search API
+                                                    (shared) src/lib/coveo/content-search.ts
+/blog/[id] (Server Component) -----------------> fetchTrendingArticle -------> Coveo Search API
 ```
+
+`src/lib/coveo/content-search.ts` centralizes both Coveo content calls: `searchTrendingContent` (list results for the right-rail cards, no article body) and `fetchTrendingArticle` (a single result looked up by `raw.permanentid`, including the full article body). The route handler and the `/blog/[id]` Server Component both call this module directly — the page does not fetch its own API route over HTTP.
+
+The full article body (`raw.content`/`raw.body`) is untrusted third-party HTML from the external blog source. `fetchTrendingArticle` sanitizes it server-side with `sanitize-html` (allowlisted tags/attributes, forced `target="_blank" rel="noopener noreferrer"` on links) before it is ever sent to the client — this is the security boundary for rendering it with `dangerouslySetInnerHTML` on the article page. List results never include the body field, keeping the right-rail card payload small.
+
+Trending cards link internally to `/blog/{id}` (the article's `permanentid`, not a product SKU) instead of opening the external source directly; the article page itself carries a "View original source" link out, reusing the existing `getSafeTrendingUrl` protocol allowlist. See ADR 0007.
 
 Both are isolated from product search. If RGA or resources fail, product discovery remains usable. RGA guidance is blog/content-grounded research support, not product recommendation.
 
@@ -140,7 +149,7 @@ Server routes redact credential and upstream details before returning errors to 
 
 ## Test Layers
 
-- Vitest covers mappers, runtime configuration, auth boundaries, UI components, RGA, resources, analytics, logging, and security helpers.
+- Vitest covers mappers, runtime configuration, auth boundaries, UI components, RGA, resources (including the Coveo content mapping and HTML sanitization in `src/lib/coveo/content-search.ts`), analytics, logging, and security helpers.
 - Playwright covers live product discovery, suggestions, facets, pagination, comparison, product details, failure isolation, keyboard behavior, responsive behavior, and axe accessibility checks.
 - Secret scanning checks committed files for obvious credential leaks.
 - `npm audit` checks dependency advisories.

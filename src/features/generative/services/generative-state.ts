@@ -5,7 +5,6 @@ import type {
 
 export type GenerativeStateAction =
   | { type: "requested"; query: string }
-  | { type: "streamed"; query: string; partialAnswer: string; citations: GenerativeAnswer["citations"] }
   | { type: "completed"; answer: GenerativeAnswer }
   | { type: "no-answer"; query: string }
   | { type: "failed"; query: string; message: string }
@@ -18,13 +17,6 @@ export function generativeStateReducer(
   switch (action.type) {
     case "requested":
       return { status: "loading", query: action.query };
-    case "streamed":
-      return {
-        status: "streaming",
-        query: action.query,
-        partialAnswer: action.partialAnswer,
-        citations: action.citations,
-      };
     case "completed":
       return { status: "complete", data: action.answer };
     case "no-answer":

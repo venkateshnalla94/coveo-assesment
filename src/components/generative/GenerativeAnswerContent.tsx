@@ -1,24 +1,35 @@
 "use client";
 
 import { X } from "lucide-react";
-import { KeyboardEvent, useEffect, useId, useRef, useState } from "react";
+import { KeyboardEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { GenerativeCitations } from "@/components/generative/GenerativeCitations";
 import type { GenerativeCitation } from "@/features/generative/models/generative-models";
 
 type GenerativeModalTab = "answer" | "citations";
 
+const PREVIEW_REVEAL_CHARS_PER_TICK = 3;
+const PREVIEW_REVEAL_INTERVAL_MS = 20;
+
+function prefersReducedMotion() {
+  return (
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+}
+
 export function GenerativeAnswerContent({
   answer,
+  animatePreview = false,
   citations,
   compact = true,
-  isStreaming = false,
   query,
 }: {
   answer: string;
+  animatePreview?: boolean;
   citations: GenerativeCitation[];
   compact?: boolean;
-  isStreaming?: boolean;
   query: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -31,6 +42,9 @@ export function GenerativeAnswerContent({
   const answerPanelId = useId();
   const citationsTabId = useId();
   const citationsPanelId = useId();
+  const previewText = useMemo(() => getCompactAnswer(answer), [answer]);
+  const shouldAnimate = animatePreview && !prefersReducedMotion();
+  const [revealedLength, setRevealedLength] = useState(0);
 
   useEffect(() => {
     if (isOpen) {
@@ -43,6 +57,25 @@ export function GenerativeAnswerContent({
       triggerRef.current?.focus();
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!shouldAnimate) {
+      return;
+    }
+
+    let current = 0;
+
+    const timer = window.setInterval(() => {
+      current = Math.min(current + PREVIEW_REVEAL_CHARS_PER_TICK, previewText.length);
+      setRevealedLength(current);
+
+      if (current >= previewText.length) {
+        window.clearInterval(timer);
+      }
+    }, PREVIEW_REVEAL_INTERVAL_MS);
+
+    return () => window.clearInterval(timer);
+  }, [shouldAnimate, previewText]);
 
   if (!compact) {
     return (
@@ -64,23 +97,31 @@ export function GenerativeAnswerContent({
     }
   }
 
-  return (
-    <div aria-busy={isStreaming} aria-live="polite" className="generative-content">
-      <p className={isStreaming ? "generative-streaming-text" : undefined}>
-        {isStreaming ? answer : getCompactAnswer(answer)}
-      </p>
-      {isStreaming ? null : (
-        <button
-          className="secondary-button generative-read-more"
-          onClick={() => setIsOpen(true)}
-          ref={triggerRef}
-          type="button"
-        >
-          Read full guidance and citations
-        </button>
-      )}
+  const isRevealing = shouldAnimate && revealedLength < previewText.length;
+  const displayedText = shouldAnimate ? previewText.slice(0, revealedLength) : previewText;
 
-      {isOpen && !isStreaming ? (
+  return (
+    <div aria-busy={isRevealing} aria-live="polite" className="generative-content">
+      <p className={isRevealing ? "generative-streaming-text" : undefined}>
+        {displayedText}
+        {isRevealing ? null : (
+          <>
+            {" "}
+            <button
+              aria-label="Read full guidance and citations"
+              className="generative-more-link"
+              onClick={() => setIsOpen(true)}
+              ref={triggerRef}
+              title="Read full guidance and citations"
+              type="button"
+            >
+              more
+            </button>
+          </>
+        )}
+      </p>
+
+      {isOpen && !isRevealing ? (
         <div className="drawer-backdrop generative-modal-backdrop" role="presentation">
           <section
             aria-labelledby={titleId}

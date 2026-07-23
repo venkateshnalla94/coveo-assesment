@@ -150,6 +150,7 @@ describe("GenerativeAnswer", () => {
       </AnalyticsProviderRoot>,
     );
 
+    expect(await screen.findByText(/Fixture-backed summary/)).toBeTruthy();
     await userEvent.click(screen.getByRole("button", { name: "Read full guidance and citations" }));
     await userEvent.click(screen.getByRole("tab", { name: "Citations (0)" }));
     expect(screen.getByText("No citations are available for this answer.")).toBeTruthy();

@@ -7,20 +7,12 @@ import {
 } from "@/features/generative/services/generative-state";
 
 describe("generativeStateReducer", () => {
-  it("models loading, streaming, complete, no-answer, and error states", () => {
+  it("models loading, complete, no-answer, and error states", () => {
     const loading = generativeStateReducer({ status: "idle" }, { type: "requested", query: "q" });
     expect(loading).toEqual({ status: "loading", query: "q" });
 
-    const streaming = generativeStateReducer(loading, {
-      type: "streamed",
-      query: "q",
-      partialAnswer: "partial",
-      citations: [],
-    });
-    expect(streaming.status).toBe("streaming");
-
     expect(
-      generativeStateReducer(streaming, {
+      generativeStateReducer(loading, {
         type: "completed",
         answer: { id: "a1", answer: "done", citations: [], query: "q" },
       }),

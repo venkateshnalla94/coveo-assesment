@@ -17,12 +17,6 @@ export interface GenerativeAnswer {
 export type GenerativeState =
   | { status: "idle" }
   | { status: "loading"; query: string }
-  | {
-      status: "streaming";
-      query: string;
-      partialAnswer: string;
-      citations: GenerativeCitation[];
-    }
   | { status: "complete"; data: GenerativeAnswer }
   | { status: "no-answer"; query: string }
   | { status: "error"; query: string; message: string };

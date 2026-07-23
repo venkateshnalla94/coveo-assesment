@@ -2,14 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
-import { TrendingContent } from "@/components/content/TrendingContent";
 import { SearchBox } from "@/components/search/SearchBox";
 import { SEARCH_UI } from "@/components/search/search-ui.constants";
 import type { HeadlessCommerceAuthConfig } from "@/features/commerce/headless/commerce-auth";
 import { useHomeCommerceSuggestions } from "@/features/commerce/headless/use-home-commerce-suggestions";
-import { CoveoContentTrendingProvider } from "@/features/trending/providers/coveo-content-trending-provider";
 
 const popularSearches = [
   "welding arm",
@@ -27,10 +25,6 @@ export function HomeSearchExperience({
   const router = useRouter();
   const [query, setQuery] = useState(SEARCH_UI.defaultQuery);
   const suggestionsProvider = useHomeCommerceSuggestions({ authConfig });
-  const trendingProvider = useMemo(
-    () => new CoveoContentTrendingProvider(SEARCH_UI.defaultQuery),
-    [],
-  );
 
   function openCatalog(nextQuery: string) {
     const trimmedQuery = nextQuery.trim();
@@ -65,13 +59,6 @@ export function HomeSearchExperience({
           </Link>
         ))}
       </nav>
-
-      <TrendingContent
-        description="Guides and community resources for robotics buyers, independent of search."
-        enabled
-        provider={trendingProvider}
-        title="Trending Topics"
-      />
     </section>
   );
 }

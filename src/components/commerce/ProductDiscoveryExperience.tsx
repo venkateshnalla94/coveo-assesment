@@ -10,6 +10,7 @@ import { ProductDetailsDrawer } from "@/components/commerce/ProductDetailsDrawer
 import { ProductGrid } from "@/components/commerce/ProductGrid";
 import { ProductRightRail } from "@/components/commerce/ProductRightRail";
 import { ProductStatus } from "@/components/commerce/ProductStatus";
+import { GenerativeAnswer } from "@/components/generative/GenerativeAnswer";
 import { SearchBox } from "@/components/search/SearchBox";
 import { Pagination } from "@/components/search/Pagination";
 import {
@@ -20,6 +21,8 @@ import {
 import type { HeadlessCommerceAuthConfig } from "@/features/commerce/headless/commerce-auth";
 import { useHeadlessCommerce } from "@/features/commerce/headless/use-headless-commerce";
 import type { ProductResult } from "@/features/commerce/models/commerce-models";
+import { InMemoryFeedbackProvider } from "@/features/generative/providers/feedback-provider";
+import { CoveoGenerativeProvider } from "@/features/generative/providers/coveo-generative-provider";
 import type { SearchFeatureFlags } from "@/lib/features/search-feature-flags";
 
 export function ProductDiscoveryExperience({
@@ -57,6 +60,9 @@ function HeadlessProductDiscoveryContent({
   const [detailsProduct, setDetailsProduct] = useState<ProductResult | null>(null);
   const response = commerce.response;
   const pagination = response?.pagination;
+  const rightRailQuery = commerce.query || "welding arm";
+  const generativeProvider = useMemo(() => new CoveoGenerativeProvider(), []);
+  const feedbackProvider = useMemo(() => new InMemoryFeedbackProvider(), []);
 
   function submitSearch(query: string) {
     analytics.track("commerce_search_submitted", { mode: "headless", query });
@@ -130,6 +136,19 @@ function HeadlessProductDiscoveryContent({
           />
 
           <section className="results-column product-results-column" aria-busy={commerce.status === "loading"} tabIndex={-1}>
+            <GenerativeAnswer
+              feedbackProvider={feedbackProvider}
+              featureFlags={{
+                enableGenerativeAnswers: true,
+                enableGenerativeCitations: true,
+                enableGenerativeDisclaimer: true,
+                enableGenerativeFeedback: true,
+                enableGenerativeStreaming: true,
+              }}
+              provider={generativeProvider}
+              query={commerce.query}
+            />
+
             <div className="results-toolbar">
               <ProductStatus
                 didYouMean={response?.didYouMean}
@@ -205,7 +224,7 @@ function HeadlessProductDiscoveryContent({
             ) : null}
           </section>
 
-          <ProductRightRail query={commerce.query || "welding arm"} />
+          <ProductRightRail query={rightRailQuery} />
         </div>
       </main>
 

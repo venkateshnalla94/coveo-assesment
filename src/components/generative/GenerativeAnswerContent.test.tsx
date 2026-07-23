@@ -65,4 +65,15 @@ describe("GenerativeAnswerContent", () => {
     expect(screen.getByText("Short guidance.")).toBeTruthy();
     expect(screen.getByRole("link", { name: /Welding robotics guide/ })).toBeTruthy();
   });
+
+  it("shows a compact inline 'more' trigger with a full accessible name", () => {
+    renderContent({
+      answer:
+        "The welding arm, or End-of-Arm Tooling, is a critical component in robotic welding systems with control parameters that affect weld quality and maintenance planning.",
+    });
+
+    const trigger = screen.getByRole("button", { name: "Read full guidance and citations" });
+    expect(trigger.textContent).toBe("more");
+    expect(trigger.tagName).toBe("BUTTON");
+  });
 });

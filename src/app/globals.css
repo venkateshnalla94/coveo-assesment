@@ -961,6 +961,14 @@ p {
   color: #ffffff;
 }
 
+.page-ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  color: var(--muted);
+}
+
 .insights-rail {
   display: grid;
   gap: 18px;
@@ -1080,8 +1088,25 @@ p {
   }
 }
 
-.generative-read-more {
-  justify-self: start;
+.generative-more-link {
+  display: inline;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--accent-strong);
+  font: inherit;
+  font-weight: 750;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.generative-more-link:hover {
+  color: var(--accent);
+}
+
+.generative-more-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 @keyframes generative-cursor-blink {

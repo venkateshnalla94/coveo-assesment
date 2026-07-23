@@ -36,9 +36,10 @@ export function GenerativeAnswer({
   query: string;
 }) {
   const analytics = useAnalytics();
-  const [state, dispatch] = useReducer(generativeStateReducer, { status: "idle" });
+  const [state, dispatch] = useReducer(generativeStateReducer, {
+    status: "idle",
+  });
   const [retryCount, setRetryCount] = useState(0);
-  const lastRequestedQuery = useRef("");
   const trackedStateKey = useRef("");
   const trimmedQuery = query.trim();
 
@@ -48,12 +49,7 @@ export function GenerativeAnswer({
       return;
     }
 
-    if (lastRequestedQuery.current === trimmedQuery) {
-      return;
-    }
-
     let isCurrent = true;
-    lastRequestedQuery.current = trimmedQuery;
     trackedStateKey.current = "";
     dispatch({ type: "requested", query: trimmedQuery });
     analytics.track("generative_answer_requested", { query: trimmedQuery });
@@ -72,7 +68,9 @@ export function GenerativeAnswer({
 
         const completedAnswer = {
           ...answer,
-          citations: featureFlags.enableGenerativeCitations ? answer.citations : [],
+          citations: featureFlags.enableGenerativeCitations
+            ? answer.citations
+            : [],
         };
 
         dispatch({ type: "completed", answer: completedAnswer });
@@ -122,7 +120,10 @@ export function GenerativeAnswer({
     }
 
     if (state.status === "error") {
-      analytics.track("generative_answer_failed", { query: state.query, message: state.message });
+      analytics.track("generative_answer_failed", {
+        query: state.query,
+        message: state.message,
+      });
     }
   }, [analytics, state]);
 
@@ -131,7 +132,6 @@ export function GenerativeAnswer({
   }
 
   function retry() {
-    lastRequestedQuery.current = "";
     dispatch({ type: "reset" });
     setRetryCount((count) => count + 1);
   }
@@ -142,38 +142,46 @@ export function GenerativeAnswer({
         <div>
           <span className="result-type">
             <Sparkles aria-hidden="true" size={17} />
-            Generated answer
+            AI Generated information
           </span>
           {featureFlags.enableGenerativeDisclaimer ? (
-            <p>Generated from configured Coveo content. Verify cited sources before using the answer.</p>
+            <p>
+              Generated from configured Coveo content. Verify cited sources
+              before using the answer.
+            </p>
           ) : null}
         </div>
         {state.status === "complete" ? (
-          <button className="icon-button" onClick={retry} type="button" aria-label="Regenerate answer">
+          <button
+            className="icon-button"
+            onClick={retry}
+            type="button"
+            aria-label="Regenerate answer"
+          >
             <RefreshCw aria-hidden="true" size={18} />
           </button>
         ) : null}
       </div>
 
-      {state.status === "idle" ? <p className="muted-copy">Submit a search to generate an answer.</p> : null}
-      {state.status === "loading" ? <GenerativeAnswerSkeleton query={state.query} /> : null}
-      {state.status === "streaming" ? (
-        <GenerativeAnswerContent
-          answer={state.partialAnswer}
-          citations={state.citations}
-          isStreaming
-          query={state.query}
-        />
+      {state.status === "idle" ? (
+        <p className="muted-copy">Submit a search to generate an answer.</p>
+      ) : null}
+      {state.status === "loading" ? (
+        <GenerativeAnswerSkeleton query={state.query} />
       ) : null}
       {state.status === "complete" ? (
         <>
           <GenerativeAnswerContent
+            animatePreview={featureFlags.enableGenerativeStreaming}
             answer={state.data.answer}
             citations={state.data.citations}
             query={state.data.query}
           />
           {featureFlags.enableGenerativeFeedback ? (
-            <GenerativeFeedback answer={state.data} feedbackProvider={feedbackProvider} />
+            <GenerativeFeedback
+              answer={state.data}
+              feedbackProvider={feedbackProvider}
+            />
           ) : null}
         </>
       ) : null}

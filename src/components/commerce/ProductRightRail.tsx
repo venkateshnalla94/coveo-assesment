@@ -3,17 +3,15 @@
 import { CheckCircle2, Sparkles } from "lucide-react";
 import { useMemo } from "react";
 
-import { GenerativeAnswer } from "@/components/generative/GenerativeAnswer";
-import { InMemoryFeedbackProvider } from "@/features/generative/providers/feedback-provider";
-import { CoveoGenerativeProvider } from "@/features/generative/providers/coveo-generative-provider";
+import { TrendingContent } from "@/components/content/TrendingContent";
+import { CoveoContentTrendingProvider } from "@/features/trending/providers/coveo-content-trending-provider";
 
 export function ProductRightRail({
   query,
 }: {
   query: string;
 }) {
-  const generativeProvider = useMemo(() => new CoveoGenerativeProvider(), []);
-  const feedbackProvider = useMemo(() => new InMemoryFeedbackProvider(), []);
+  const trendingProvider = useMemo(() => new CoveoContentTrendingProvider(query), [query]);
 
   return (
     <aside
@@ -41,17 +39,11 @@ export function ProductRightRail({
         </ul>
       </section>
 
-      <GenerativeAnswer
-        feedbackProvider={feedbackProvider}
-        featureFlags={{
-          enableGenerativeAnswers: true,
-          enableGenerativeCitations: true,
-          enableGenerativeDisclaimer: true,
-          enableGenerativeFeedback: true,
-          enableGenerativeStreaming: true,
-        }}
-        provider={generativeProvider}
-        query={query}
+      <TrendingContent
+        description={`Guides and technical resources related to "${query}".`}
+        enabled
+        provider={trendingProvider}
+        title="Related Technical Resources"
       />
     </aside>
   );

@@ -101,9 +101,14 @@ export function ProductResultCard({
             <GitCompareArrows aria-hidden="true" size={16} />
             {isCompared ? "Compared" : "Compare"}
           </button>
-          <button className="primary-text-button" onClick={() => onOpenDetails(product)} type="button">
-            View Product
-            {safeUrl !== "#" ? <ExternalLink aria-hidden="true" size={15} /> : null}
+          <button
+            aria-label="View product"
+            className="primary-text-button"
+            onClick={() => onOpenDetails(product)}
+            type="button"
+          >
+            View
+            {safeUrl !== "#" ? <ExternalLink aria-hidden="true" size={14} /> : null}
           </button>
         </div>
       </div>

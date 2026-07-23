@@ -145,12 +145,25 @@ export function GenerativeAnswerContent({
   );
 }
 
+const SENTENCE_PREVIEW_COUNT = 2;
+const SENTENCE_PREVIEW_MAX_LENGTH = 280;
+
 function getCompactAnswer(answer: string) {
   const normalized = answer.trim();
+  const sentences = normalized.match(/[^.!?]+[.!?]+(\s+|$)/g);
+  const preview = sentences?.slice(0, SENTENCE_PREVIEW_COUNT).join("").trim();
 
-  if (normalized.length <= 260) {
+  if (preview && preview.length < normalized.length) {
+    return `${preview}...`;
+  }
+
+  if (preview) {
+    return preview;
+  }
+
+  if (normalized.length <= SENTENCE_PREVIEW_MAX_LENGTH) {
     return normalized;
   }
 
-  return `${normalized.slice(0, 260).trimEnd()}...`;
+  return `${normalized.slice(0, SENTENCE_PREVIEW_MAX_LENGTH).trimEnd()}...`;
 }

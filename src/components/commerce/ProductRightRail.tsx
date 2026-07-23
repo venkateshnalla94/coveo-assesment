@@ -6,8 +6,6 @@ import { useMemo } from "react";
 import { GenerativeAnswer } from "@/components/generative/GenerativeAnswer";
 import { InMemoryFeedbackProvider } from "@/features/generative/providers/feedback-provider";
 import { CoveoGenerativeProvider } from "@/features/generative/providers/coveo-generative-provider";
-import { CoveoContentTrendingProvider } from "@/features/trending/providers/coveo-content-trending-provider";
-import { TrendingContent } from "@/components/content/TrendingContent";
 
 export function ProductRightRail({
   query,
@@ -16,7 +14,6 @@ export function ProductRightRail({
 }) {
   const generativeProvider = useMemo(() => new CoveoGenerativeProvider(), []);
   const feedbackProvider = useMemo(() => new InMemoryFeedbackProvider(), []);
-  const trendingProvider = useMemo(() => new CoveoContentTrendingProvider(query), [query]);
 
   return (
     <aside
@@ -55,13 +52,6 @@ export function ProductRightRail({
         }}
         provider={generativeProvider}
         query={query}
-      />
-
-      <TrendingContent
-        description="Live Search API content for product evaluation and robotics planning."
-        enabled
-        provider={trendingProvider}
-        title="Technical Resources"
       />
     </aside>
   );

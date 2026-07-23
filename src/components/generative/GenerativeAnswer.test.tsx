@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -86,9 +86,7 @@ describe("GenerativeAnswer", () => {
     await waitFor(() => expect(screen.queryByLabelText("Generated answer")).toBeNull());
   });
 
-  it("supports streaming-like progressive display", async () => {
-    vi.useFakeTimers();
-
+  it("renders the completed answer immediately without a progressive typing delay", async () => {
     render(
       <AnalyticsProviderRoot enabled provider={{ track: vi.fn() }}>
         <GenerativeAnswer
@@ -111,18 +109,7 @@ describe("GenerativeAnswer", () => {
       </AnalyticsProviderRoot>,
     );
 
-    await act(async () => {
-      await Promise.resolve();
-    });
-
-    expect(screen.getByText("S")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Read full guidance and citations" })).toBeNull();
-
-    act(() => {
-      vi.advanceTimersByTime(1_000);
-    });
-
-    expect(screen.getByText("Streaming answer text.")).toBeTruthy();
+    expect(await screen.findByText("Streaming answer text.")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Read full guidance and citations" })).toBeTruthy();
   });
 

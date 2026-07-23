@@ -36,7 +36,7 @@ export function ComparisonBar({
             {product.imageUrl ? <img alt="" src={product.imageUrl} /> : null}
             <span>
               <strong>{product.id}</strong>
-              <small>{formatPrice(product.promoPrice ?? product.price)}</small>
+              <small>{formatPrice(product.price)}</small>
             </span>
             <button aria-label={`Remove ${product.title} from comparison`} onClick={() => onRemove(product.id)} type="button">
               <X aria-hidden="true" size={15} />

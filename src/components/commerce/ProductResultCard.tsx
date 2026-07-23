@@ -73,7 +73,7 @@ export function ProductResultCard({
         <dl className="product-meta-grid">
           <div>
             <dt>Price</dt>
-            <dd>{formatPrice(product.promoPrice ?? product.price)}</dd>
+            <dd>{formatPrice(product.price)}</dd>
           </div>
           <div>
             <dt>Rating</dt>

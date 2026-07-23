@@ -77,7 +77,7 @@ function getComparisonRows(products: ProductResult[]) {
   const rows = [
     { label: "Brand", values: products.map((product) => product.brand) },
     { label: "Category", values: products.map((product) => getLeafCategory(product)) },
-    { label: "Price", values: products.map((product) => formatPrice(product.promoPrice ?? product.price)) },
+    { label: "Price", values: products.map((product) => formatPrice(product.price)) },
     { label: "Rating", values: products.map((product) => formatRating(product.rating)) },
     { label: "Availability", values: products.map((product) => (product.inStock === undefined ? undefined : product.inStock ? "In stock" : "Unavailable")) },
     { label: "Compatible Robot Series", values: products.map((product) => product.compatibleRobotSeries.join(", ")) },

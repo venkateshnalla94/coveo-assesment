@@ -52,7 +52,7 @@ export function ProductDetailsDrawer({
             <p className="product-brand">{product.brand}</p>
             <h3>{product.title}</h3>
             <p>{getLeafCategory(product)}</p>
-            <strong>{formatPrice(product.promoPrice ?? product.price)}</strong>
+            <strong>{formatPrice(product.price)}</strong>
             <span>{formatRating(product.rating)} rating</span>
             {product.inStock !== undefined ? (
               <span className={`stock-pill ${product.inStock ? "stock-pill-in" : "stock-pill-out"}`}>

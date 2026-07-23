@@ -9,6 +9,33 @@ export type PaginationState = {
   totalPages: number;
 };
 
+/**
+ * Bounds the number of rendered page buttons: always page 1, the last page, and a small
+ * window around the current page, collapsing gaps into "…" markers. Without this, a query
+ * with dozens of pages renders one button per page and overflows the results column.
+ */
+export function getPageWindow(currentPage: number, totalPages: number, siblingCount = 1) {
+  const window: Array<number | "…"> = [];
+  const start = Math.max(2, currentPage - siblingCount);
+  const end = Math.min(totalPages - 1, currentPage + siblingCount);
+
+  window.push(1);
+  if (start > 2) {
+    window.push("…");
+  }
+  for (let page = start; page <= end; page += 1) {
+    window.push(page);
+  }
+  if (end < totalPages - 1) {
+    window.push("…");
+  }
+  if (totalPages > 1) {
+    window.push(totalPages);
+  }
+
+  return window;
+}
+
 export function Pagination({
   onSelectPage,
   pagination,
@@ -32,17 +59,23 @@ export function Pagination({
         <ChevronLeft aria-hidden="true" size={18} />
       </button>
 
-      {Array.from({ length: pagination.totalPages }, (_, index) => index + 1).map((page) => (
-        <button
-          aria-current={pagination.currentPage === page ? "page" : undefined}
-          className="page-button"
-          key={page}
-          onClick={() => onSelectPage(page)}
-          type="button"
-        >
-          {page}
-        </button>
-      ))}
+      {getPageWindow(pagination.currentPage, pagination.totalPages).map((page, index) =>
+        page === "…" ? (
+          <span aria-hidden="true" className="page-ellipsis" key={`ellipsis-${index}`}>
+            …
+          </span>
+        ) : (
+          <button
+            aria-current={pagination.currentPage === page ? "page" : undefined}
+            className="page-button"
+            key={page}
+            onClick={() => onSelectPage(page)}
+            type="button"
+          >
+            {page}
+          </button>
+        ),
+      )}
 
       <button
         aria-label="Next page"

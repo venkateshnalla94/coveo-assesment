@@ -17,7 +17,7 @@ Industrial robotics buyers rarely know the exact SKU they need at the start of d
 - Live Coveo Commerce product search through `@coveo/headless/commerce`
 - Query suggestions
 - Hierarchical, regular, and numerical-range facets
-- Result summary and relevance-only sorting
+- Result summary and data-driven sorting (renders whatever sort criteria the commerce interface config returns — relevance-only today, additional criteria would appear automatically without a code change)
 - Pagination
 - Product cards with image, price, rating, stock, brand, category, and compatibility
 - Local comparison for up to three products
@@ -110,7 +110,7 @@ npm audit
 
 ## Known Limitations
 
-- Live sorting is relevance-only: verified directly against the raw `/commerce/v2/search` response (`sort.availableSorts` returns only `{sortCriteria: "relevance"}`), so this is a Merchandising Hub interface-config gap, not an unwired frontend control. In a live engagement I'd enable field sorting for `ec_price`/`ec_rating` on the commerce listing config rather than build a dropdown against options the platform doesn't offer.
+- Live sorting is relevance-only: verified directly against the raw `/commerce/v2/search` response (`sort.availableSorts` returns only `{sortCriteria: "relevance"}`), so this is a Merchandising Hub interface-config gap, not a frontend gap — the toolbar's sort control is already data-driven (`mapHeadlessSort()`/`updateSort()`, see ADR 0011) and renders a `<select>` the moment more than one criterion is configured; it falls back to a read-only "Relevance" label only because that's the only option offered today. In a live engagement I'd enable field sorting for `ec_price`/`ec_rating` on the commerce listing config; no frontend change would be needed to pick it up.
 - Payload, reach, precision, mounting, certification, industry, controller, and datasheet fields are not available as consistent structured catalog fields.
 - RGA is grounded in blog/content material and is not a product recommendation engine.
 - Commerce Product Recommendations and Product Listings are not configured.
@@ -126,7 +126,7 @@ npm audit
 - Implement secured identity-aware search for authenticated customers.
 - Add analytics dashboards and conversion reporting.
 - Add personalization after governance and consent requirements are clear.
-- Configure Commerce sorting beyond relevance when the index supports it.
+- Configure Commerce sorting beyond relevance on the Merchandising Hub side — the frontend already renders whatever criteria are returned.
 - Add product recommendations when Coveo recommendations are enabled.
 - Deploy Web Vitals monitoring.
 

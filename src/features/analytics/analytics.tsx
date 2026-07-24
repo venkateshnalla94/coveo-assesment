@@ -33,6 +33,7 @@ export type AnalyticsEventName =
   | "commerce_facet_selected"
   | "commerce_facet_removed"
   | "commerce_page_changed"
+  | "commerce_sort_changed"
   | "product_compare_added"
   | "product_compare_removed"
   | "product_compare_opened"

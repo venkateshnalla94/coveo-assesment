@@ -31,7 +31,7 @@
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
-    "@coveo/headless": "^3.4.1",
+    "@coveo/headless": "^3.53.1",
     "lucide-react": "^1.25.0",
     "next": "^16.2.10",
     "react": "^19.2.7",

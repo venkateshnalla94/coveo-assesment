@@ -126,13 +126,20 @@ export interface ProductDidYouMean {
   wasAutomaticallyCorrected: boolean;
 }
 
+export interface ProductSortOption {
+  id: string;
+  label: string;
+}
+
 export interface ProductSearchResponse {
   products: ProductResult[];
   facets: ProductFacet[];
   pagination: ProductPagination;
   totalCount: number;
   didYouMean?: ProductDidYouMean;
-  availableSorts: string[];
+  // Whatever criteria Coveo's commerce interface config returns (often relevance-only), rendered
+  // as-is rather than a hardcoded list, so newly configured criteria show up without a code change.
+  availableSorts: ProductSortOption[];
   appliedSort: string;
 }
 

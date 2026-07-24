@@ -5,7 +5,6 @@ import {
   buildRelevanceSortCriterion,
   buildSearch,
   buildSearchBox,
-  getOrganizationEndpoints,
   type CategoryFacet,
   type CommerceEngine,
   type DidYouMean,
@@ -24,9 +23,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { COMMERCE_DEFAULTS } from "@/features/commerce/config/commerce-config";
 import type { HeadlessCommerceAuthConfig } from "@/features/commerce/headless/commerce-auth";
 import {
+  getSortCriterionId,
   mapHeadlessFacets,
   mapHeadlessPagination,
   mapHeadlessProduct,
+  mapHeadlessSort,
   resolveProductId,
 } from "@/features/commerce/headless/headless-commerce-mappers";
 import type { Analytics } from "@/features/analytics/analytics";
@@ -233,6 +234,14 @@ export function useHeadlessCommerce({
     toggleRange: (field: string, start: number, end: number) => {
       toggleRangeValue(bundleRef.current?.facetGenerator.facets ?? [], field, start, end);
     },
+    updateSort: (sortId: string) => {
+      const bundle = bundleRef.current;
+      const criterion = bundle?.sort.state.availableSorts.find((option) => getSortCriterionId(option) === sortId);
+
+      if (bundle && criterion) {
+        bundle.sort.sortBy(criterion);
+      }
+    },
     trackProductClick: (productId: string) => {
       const bundle = bundleRef.current;
       const rawProduct = bundle?.search.state.products.find(
@@ -264,7 +273,6 @@ function createCommerceControllers({
       accessToken: token,
       analytics: {
         enabled: true,
-        originContext: "Search",
         trackingId: COMMERCE_DEFAULTS.trackingId,
       },
       context: {
@@ -276,7 +284,6 @@ function createCommerceControllers({
         },
       },
       organizationId,
-      organizationEndpoints: getOrganizationEndpoints(organizationId),
       ...(renewAccessToken ? { renewAccessToken } : {}),
     },
   });
@@ -374,10 +381,11 @@ function buildSearchResponse(bundle: CommerceControllerBundle): ProductSearchRes
   const products = bundle.search.state.products.map(mapHeadlessProduct);
   const pagination = mapHeadlessPagination(bundle.pagination.state);
   const didYouMeanState = bundle.didYouMean.state;
+  const { appliedSort, availableSorts } = mapHeadlessSort(bundle.sort.state);
 
   return {
-    appliedSort: "relevance",
-    availableSorts: bundle.sort.state.availableSorts.length > 0 ? ["relevance"] : ["relevance"],
+    appliedSort,
+    availableSorts,
     ...(didYouMeanState.wasAutomaticallyCorrected
       ? {
           didYouMean: {

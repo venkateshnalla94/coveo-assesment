@@ -172,10 +172,30 @@ function HeadlessProductDiscoveryContent({
                 pagination={pagination}
                 query={commerce.query}
               />
-              <div className="sort-control">
-                <span>Sort by</span>
-                <span className="sort-readonly">Relevance</span>
-              </div>
+              {response && response.availableSorts.length > 1 ? (
+                <div className="sort-control">
+                  <label htmlFor="commerce-sort-select">Sort by</label>
+                  <select
+                    id="commerce-sort-select"
+                    onChange={(event) => {
+                      analytics.track("commerce_sort_changed", { query: commerce.query, sort: event.target.value });
+                      commerce.updateSort(event.target.value);
+                    }}
+                    value={response.appliedSort}
+                  >
+                    {response.availableSorts.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="sort-control">
+                  <span>Sort by</span>
+                  <span className="sort-readonly">{response?.availableSorts[0]?.label ?? "Relevance"}</span>
+                </div>
+              )}
             </div>
 
             {commerce.status === "error" ? (

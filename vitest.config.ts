@@ -28,6 +28,7 @@ export default defineConfig({
         "src/components/shared/ConfigurationNotice.tsx",
         "src/features/analytics/analytics.tsx",
         "src/features/commerce/headless/commerce-auth.ts",
+        "src/features/commerce/headless/headless-commerce-mappers.ts",
         "src/features/commerce/models/commerce-models.ts",
         "src/features/feature-flags/env-feature-flags.ts",
         "src/features/feature-flags/feature-flags.ts",

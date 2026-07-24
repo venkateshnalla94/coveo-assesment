@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  getSortCriterionId,
   mapHeadlessFacets,
   mapHeadlessPagination,
   mapHeadlessProduct,
+  mapHeadlessSort,
 } from "@/features/commerce/headless/headless-commerce-mappers";
 
 describe("headless commerce mappers", () => {
@@ -139,6 +141,64 @@ describe("headless commerce mappers", () => {
       totalEntries: 50,
       totalPages: 3,
       totalProducts: 50,
+    });
+  });
+
+  it("drops facets with a type it does not recognize, such as location", () => {
+    expect(
+      mapHeadlessFacets([
+        {
+          state: {
+            displayName: "Store",
+            field: "ec_store_location",
+            type: "location",
+            values: [{ numberOfResults: 3, state: "idle", value: "Toronto" }],
+          },
+        },
+      ]),
+    ).toEqual([]);
+  });
+
+  it("derives a stable id for the relevance sort criterion", () => {
+    expect(getSortCriterionId({ by: "relevance" })).toBe("relevance");
+  });
+
+  it("derives a joined field:direction id for a fields sort criterion, defaulting to ascending", () => {
+    expect(
+      getSortCriterionId({
+        by: "fields",
+        fields: [{ name: "ec_price", direction: "desc" }, { name: "ec_rating" }],
+      }),
+    ).toBe("ec_price:desc,ec_rating:asc");
+  });
+
+  it("maps the applied and available sort criteria into ids and human-readable labels", () => {
+    expect(
+      mapHeadlessSort({
+        appliedSort: { by: "relevance" },
+        availableSorts: [
+          { by: "relevance" },
+          { by: "fields", fields: [{ direction: "desc", name: "ec_price" }] },
+          { by: "fields", fields: [{ direction: "asc", name: "ec_rating" }] },
+          { by: "fields", fields: [{ displayName: "Newest", direction: "desc", name: "ec_publish_date" }] },
+          {
+            by: "fields",
+            fields: [
+              { direction: "desc", name: "ec_price" },
+              { direction: "asc", name: "ec_brand-name" },
+            ],
+          },
+        ],
+      }),
+    ).toEqual({
+      appliedSort: "relevance",
+      availableSorts: [
+        { id: "relevance", label: "Relevance" },
+        { id: "ec_price:desc", label: "price (High to Low)" },
+        { id: "ec_rating:asc", label: "rating (Low to High)" },
+        { id: "ec_publish_date:desc", label: "Newest" },
+        { id: "ec_price:desc,ec_brand-name:asc", label: "price (High to Low), brand name (Low to High)" },
+      ],
     });
   });
 });

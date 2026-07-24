@@ -5,6 +5,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const replaceMock = vi.fn();
 const submitSearchSpy = vi.fn();
+const updateSortSpy = vi.fn();
+let mockResponse: unknown;
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: replaceMock }),
@@ -23,7 +25,7 @@ vi.mock("@/features/commerce/headless/use-headless-commerce", () => ({
       clearQuery: () => setQuery(""),
       message: undefined,
       query,
-      response: undefined,
+      response: mockResponse,
       retry: vi.fn(),
       selectPage: vi.fn(),
       status: "success" as const,
@@ -36,11 +38,13 @@ vi.mock("@/features/commerce/headless/use-headless-commerce", () => ({
       toggleRange: vi.fn(),
       trackProductClick: vi.fn(),
       updateQuery: (nextQuery: string) => setQuery(nextQuery),
+      updateSort: updateSortSpy,
     };
   },
 }));
 
 import { ProductDiscoveryExperience } from "@/components/commerce/ProductDiscoveryExperience";
+import { CoveoAnalyticsProvider } from "@/features/analytics/analytics";
 import { defaultSearchFeatureFlags } from "@/lib/features/search-feature-flags";
 
 const configurationErrorAuthConfig = {
@@ -61,6 +65,8 @@ afterEach(() => {
   cleanup();
   replaceMock.mockClear();
   submitSearchSpy.mockClear();
+  updateSortSpy.mockClear();
+  mockResponse = undefined;
   vi.restoreAllMocks();
 });
 
@@ -112,6 +118,70 @@ describe("ProductDiscoveryExperience", () => {
     expect(replaceMock).not.toHaveBeenCalled();
     expect(screen.getByRole("link", { name: "Blog" }).getAttribute("href")).toBe(
       "/blog?q=welding%20arm",
+    );
+  });
+
+  it("renders a read-only sort label when zero or one sort options are available", async () => {
+    mockTrendingFetch();
+    mockResponse = {
+      appliedSort: "relevance",
+      availableSorts: [{ id: "relevance", label: "Relevance" }],
+      facets: [],
+      pagination: { page: 0, perPage: 24, totalEntries: 0, totalPages: 0, totalProducts: 0 },
+      products: [],
+      totalCount: 0,
+    };
+
+    render(
+      <ProductDiscoveryExperience
+        commerceAuthConfig={configurationErrorAuthConfig}
+        featureFlags={defaultSearchFeatureFlags}
+        initialQuery="welding arm"
+      />,
+    );
+
+    expect(screen.queryByRole("combobox", { name: "Sort by" })).toBeNull();
+    expect(screen.getByText("Relevance", { selector: ".sort-readonly" })).not.toBeNull();
+  });
+
+  it("renders a sort select when multiple sort options are available and updates sort on change", async () => {
+    mockTrendingFetch();
+    const trackSpy = vi.spyOn(CoveoAnalyticsProvider.prototype, "track");
+    mockResponse = {
+      appliedSort: "relevance",
+      availableSorts: [
+        { id: "relevance", label: "Relevance" },
+        { id: "ec_price:desc", label: "Price (High to Low)" },
+      ],
+      facets: [],
+      pagination: { page: 0, perPage: 24, totalEntries: 0, totalPages: 0, totalProducts: 0 },
+      products: [],
+      totalCount: 0,
+    };
+
+    render(
+      <ProductDiscoveryExperience
+        commerceAuthConfig={configurationErrorAuthConfig}
+        featureFlags={defaultSearchFeatureFlags}
+        initialQuery="welding arm"
+      />,
+    );
+
+    const select = screen.getByRole<HTMLSelectElement>("combobox", { name: "Sort by" });
+    expect(select.value).toBe("relevance");
+    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
+      "Relevance",
+      "Price (High to Low)",
+    ]);
+
+    await userEvent.selectOptions(select, "ec_price:desc");
+
+    expect(updateSortSpy).toHaveBeenCalledWith("ec_price:desc");
+    expect(trackSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: "commerce_sort_changed",
+        payload: { query: "welding arm", sort: "ec_price:desc" },
+      }),
     );
   });
 });

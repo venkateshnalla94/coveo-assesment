@@ -6,10 +6,20 @@ import type {
   ProductPagination,
   ProductRangeFacetValue,
   ProductResult,
+  ProductSortOption,
   ProductTextHighlight,
 } from "@/features/commerce/models/commerce-models";
 
 type RawRecord = Record<string, unknown>;
+
+type HeadlessSortCriterionLike =
+  | { by: "relevance" }
+  | { by: "fields"; fields: { name: string; direction?: "asc" | "desc"; displayName?: string }[] };
+
+type HeadlessSortStateLike = {
+  appliedSort: HeadlessSortCriterionLike;
+  availableSorts: HeadlessSortCriterionLike[];
+};
 
 type HeadlessProductLike = {
   additionalFields?: RawRecord;
@@ -41,7 +51,7 @@ type HeadlessFacetLike = {
     displayName?: string;
     field: string;
     facetId?: string;
-    type: "regular" | "hierarchical" | "numericalRange" | "dateRange";
+    type: "regular" | "hierarchical" | "numericalRange" | "dateRange" | "location";
     values: unknown[];
     domain?: {
       min: number;
@@ -117,6 +127,43 @@ export function mapHeadlessFacets(facets: HeadlessFacetLike[]): ProductFacet[] {
   return facets
     .map((facet) => mapHeadlessFacet(facet))
     .filter((facet): facet is ProductFacet => Boolean(facet));
+}
+
+// Stable identity for a sort criterion, shared between the mapped `availableSorts`/`appliedSort`
+// ids and the lookup that resolves a selected id back to the criterion `sort.sortBy()` expects.
+export function getSortCriterionId(criterion: HeadlessSortCriterionLike): string {
+  if (criterion.by === "relevance") {
+    return "relevance";
+  }
+
+  return criterion.fields.map((field) => `${field.name}:${field.direction ?? "asc"}`).join(",");
+}
+
+function getSortCriterionLabel(criterion: HeadlessSortCriterionLike): string {
+  if (criterion.by === "relevance") {
+    return "Relevance";
+  }
+
+  return criterion.fields
+    .map((field) => field.displayName ?? `${humanizeFieldName(field.name)} (${field.direction === "desc" ? "High to Low" : "Low to High"})`)
+    .join(", ");
+}
+
+function humanizeFieldName(field: string) {
+  return field.replace(/^ec_/, "").replace(/[_-]+/g, " ");
+}
+
+export function mapHeadlessSort(state: HeadlessSortStateLike): {
+  availableSorts: ProductSortOption[];
+  appliedSort: string;
+} {
+  return {
+    appliedSort: getSortCriterionId(state.appliedSort),
+    availableSorts: state.availableSorts.map((criterion) => ({
+      id: getSortCriterionId(criterion),
+      label: getSortCriterionLabel(criterion),
+    })),
+  };
 }
 
 export function mapHeadlessPagination({

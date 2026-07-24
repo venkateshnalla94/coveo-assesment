@@ -5,7 +5,7 @@
 - Next.js App Router on Next `^16.2.10`
 - React `^19.2.7`
 - TypeScript `^6.0.3`
-- `@coveo/headless` `^3.4.1`
+- `@coveo/headless` `^3.53.1`
 - Vitest, React Testing Library, Playwright, and axe
 - Webpack-based Next commands because of a known Coveo Headless bundle warning
 
@@ -63,7 +63,7 @@ There is no silent fallback between credentials or provider paths.
 - All five Commerce facets work: category, compatible robot series, brand, price, and rating.
 - Price and rating are range facets.
 - Pagination works.
-- Sorting is relevance-only.
+- Sorting is data-driven (`mapHeadlessSort()`/`commerce.updateSort()`, see ADR 0011): the toolbar renders whatever sort criteria the commerce interface config returns and is relevance-only today because that's the only criterion configured, not because of a frontend limitation.
 - Headless Commerce requests return HTTP 200.
 - `/api/search-token` is not used in anonymous mode.
 

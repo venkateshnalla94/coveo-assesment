@@ -4,7 +4,6 @@ import {
   buildCommerceEngine,
   buildSearch,
   buildSearchBox,
-  getOrganizationEndpoints,
   type SearchBox as HeadlessSearchBox,
 } from "@coveo/headless/commerce";
 import type { CurrencyCodeISO4217 } from "@coveo/relay-event-types";
@@ -62,7 +61,6 @@ async function createGlobalSuggestionControllers(
       accessToken: resolvedAuth.token,
       analytics: {
         enabled: true,
-        originContext: "Search",
         trackingId: COMMERCE_DEFAULTS.trackingId,
       },
       context: {
@@ -74,7 +72,6 @@ async function createGlobalSuggestionControllers(
         },
       },
       organizationId: resolvedAuth.organizationId,
-      organizationEndpoints: getOrganizationEndpoints(resolvedAuth.organizationId),
       ...(resolvedAuth.renewAccessToken ? { renewAccessToken: resolvedAuth.renewAccessToken } : {}),
     },
   });

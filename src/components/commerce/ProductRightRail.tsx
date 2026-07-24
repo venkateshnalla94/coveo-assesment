@@ -5,10 +5,13 @@ import { useMemo } from "react";
 
 import { TrendingContent } from "@/components/content/TrendingContent";
 import { CoveoContentTrendingProvider } from "@/features/trending/providers/coveo-content-trending-provider";
+import type { SearchFeatureFlags } from "@/lib/features/search-feature-flags";
 
 export function ProductRightRail({
+  featureFlags,
   query,
 }: {
+  featureFlags: Pick<SearchFeatureFlags, "enableTrendingContent">;
   query: string;
 }) {
   const trendingProvider = useMemo(() => new CoveoContentTrendingProvider(query), [query]);
@@ -41,7 +44,7 @@ export function ProductRightRail({
 
       <TrendingContent
         description={`Guides and technical resources related to "${query}".`}
-        enabled
+        enabled={featureFlags.enableTrendingContent}
         provider={trendingProvider}
         title="Related Technical Resources"
       />

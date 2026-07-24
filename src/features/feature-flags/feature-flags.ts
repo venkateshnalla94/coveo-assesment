@@ -1,20 +1,4 @@
 export interface FeatureFlags {
-  search: {
-    querySuggestions: boolean;
-    recentSearches: boolean;
-  };
-  results: {
-    badges: boolean;
-    thumbnails: boolean;
-    quickView: boolean;
-  };
-  facets: {
-    enabled: boolean;
-    contentType: boolean;
-    source: boolean;
-    product: boolean;
-    updatedDate: boolean;
-  };
   generative: {
     enabled: boolean;
     streaming: boolean;
@@ -25,15 +9,8 @@ export interface FeatureFlags {
   trending: {
     enabled: boolean;
   };
-  insights: {
-    enabled: boolean;
-    topic: boolean;
-    relatedQueries: boolean;
-    popularContent: boolean;
-  };
   analytics: {
     enabled: boolean;
-    featureExposure: boolean;
   };
 }
 
@@ -44,14 +21,6 @@ export type FeatureFlagOverrides = {
 export const defaultFeatureFlags: Readonly<FeatureFlags> = Object.freeze({
   analytics: Object.freeze({
     enabled: true,
-    featureExposure: true,
-  }),
-  facets: Object.freeze({
-    contentType: true,
-    enabled: true,
-    product: true,
-    source: true,
-    updatedDate: false,
   }),
   generative: Object.freeze({
     citations: true,
@@ -59,21 +28,6 @@ export const defaultFeatureFlags: Readonly<FeatureFlags> = Object.freeze({
     enabled: false,
     feedback: true,
     streaming: false,
-  }),
-  insights: Object.freeze({
-    enabled: true,
-    popularContent: true,
-    relatedQueries: true,
-    topic: true,
-  }),
-  results: Object.freeze({
-    badges: true,
-    quickView: false,
-    thumbnails: true,
-  }),
-  search: Object.freeze({
-    querySuggestions: true,
-    recentSearches: false,
   }),
   trending: Object.freeze({
     enabled: true,
@@ -91,11 +45,7 @@ export function mergeFeatureFlags(
 
     return {
       analytics: { ...current.analytics, ...pickBooleanOverrides(override.analytics) },
-      facets: { ...current.facets, ...pickBooleanOverrides(override.facets) },
       generative: { ...current.generative, ...pickBooleanOverrides(override.generative) },
-      insights: { ...current.insights, ...pickBooleanOverrides(override.insights) },
-      results: { ...current.results, ...pickBooleanOverrides(override.results) },
-      search: { ...current.search, ...pickBooleanOverrides(override.search) },
       trending: { ...current.trending, ...pickBooleanOverrides(override.trending) },
     };
   }, cloneFeatureFlags(base));
@@ -124,11 +74,7 @@ function pickBooleanOverrides<T extends Record<string, boolean>>(input: Partial<
 function cloneFeatureFlags(flags: FeatureFlags): FeatureFlags {
   return {
     analytics: { ...flags.analytics },
-    facets: { ...flags.facets },
     generative: { ...flags.generative },
-    insights: { ...flags.insights },
-    results: { ...flags.results },
-    search: { ...flags.search },
     trending: { ...flags.trending },
   };
 }

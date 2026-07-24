@@ -41,16 +41,22 @@ export function ProductDiscoveryExperience({
 
   return (
     <AnalyticsProviderRoot enabled={featureFlags.enableAnalytics} provider={analyticsProvider}>
-      <HeadlessProductDiscoveryContent authConfig={commerceAuthConfig} initialQuery={initialQuery} />
+      <HeadlessProductDiscoveryContent
+        authConfig={commerceAuthConfig}
+        featureFlags={featureFlags}
+        initialQuery={initialQuery}
+      />
     </AnalyticsProviderRoot>
   );
 }
 
 function HeadlessProductDiscoveryContent({
   authConfig,
+  featureFlags,
   initialQuery,
 }: {
   authConfig: HeadlessCommerceAuthConfig;
+  featureFlags: SearchFeatureFlags;
   initialQuery: string;
 }) {
   const analytics = useAnalytics();
@@ -138,13 +144,7 @@ function HeadlessProductDiscoveryContent({
           <section className="results-column product-results-column" aria-busy={commerce.status === "loading"} tabIndex={-1}>
             <GenerativeAnswer
               feedbackProvider={feedbackProvider}
-              featureFlags={{
-                enableGenerativeAnswers: true,
-                enableGenerativeCitations: true,
-                enableGenerativeDisclaimer: true,
-                enableGenerativeFeedback: true,
-                enableGenerativeStreaming: true,
-              }}
+              featureFlags={featureFlags}
               provider={generativeProvider}
               query={commerce.query}
             />
@@ -224,7 +224,7 @@ function HeadlessProductDiscoveryContent({
             ) : null}
           </section>
 
-          <ProductRightRail query={rightRailQuery} />
+          <ProductRightRail featureFlags={featureFlags} query={rightRailQuery} />
         </div>
       </main>
 

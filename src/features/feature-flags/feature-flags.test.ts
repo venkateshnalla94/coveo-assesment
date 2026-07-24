@@ -7,14 +7,13 @@ describe("feature flag resolution", () => {
   it("deep merges known boolean keys in deterministic precedence order", () => {
     const resolved = resolveFeatureFlags({
       defaults: defaultFeatureFlags,
-      environment: { generative: { enabled: true }, insights: { topic: false } },
+      environment: { generative: { enabled: true }, trending: { enabled: false } },
     });
 
     expect(resolved.generative.enabled).toBe(true);
     expect(resolved.generative.citations).toBe(true);
-    expect(resolved.insights.topic).toBe(false);
-    expect(resolved.facets.product).toBe(true);
-    expect(resolved.facets.source).toBe(true);
+    expect(resolved.trending.enabled).toBe(false);
+    expect(resolved.analytics.enabled).toBe(true);
   });
 
   it("ignores malformed override values", () => {
@@ -35,14 +34,12 @@ describe("feature flag resolution", () => {
   it("maps environment variables into hierarchical overrides", () => {
     expect(
       getEnvironmentFeatureFlagOverrides({
-        COVEO_FEATURE_FACETS: "false",
+        COVEO_FEATURE_ANALYTICS: "false",
         COVEO_FEATURE_GENERATIVE_ENABLED: "true",
-        COVEO_FEATURE_QUERY_SUGGESTIONS: "off",
       }),
     ).toMatchObject({
-      facets: { enabled: false },
+      analytics: { enabled: false },
       generative: { enabled: true },
-      search: { querySuggestions: false },
     });
   });
 });

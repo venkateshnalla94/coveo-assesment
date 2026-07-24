@@ -176,7 +176,9 @@ export function useHeadlessCommerce({
           return [];
         }
 
-        bundle.searchBox.updateText(query);
+        // Text is already kept current on the engine by `updateQuery` on every keystroke;
+        // re-setting it here from the (debounced, trimmed) suggestion query would clobber
+        // any trailing whitespace the user has since typed.
         bundle.searchBox.showSuggestions();
 
         return waitForSuggestions(bundle.searchBox, options?.signal);

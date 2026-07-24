@@ -13,6 +13,8 @@
 - The `/blog/[id]` article page renders one exception to plain-text rendering: the full Technical Resources article body, which is untrusted third-party HTML from an external blog source. It is sanitized server-side with `sanitize-html` (`fetchTrendingArticle` in `src/lib/coveo/content-search.ts`) — an allowlist of basic content tags/attributes, links forced to `target="_blank" rel="noopener noreferrer"` — before being rendered client-side with `dangerouslySetInnerHTML`. No other app code uses `dangerouslySetInnerHTML`.
 - Product, citation, and resource URLs are validated before rendering navigable links.
 - External links that open in a new tab use safe `rel` attributes.
+- The product detail page's external "View Product" link reuses the existing `getSafeProductUrl` protocol allowlist (same helper used by the result card and details drawer) — no new URL-validation logic was introduced.
+- The product detail page's sessionStorage handoff (`src/lib/commerce/product-session-cache.ts`) carries the same `ProductResult` the browser already fetched from Coveo for the active session, same-origin only; it is not user-controlled input and introduces no new trust boundary.
 - `.env.example` contains placeholders only.
 
 ## Tests

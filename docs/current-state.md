@@ -21,6 +21,7 @@ Active routes:
 
 - `src/app/page.tsx`
 - `src/app/catalog/page.tsx`
+- `src/app/products/[id]/page.tsx` (product detail page; no server fetch, renders a client component that reads sessionStorage)
 - `src/app/blog/page.tsx` (Technical Resources / blog index page)
 - `src/app/blog/[id]/page.tsx` (Technical Resources article detail page)
 - `src/app/api/search-token/route.ts`
@@ -34,6 +35,8 @@ Active Commerce composition:
 - `src/features/commerce/headless/headless-commerce-mappers.ts`
 - `src/features/commerce/models/commerce-models.ts`
 - `src/features/commerce/config/commerce-config.ts`
+- `src/components/commerce/ProductDetailClient.tsx` / `src/components/commerce/ProductDetailView.tsx` (product detail page)
+- `src/lib/commerce/product-session-cache.ts` (sessionStorage handoff for the product detail page)
 
 Shared UI retained by Commerce:
 

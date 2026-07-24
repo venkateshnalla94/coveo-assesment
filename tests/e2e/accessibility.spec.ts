@@ -66,7 +66,7 @@ test("suggestions, product results, facets, RGA, and details pass axe", async ({
     await page.getByRole("button", { name: "Close AI product guidance" }).click();
   }
 
-  await page.locator(".product-card").nth(0).getByRole("button", { name: /View Product/i }).click();
+  await page.locator(".product-card").nth(0).getByRole("button", { name: /Quick view product/i }).click();
   await expect(page.getByRole("dialog", { name: "Product details" })).toBeVisible();
   await checkA11y(page);
 });

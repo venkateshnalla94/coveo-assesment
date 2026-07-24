@@ -22,6 +22,7 @@ Industrial robotics buyers rarely know the exact SKU they need at the start of d
 - Product cards with image, price, rating, stock, brand, category, and compatibility
 - Local comparison for up to three products
 - Product detail drawer with descriptions, images, compatibility, and next actions
+- Product detail page (`/products/[id]`, opened in a new tab from a result tile) with gallery, buybox, specs, and compatibility
 - AI Product Guidance through RGA
 - RGA citations and feedback
 - Search API Technical Resources, with an internal `/blog` index page and `/blog/[id]` article detail pages (sanitized full article body, author/date/category/tags, link out to the original source)
@@ -35,7 +36,8 @@ Industrial robotics buyers rarely know the exact SKU they need at the start of d
 ```text
 Next.js UI
 ├── Headless Commerce
-│   └── Coveo Commerce API
+│   ├── Coveo Commerce API
+│   └── /products/[id] (product detail page, sessionStorage handoff)
 ├── Generative Provider
 │   └── RGA
 └── Content Provider
@@ -44,7 +46,7 @@ Next.js UI
     └── /blog/[id] (article detail page)
 ```
 
-The `/` route uses Headless Commerce query suggestions and sends buyers into `/catalog?q=<query>`. Live product search, facets, pagination, summaries, and relevance sorting are handled by Headless Commerce in the browser on `/catalog`. AI Product Guidance and Technical Resources are isolated server-backed paths, not Commerce product recommendation paths. The header's Blog nav link opens `/blog`, a server-rendered index of Technical Resources content reusing the same `searchTrendingContent` provider as the right-rail cards. Clicking a Technical Resources card, or an article on `/blog`, opens `/blog/<id>`, a server-rendered article page built from the same Coveo content result — the external source link moves there instead of leaving the catalog page directly.
+The `/` route uses Headless Commerce query suggestions and sends buyers into `/catalog?q=<query>`. Live product search, facets, pagination, summaries, and relevance sorting are handled by Headless Commerce in the browser on `/catalog`. AI Product Guidance and Technical Resources are isolated server-backed paths, not Commerce product recommendation paths. The header's Blog nav link opens `/blog`, a server-rendered index of Technical Resources content reusing the same `searchTrendingContent` provider as the right-rail cards. Clicking a Technical Resources card, or an article on `/blog`, opens `/blog/<id>`, a server-rendered article page built from the same Coveo content result — the external source link moves there instead of leaving the catalog page directly. Clicking a product tile on `/catalog` opens `/products/<id>` in a new tab; unlike `/blog/[id]`, this page has no server-side data fetch — there is deliberately no product-detail API route, so the tile hands the `ProductResult` it already has in memory to the new tab via sessionStorage. See ADR 0010.
 
 ## Authentication
 

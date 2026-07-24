@@ -54,7 +54,7 @@ test("keyboard interactions cover suggestions, facets, comparison, product detai
   await page.keyboard.press("Enter");
   await expect(page.getByText("1 product selected")).toBeVisible();
 
-  await cards.nth(0).getByRole("button", { name: /View Product/i }).focus();
+  await cards.nth(0).getByRole("button", { name: /Quick view product/i }).focus();
   await page.keyboard.press("Enter");
   await expect(page.getByRole("dialog", { name: "Product details" })).toBeVisible();
   await page.keyboard.press("Escape");

@@ -81,7 +81,7 @@ test("facets, pagination, comparison, and product details work together", async 
   await expect(page.getByRole("dialog", { name: "Compare products" })).toBeVisible();
   await page.getByRole("button", { name: "Close comparison" }).click();
 
-  await cards.nth(0).getByRole("button", { name: /View Product/i }).click();
+  await cards.nth(0).getByRole("button", { name: /Quick view product/i }).click();
   await expect(page.getByRole("dialog", { name: "Product details" })).toBeVisible();
   await page.getByRole("button", { name: "Close product details" }).click();
 });

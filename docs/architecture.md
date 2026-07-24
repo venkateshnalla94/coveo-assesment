@@ -5,7 +5,8 @@
 ```text
 Next.js UI
 ├── Headless Commerce
-│   └── Coveo Commerce API
+│   ├── Coveo Commerce API
+│   └── /products/[id] (product detail page, sessionStorage handoff)
 ├── Generative Provider
 │   └── RGA
 └── Content Provider
@@ -81,6 +82,12 @@ Payload, reach, precision, mounting, certification, industry, controller, and da
 Comparison state is intentionally local. It is a short-lived buyer workflow for selecting up to three visible products, not a persisted cart or account-level list.
 
 The product details drawer also uses local state. It exposes deeper descriptions, images, compatibility, and demo next actions without claiming production CRM integration.
+
+## Product Detail Page
+
+`/products/[id]` (`src/app/products/[id]/page.tsx`) is a Server Component shell — Header/Footer and route resolution only — that renders `ProductDetailClient`, a Client Component, with no server-side Coveo fetch. This differs from `/blog/[id]`, which fetches its content server-side: there is deliberately no product-detail API route (per this repo's architecture, Commerce product search stays client-side against Coveo directly), so the page instead reads the `ProductResult` the result tile already held in memory from the live Commerce search response.
+
+`ProductResultCard` writes that `ProductResult` into `sessionStorage` (`src/lib/commerce/product-session-cache.ts`, keyed by product id) and opens `/products/<id>` with `window.open()` rather than a plain link click, so the new tab reliably inherits an opener relationship and, with it, same-origin `sessionStorage`. `ProductDetailClient` reads it back via `useSyncExternalStore`, memoizing the parsed snapshot per id in a module-level cache so the store returns a stable reference across renders. A direct visit, an expired tab, or an untouched `sessionStorage` origin renders the client component's own "Product details unavailable" empty state rather than failing silently. See ADR 0010.
 
 ## Authentication
 

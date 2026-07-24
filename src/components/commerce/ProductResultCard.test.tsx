@@ -1,6 +1,12 @@
-import { render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+const storeProductForPdpMock = vi.fn();
+
+vi.mock("@/lib/commerce/product-session-cache", () => ({
+  storeProductForPdp: (...args: unknown[]) => storeProductForPdpMock(...args),
+}));
 
 import { ProductResultCard } from "@/components/commerce/ProductResultCard";
 import type { ProductResult } from "@/features/commerce/models/commerce-models";
@@ -21,6 +27,11 @@ const product: ProductResult = {
   title: "Collaborative Robot Arm 5kg Payload",
   url: "https://robotics.example/p/NXB-1",
 };
+
+afterEach(() => {
+  storeProductForPdpMock.mockReset();
+  cleanup();
+});
 
 describe("ProductResultCard", () => {
   it("renders confirmed Commerce fields and actions", async () => {
@@ -43,9 +54,69 @@ describe("ProductResultCard", () => {
     expect(screen.getByText("C-10")).toBeTruthy();
 
     await userEvent.click(screen.getByRole("button", { name: /Compare/i }));
-    await userEvent.click(screen.getByRole("button", { name: /View Product/i }));
+    await userEvent.click(screen.getByRole("button", { name: /Quick view product/i }));
 
     expect(onCompare).toHaveBeenCalledWith(product);
     expect(onOpenDetails).toHaveBeenCalledWith(product);
+  });
+
+  it("stores the product and opens the PDP in a new tab on a plain click of the title link", async () => {
+    const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+
+    render(
+      <ProductResultCard
+        compareDisabled={false}
+        isCompared={false}
+        onCompare={vi.fn()}
+        onOpenDetails={vi.fn()}
+        product={product}
+      />,
+    );
+
+    const titleLink = screen.getByRole("link", { name: "Collaborative Robot Arm 5kg Payload" });
+    await userEvent.click(titleLink);
+
+    expect(storeProductForPdpMock).toHaveBeenCalledWith(product);
+    expect(openSpy).toHaveBeenCalledWith(`/products/${encodeURIComponent(product.id)}`, "_blank");
+  });
+
+  it("stores the product and opens the PDP in a new tab on a plain click of the image link", async () => {
+    const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+
+    render(
+      <ProductResultCard
+        compareDisabled={false}
+        isCompared={false}
+        onCompare={vi.fn()}
+        onOpenDetails={vi.fn()}
+        product={product}
+      />,
+    );
+
+    const imageLink = screen.getByRole("link", { name: /Open .* product page in a new tab/i });
+    await userEvent.click(imageLink);
+
+    expect(storeProductForPdpMock).toHaveBeenCalledWith(product);
+    expect(openSpy).toHaveBeenCalledWith(`/products/${encodeURIComponent(product.id)}`, "_blank");
+  });
+
+  it("leaves modifier clicks to native anchor handling instead of calling window.open", async () => {
+    const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+
+    render(
+      <ProductResultCard
+        compareDisabled={false}
+        isCompared={false}
+        onCompare={vi.fn()}
+        onOpenDetails={vi.fn()}
+        product={product}
+      />,
+    );
+
+    const titleLink = screen.getByRole("link", { name: "Collaborative Robot Arm 5kg Payload" });
+    fireEvent.click(titleLink, { ctrlKey: true });
+
+    expect(storeProductForPdpMock).toHaveBeenCalledWith(product);
+    expect(openSpy).not.toHaveBeenCalled();
   });
 });

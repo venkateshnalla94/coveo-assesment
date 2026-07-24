@@ -1,16 +1,33 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import { ExternalLink, GitCompareArrows, Star } from "lucide-react";
+import { Eye, GitCompareArrows, Star } from "lucide-react";
+import Link from "next/link";
+import type { MouseEvent } from "react";
 
 import { HighlightedText } from "@/components/commerce/HighlightedText";
 import {
   formatPrice,
   formatRating,
   getLeafCategory,
-  getSafeProductUrl,
 } from "@/components/commerce/product-formatters";
 import type { ProductResult } from "@/features/commerce/models/commerce-models";
+import { storeProductForPdp } from "@/lib/commerce/product-session-cache";
+
+// Commerce search never re-fetches a single product, so the PDP relies on the new tab inheriting
+// this tab's sessionStorage. That inheritance needs an opener relationship, which a plain
+// `<a target="_blank">` click doesn't reliably establish — window.open() does. Modifier/middle
+// clicks are left to the browser's native handling (and the PDP's own "not found" fallback).
+function openInNewTab(event: MouseEvent<HTMLAnchorElement>, product: ProductResult, href: string) {
+  storeProductForPdp(product);
+
+  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+    return;
+  }
+
+  event.preventDefault();
+  window.open(href, "_blank");
+}
 
 export function ProductResultCard({
   compareDisabled,
@@ -28,37 +45,52 @@ export function ProductResultCard({
   product: ProductResult;
 }) {
   const category = getLeafCategory(product);
-  const safeUrl = getSafeProductUrl(product);
+  const pdpHref = `/products/${encodeURIComponent(product.id)}`;
 
   return (
     <article className="product-card">
-      <div className="product-image-wrap">
-        {product.imageUrl ? (
-          <img
-            alt=""
-            className="product-image"
-            decoding="async"
-            fetchPriority={imagePriority ? "high" : "auto"}
-            height={172}
-            loading={imagePriority ? "eager" : "lazy"}
-            src={product.imageUrl}
-            width={320}
-          />
-        ) : (
-          <span>No image</span>
-        )}
-        {product.inStock !== undefined ? (
-          <span className={`stock-pill ${product.inStock ? "stock-pill-in" : "stock-pill-out"}`}>
-            {product.inStock ? "In stock" : "Unavailable"}
-          </span>
-        ) : null}
-      </div>
+      <Link
+        aria-label={`Open ${product.title} product page in a new tab`}
+        className="product-tile-link"
+        href={pdpHref}
+        onClick={(event) => openInNewTab(event, product, pdpHref)}
+        target="_blank"
+      >
+        <div className="product-image-wrap">
+          {product.imageUrl ? (
+            <img
+              alt=""
+              className="product-image"
+              decoding="async"
+              fetchPriority={imagePriority ? "high" : "auto"}
+              height={172}
+              loading={imagePriority ? "eager" : "lazy"}
+              src={product.imageUrl}
+              width={320}
+            />
+          ) : (
+            <span>No image</span>
+          )}
+          {product.inStock !== undefined ? (
+            <span className={`stock-pill ${product.inStock ? "stock-pill-in" : "stock-pill-out"}`}>
+              {product.inStock ? "In stock" : "Unavailable"}
+            </span>
+          ) : null}
+        </div>
+      </Link>
 
       <div className="product-card-body">
         <div>
           {product.brand ? <p className="product-brand">{product.brand}</p> : null}
           <h2>
-            <HighlightedText highlights={product.nameHighlights} text={product.title} />
+            <Link
+              className="product-title-link"
+              href={pdpHref}
+              onClick={(event) => openInNewTab(event, product, pdpHref)}
+              target="_blank"
+            >
+              <HighlightedText highlights={product.nameHighlights} text={product.title} />
+            </Link>
           </h2>
           {category ? <p className="product-category">{category}</p> : null}
           <p className="product-description">
@@ -102,13 +134,13 @@ export function ProductResultCard({
             {isCompared ? "Compared" : "Compare"}
           </button>
           <button
-            aria-label="View product"
+            aria-label="Quick view product"
             className="primary-text-button"
             onClick={() => onOpenDetails(product)}
             type="button"
           >
-            View
-            {safeUrl !== "#" ? <ExternalLink aria-hidden="true" size={14} /> : null}
+            <Eye aria-hidden="true" size={14} />
+            Quick View
           </button>
         </div>
       </div>

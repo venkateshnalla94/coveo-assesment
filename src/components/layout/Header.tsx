@@ -15,6 +15,11 @@ function isActiveNavItem(href: string, activePath: string) {
   return href === activePath || (href !== "/" && activePath.startsWith(href));
 }
 
+function withCurrentQuery(href: string, currentQuery: string | undefined) {
+  const trimmedQuery = currentQuery?.trim();
+  return trimmedQuery ? `${href}?q=${encodeURIComponent(trimmedQuery)}` : href;
+}
+
 type HeaderSearchOverride = {
   isLoading: boolean;
   onClear: () => void;
@@ -27,14 +32,17 @@ type HeaderSearchOverride = {
 export function Header({
   activePath,
   authConfig,
+  currentQuery,
   search,
 }: {
   activePath: string;
   authConfig: HeadlessCommerceAuthConfig;
+  /** Last submitted/URL-resolved query, if any — used to carry `?q=` forward onto the nav links. */
+  currentQuery?: string;
   search?: HeaderSearchOverride;
 }) {
   const router = useRouter();
-  const [defaultQuery, setDefaultQuery] = useState("");
+  const [defaultQuery, setDefaultQuery] = useState(currentQuery ?? "");
   const defaultSuggestionsProvider = useGlobalSearchSuggestions({ authConfig });
 
   const activeSearch: HeaderSearchOverride = search ?? {
@@ -102,7 +110,7 @@ export function Header({
           {SEARCH_UI.navItems.map((item) => (
             <Link
               aria-current={isActiveNavItem(item.href, activePath) ? "page" : undefined}
-              href={item.href}
+              href={withCurrentQuery(item.href, currentQuery)}
               key={item.label}
             >
               {item.label}

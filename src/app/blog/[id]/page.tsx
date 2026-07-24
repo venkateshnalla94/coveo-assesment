@@ -29,7 +29,13 @@ function estimateReadTime(wordCount: number | undefined) {
   return `${minutes} min read`;
 }
 
-export default async function BlogArticlePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function BlogArticlePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { id } = await params;
   const item = await fetchTrendingArticle(decodeURIComponent(id)).catch(() => undefined);
 
@@ -41,10 +47,13 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ id
   const readTimeLabel = estimateReadTime(item.wordCount);
   const runtimeConfig = resolveRuntimeConfig();
   const commerceAuthConfig = resolveHeadlessCommerceAuthConfig(runtimeConfig);
+  const resolvedSearchParams = await searchParams;
+  const currentQueryParam = resolvedSearchParams?.q;
+  const currentQuery = (Array.isArray(currentQueryParam) ? currentQueryParam[0] : currentQueryParam)?.trim() || undefined;
 
   return (
     <div className="search-app">
-      <Header activePath="/blog" authConfig={commerceAuthConfig} />
+      <Header activePath="/blog" authConfig={commerceAuthConfig} currentQuery={currentQuery} />
       <main className="blog-page">
         <article className="blog-article">
           {item.imageUrl ? (

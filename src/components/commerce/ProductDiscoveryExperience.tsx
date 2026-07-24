@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { ComparisonBar } from "@/components/commerce/ComparisonBar";
@@ -60,10 +61,14 @@ function HeadlessProductDiscoveryContent({
   initialQuery: string;
 }) {
   const analytics = useAnalytics();
+  const router = useRouter();
   const commerce = useHeadlessCommerce({ analytics, authConfig, enabled: true, initialQuery });
   const [comparedProducts, setComparedProducts] = useState<ProductResult[]>([]);
   const [comparisonOpen, setComparisonOpen] = useState(false);
   const [detailsProduct, setDetailsProduct] = useState<ProductResult | null>(null);
+  // Tracks the last *submitted* query for the Header nav links (`?q=` on Products/Blog), so
+  // they stay stable while the user is mid-keystroke instead of updating on every change.
+  const [committedQuery, setCommittedQuery] = useState(initialQuery);
   const response = commerce.response;
   const pagination = response?.pagination;
   const rightRailQuery = commerce.query || "welding arm";
@@ -71,8 +76,16 @@ function HeadlessProductDiscoveryContent({
   const feedbackProvider = useMemo(() => new InMemoryFeedbackProvider(), []);
 
   function submitSearch(query: string) {
-    analytics.track("commerce_search_submitted", { mode: "headless", query });
-    commerce.submitSearch(query);
+    const trimmedQuery = query.trim();
+
+    if (!trimmedQuery) {
+      return;
+    }
+
+    analytics.track("commerce_search_submitted", { mode: "headless", query: trimmedQuery });
+    commerce.submitSearch(trimmedQuery);
+    setCommittedQuery(trimmedQuery);
+    router.replace(`/catalog?q=${encodeURIComponent(trimmedQuery)}`, { scroll: false });
   }
 
   function toggleCompare(product: ProductResult) {
@@ -107,6 +120,7 @@ function HeadlessProductDiscoveryContent({
       <Header
         activePath="/catalog"
         authConfig={authConfig}
+        currentQuery={committedQuery}
         search={{
           isLoading: commerce.status === "loading",
           onClear: commerce.clearQuery,

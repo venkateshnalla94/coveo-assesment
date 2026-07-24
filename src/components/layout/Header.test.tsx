@@ -87,4 +87,51 @@ describe("Header", () => {
     expect(screen.getByRole("link", { name: "Products" }).getAttribute("aria-current")).toBe("page");
     expect(screen.getByRole("link", { name: "Blog" }).getAttribute("aria-current")).toBeNull();
   });
+
+  it("appends the current query onto nav links when provided", () => {
+    render(
+      <Header
+        activePath="/catalog"
+        authConfig={configurationErrorAuthConfig}
+        currentQuery="welding arm"
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: "Products" }).getAttribute("href")).toBe(
+      "/catalog?q=welding%20arm",
+    );
+    expect(screen.getByRole("link", { name: "Blog" }).getAttribute("href")).toBe(
+      "/blog?q=welding%20arm",
+    );
+  });
+
+  it("leaves nav link hrefs unchanged when the current query is absent or blank", () => {
+    const { rerender } = render(
+      <Header activePath="/catalog" authConfig={configurationErrorAuthConfig} />,
+    );
+
+    expect(screen.getByRole("link", { name: "Products" }).getAttribute("href")).toBe("/catalog");
+    expect(screen.getByRole("link", { name: "Blog" }).getAttribute("href")).toBe("/blog");
+
+    rerender(
+      <Header activePath="/catalog" authConfig={configurationErrorAuthConfig} currentQuery="   " />,
+    );
+
+    expect(screen.getByRole("link", { name: "Products" }).getAttribute("href")).toBe("/catalog");
+    expect(screen.getByRole("link", { name: "Blog" }).getAttribute("href")).toBe("/blog");
+  });
+
+  it("seeds the uncontrolled search input from the current query", () => {
+    render(
+      <Header
+        activePath="/catalog"
+        authConfig={configurationErrorAuthConfig}
+        currentQuery="servo motor"
+      />,
+    );
+
+    expect((screen.getByRole("combobox", { name: "Search" }) as HTMLInputElement).value).toBe(
+      "servo motor",
+    );
+  });
 });

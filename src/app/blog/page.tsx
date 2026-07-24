@@ -26,16 +26,15 @@ function formatPublishedAt(publishedAt: string | undefined) {
     : new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(parsed);
 }
 
-async function loadBlogIndex(): Promise<
+async function loadBlogIndex(
+  query: string,
+): Promise<
   | { status: "success"; items: TrendingItem[] }
   | { status: "empty" }
   | { status: "error" }
 > {
   try {
-    const items = await searchTrendingContent(
-      BLOG_INDEX_QUERY,
-      BLOG_INDEX_RESULT_COUNT,
-    );
+    const items = await searchTrendingContent(query, BLOG_INDEX_RESULT_COUNT);
     return items.length > 0
       ? { status: "success", items }
       : { status: "empty" };
@@ -47,14 +46,25 @@ async function loadBlogIndex(): Promise<
   }
 }
 
-export default async function BlogIndexPage() {
-  const state = await loadBlogIndex();
+function resolveBlogIndexQuery(query: string | string[] | undefined) {
+  const value = Array.isArray(query) ? query[0] : query;
+  return value?.trim() || undefined;
+}
+
+export default async function BlogIndexPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const resolvedSearchParams = await searchParams;
+  const currentQuery = resolveBlogIndexQuery(resolvedSearchParams?.q);
+  const state = await loadBlogIndex(currentQuery ?? BLOG_INDEX_QUERY);
   const runtimeConfig = resolveRuntimeConfig();
   const commerceAuthConfig = resolveHeadlessCommerceAuthConfig(runtimeConfig);
 
   return (
     <div className="search-app">
-      <Header activePath="/blog" authConfig={commerceAuthConfig} />
+      <Header activePath="/blog" authConfig={commerceAuthConfig} currentQuery={currentQuery} />
       <main className="blog-index">
         <div className="blog-index-header">
           <h1>Blogs</h1>

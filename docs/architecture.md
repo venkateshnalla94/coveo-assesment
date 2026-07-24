@@ -18,6 +18,8 @@ The application is a customer-facing RoboMotion product discovery experience. Pr
 
 The `/` route is a search entry page. It initializes Headless Commerce query suggestions and navigates into `/catalog?q=<query>` without rendering product listings on the home page.
 
+The last *submitted* search query is carried across pages via the URL's `?q=` param rather than app-level state: `ProductDiscoveryExperience` calls `router.replace` with `?q=<query>` after submitting to Headless Commerce, and the shared `Header` appends `?q=<currentQuery>` onto its Products/Blog nav links whenever a `currentQuery` is available, so navigating away from an active search carries it forward. `/blog` and `/blog/[id]` (Server Components) read `searchParams.q` to resolve their own `Header currentQuery` and, for `/blog`, the `searchTrendingContent` query itself (falling back to the existing hardcoded default when absent). This is a UI-navigation convenience only — it does not couple the Commerce and content search domains described below. See ADR 0009.
+
 ## Headless Commerce Engine Lifecycle
 
 `src/app/catalog/page.tsx` owns the live product catalog route. `src/components/commerce/ProductDiscoveryExperience.tsx` owns the product discovery page composition and passes the selected auth mode and initial query into `useHeadlessCommerce`.

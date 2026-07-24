@@ -4,7 +4,7 @@ import type { TrendingProvider } from "@/features/trending/providers/trending-pr
 export class CoveoContentTrendingProvider implements TrendingProvider {
   constructor(private readonly query: string) {}
 
-  async getTrendingContent(): Promise<TrendingItem[]> {
+  async getTrendingContent(options: { signal?: AbortSignal } = {}): Promise<TrendingItem[]> {
     const response = await fetch("/api/coveo/content/search", {
       body: JSON.stringify({ numberOfResults: 4, query: this.query }),
       cache: "no-store",
@@ -13,6 +13,7 @@ export class CoveoContentTrendingProvider implements TrendingProvider {
         "Content-Type": "application/json",
       },
       method: "POST",
+      signal: options.signal,
     });
 
     if (!response.ok) {

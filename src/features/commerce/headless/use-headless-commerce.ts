@@ -105,11 +105,12 @@ export function useHeadlessCommerce({
       return;
     }
 
+    const abortController = new AbortController();
     let isCurrent = true;
     let snapshotTimer: number | undefined;
     let unsubscribe: (() => void) | undefined;
 
-    resolveCommerceAuth(authConfig)
+    resolveCommerceAuth(authConfig, { signal: abortController.signal })
       .then((resolvedAuth) => {
         if (!isCurrent) {
           return;
@@ -140,14 +141,16 @@ export function useHeadlessCommerce({
         };
         unsubscribe = bundle.engine.subscribe(scheduleSnapshot);
 
+        // Page size is already configured via `search.pagination({ options: { pageSize } })` in
+        // createCommerceControllers. Calling `pagination.setPageSize` again here is redundant and,
+        // worse, triggers the Commerce engine's automatic first-search fetch before `updateText`'s
+        // query has been committed via `submit()` — producing an extra empty-query search request.
         bundle.searchBox.updateText(initialQuery);
-        bundle.pagination.setPageSize(COMMERCE_DEFAULTS.perPage);
         updateSnapshot();
         bundle.searchBox.submit();
-
       })
-      .catch(() => {
-        if (isCurrent) {
+      .catch((error: unknown) => {
+        if (isCurrent && !(error instanceof DOMException && error.name === "AbortError")) {
           setSnapshot({
             message: "Product search could not be initialized.",
             query: initialQuery,
@@ -158,6 +161,7 @@ export function useHeadlessCommerce({
 
     return () => {
       isCurrent = false;
+      abortController.abort();
       if (snapshotTimer !== undefined) {
         window.clearTimeout(snapshotTimer);
       }
@@ -300,7 +304,10 @@ function createCommerceControllers({
   };
 }
 
-async function resolveCommerceAuth(authConfig: HeadlessCommerceAuthConfig): Promise<{
+async function resolveCommerceAuth(
+  authConfig: HeadlessCommerceAuthConfig,
+  options: { signal?: AbortSignal } = {},
+): Promise<{
   organizationId: string;
   renewAccessToken?: () => Promise<string>;
   token: string;
@@ -316,7 +323,7 @@ async function resolveCommerceAuth(authConfig: HeadlessCommerceAuthConfig): Prom
     throw new Error(authConfig.message);
   }
 
-  const config = await fetchSearchTokenConfig();
+  const config = await fetchSearchTokenConfig({ signal: options.signal });
 
   return {
     organizationId: config.organizationId,

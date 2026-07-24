@@ -79,4 +79,39 @@ describe("TrendingContent", () => {
     );
     expect(screen.queryByLabelText("Trending content")).toBeNull();
   });
+
+  it("aborts the in-flight request when unmounted", async () => {
+    let capturedSignal: AbortSignal | undefined;
+    const provider: TrendingProvider = {
+      getTrendingContent: vi.fn().mockImplementation((options?: { signal?: AbortSignal }) => {
+        capturedSignal = options?.signal;
+        return new Promise(() => {});
+      }),
+    };
+
+    const { unmount } = render(
+      <AnalyticsProviderRoot enabled provider={{ track: vi.fn() }}>
+        <TrendingContent enabled provider={provider} />
+      </AnalyticsProviderRoot>,
+    );
+
+    expect(capturedSignal?.aborted).toBe(false);
+    unmount();
+    expect(capturedSignal?.aborted).toBe(true);
+  });
+
+  it("does not surface an error state when the request is aborted", async () => {
+    const provider: TrendingProvider = {
+      getTrendingContent: vi
+        .fn()
+        .mockRejectedValue(new DOMException("The operation was aborted.", "AbortError")),
+    };
+
+    renderTrending(provider);
+
+    await screen.findByText("Loading trending content.");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(screen.queryByText("Trending content could not be loaded.")).toBeNull();
+  });
 });

@@ -49,13 +49,14 @@ export function GenerativeAnswer({
       return;
     }
 
+    const abortController = new AbortController();
     let isCurrent = true;
     trackedStateKey.current = "";
     dispatch({ type: "requested", query: trimmedQuery });
     analytics.track("generative_answer_requested", { query: trimmedQuery });
 
     provider
-      .generate(trimmedQuery)
+      .generate(trimmedQuery, { signal: abortController.signal })
       .then((answer) => {
         if (!isCurrent) {
           return;
@@ -76,7 +77,7 @@ export function GenerativeAnswer({
         dispatch({ type: "completed", answer: completedAnswer });
       })
       .catch((error: unknown) => {
-        if (isCurrent) {
+        if (isCurrent && !(error instanceof DOMException && error.name === "AbortError")) {
           dispatch({
             type: "failed",
             query: trimmedQuery,
@@ -87,6 +88,7 @@ export function GenerativeAnswer({
 
     return () => {
       isCurrent = false;
+      abortController.abort();
     };
   }, [
     analytics,

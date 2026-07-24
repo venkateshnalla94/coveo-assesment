@@ -44,23 +44,25 @@ export function TrendingContent({
       return;
     }
 
+    const abortController = new AbortController();
     let isCurrent = true;
 
     provider
-      .getTrendingContent()
+      .getTrendingContent({ signal: abortController.signal })
       .then((items) => {
         if (isCurrent) {
           setState(items.length > 0 ? { status: "success", items } : { status: "empty" });
         }
       })
-      .catch(() => {
-        if (isCurrent) {
+      .catch((error: unknown) => {
+        if (isCurrent && !(error instanceof DOMException && error.name === "AbortError")) {
           setState({ status: "error" });
         }
       });
 
     return () => {
       isCurrent = false;
+      abortController.abort();
     };
   }, [enabled, provider]);
 

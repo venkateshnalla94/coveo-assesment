@@ -28,6 +28,25 @@ describe("CoveoContentTrendingProvider", () => {
     );
   });
 
+  it("forwards an abort signal to the underlying fetch call", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ items: [] }), {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+      }),
+    );
+    const abortController = new AbortController();
+
+    await new CoveoContentTrendingProvider("welding arm").getTrendingContent({
+      signal: abortController.signal,
+    });
+
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/coveo/content/search",
+      expect.objectContaining({ signal: abortController.signal }),
+    );
+  });
+
   it("throws when technical resources fail", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 502 }));
 

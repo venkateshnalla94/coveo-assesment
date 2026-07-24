@@ -3,7 +3,7 @@ import type { GenerativeAnswer } from "@/features/generative/models/generative-m
 import { GenerativeProviderError } from "@/features/generative/providers/generative-errors";
 
 export class CoveoGenerativeProvider implements GenerativeProvider {
-  async generate(query: string): Promise<GenerativeAnswer | null> {
+  async generate(query: string, options: { signal?: AbortSignal } = {}): Promise<GenerativeAnswer | null> {
     const response = await fetch("/api/coveo/generative/answer", {
       body: JSON.stringify({ query }),
       cache: "no-store",
@@ -12,6 +12,7 @@ export class CoveoGenerativeProvider implements GenerativeProvider {
         "Content-Type": "application/json",
       },
       method: "POST",
+      signal: options.signal,
     });
 
     if (!response.ok) {

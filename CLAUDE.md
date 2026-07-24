@@ -28,6 +28,7 @@ This repo also defines Claude subagents at `.claude/agents/*.md` (gitignored, lo
 - `commit-agent` (or a direct request) triggers `context-agent` for larger or ambiguous documentation drift.
 - Trigger `code-review-agent` for a report-only second opinion on application or workflow changes; it does not edit code.
 - Trigger `demo-readiness-agent` before demo/release readiness checks; it does not edit `docs/demo-readiness-report.md` itself.
+- Trigger `architecture-docs-agent` to refresh `outputs/architecture/*.md` after routing, component placement, or data-flow changes; it rewrites each section as a current-state snapshot, never as a diff against a prior version.
 
 ## Standards
 

@@ -11,7 +11,7 @@ import { ProductGrid } from "@/components/commerce/ProductGrid";
 import { ProductRightRail } from "@/components/commerce/ProductRightRail";
 import { ProductStatus } from "@/components/commerce/ProductStatus";
 import { GenerativeAnswer } from "@/components/generative/GenerativeAnswer";
-import { SearchBox } from "@/components/search/SearchBox";
+import { Header } from "@/components/layout/Header";
 import { Pagination } from "@/components/search/Pagination";
 import {
   AnalyticsProviderRoot,
@@ -104,16 +104,18 @@ function HeadlessProductDiscoveryContent({
 
   return (
     <>
-      <div className="search-command-bar product-search-command">
-        <SearchBox
-          isLoading={commerce.status === "loading"}
-          onClear={commerce.clearQuery}
-          onQueryChange={commerce.updateQuery}
-          onSubmit={submitSearch}
-          provider={commerce.suggestionsProvider}
-          query={commerce.query}
-        />
-      </div>
+      <Header
+        activePath="/catalog"
+        authConfig={authConfig}
+        search={{
+          isLoading: commerce.status === "loading",
+          onClear: commerce.clearQuery,
+          onQueryChange: commerce.updateQuery,
+          onSubmit: submitSearch,
+          provider: commerce.suggestionsProvider,
+          query: commerce.query,
+        }}
+      />
 
       <main className="app-shell product-app-shell">
         <div className="search-context-row">

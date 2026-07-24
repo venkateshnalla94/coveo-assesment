@@ -1,13 +1,56 @@
+"use client";
+
 import { Bell, ExternalLink, HelpCircle, LayoutGrid, X } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
+import { SearchBox } from "@/components/search/SearchBox";
 import { SEARCH_UI } from "@/components/search/search-ui.constants";
+import type { SuggestionsProvider } from "@/components/search/use-search-suggestions";
+import type { HeadlessCommerceAuthConfig } from "@/features/commerce/headless/commerce-auth";
+import { useGlobalSearchSuggestions } from "@/features/commerce/headless/use-global-search-suggestions";
 
 function isActiveNavItem(href: string, activePath: string) {
   return href === activePath || (href !== "/" && activePath.startsWith(href));
 }
 
-export function Header({ activePath }: { activePath: string }) {
+type HeaderSearchOverride = {
+  isLoading: boolean;
+  onClear: () => void;
+  onQueryChange: (query: string) => void;
+  onSubmit: (query: string) => void;
+  provider: SuggestionsProvider;
+  query: string;
+};
+
+export function Header({
+  activePath,
+  authConfig,
+  search,
+}: {
+  activePath: string;
+  authConfig: HeadlessCommerceAuthConfig;
+  search?: HeaderSearchOverride;
+}) {
+  const router = useRouter();
+  const [defaultQuery, setDefaultQuery] = useState("");
+  const defaultSuggestionsProvider = useGlobalSearchSuggestions({ authConfig });
+
+  const activeSearch: HeaderSearchOverride = search ?? {
+    isLoading: false,
+    onClear: () => setDefaultQuery(""),
+    onQueryChange: setDefaultQuery,
+    onSubmit: (nextQuery) => {
+      const trimmedQuery = nextQuery.trim();
+      if (trimmedQuery) {
+        router.push(`/catalog?q=${encodeURIComponent(trimmedQuery)}`);
+      }
+    },
+    provider: defaultSuggestionsProvider,
+    query: defaultQuery,
+  };
+
   return (
     <>
       <div className="announcement-bar">
@@ -30,17 +73,17 @@ export function Header({ activePath }: { activePath: string }) {
           <span>{SEARCH_UI.brandLabel}</span>
         </Link>
 
-        <nav className="primary-nav" aria-label="Primary navigation">
-          {SEARCH_UI.navItems.map((item) => (
-            <Link
-              aria-current={isActiveNavItem(item.href, activePath) ? "page" : undefined}
-              href={item.href}
-              key={item.label}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <div className="header-search">
+          <SearchBox
+            autoFocus={false}
+            isLoading={activeSearch.isLoading}
+            onClear={activeSearch.onClear}
+            onQueryChange={activeSearch.onQueryChange}
+            onSubmit={activeSearch.onSubmit}
+            provider={activeSearch.provider}
+            query={activeSearch.query}
+          />
+        </div>
 
         <div className="header-actions">
           <button aria-label="Help" className="header-icon-button" type="button">
@@ -54,6 +97,18 @@ export function Header({ activePath }: { activePath: string }) {
             <span>{SEARCH_UI.user.name}</span>
           </button>
         </div>
+
+        <nav className="primary-nav" aria-label="Primary navigation">
+          {SEARCH_UI.navItems.map((item) => (
+            <Link
+              aria-current={isActiveNavItem(item.href, activePath) ? "page" : undefined}
+              href={item.href}
+              key={item.label}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
       </header>
     </>
   );

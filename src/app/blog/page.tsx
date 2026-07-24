@@ -2,10 +2,12 @@ import Link from "next/link";
 
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
+import { resolveHeadlessCommerceAuthConfig } from "@/features/commerce/headless/commerce-auth-resolver";
 import {
   CoveoContentRequestError,
   searchTrendingContent,
 } from "@/lib/coveo/content-search";
+import { resolveRuntimeConfig } from "@/lib/runtime/runtime-config";
 import type { TrendingItem } from "@/features/trending/models/trending-models";
 
 export const dynamic = "force-dynamic";
@@ -47,10 +49,12 @@ async function loadBlogIndex(): Promise<
 
 export default async function BlogIndexPage() {
   const state = await loadBlogIndex();
+  const runtimeConfig = resolveRuntimeConfig();
+  const commerceAuthConfig = resolveHeadlessCommerceAuthConfig(runtimeConfig);
 
   return (
     <div className="search-app">
-      <Header activePath="/blog" />
+      <Header activePath="/blog" authConfig={commerceAuthConfig} />
       <main className="blog-index">
         <div className="blog-index-header">
           <h1>Blogs</h1>

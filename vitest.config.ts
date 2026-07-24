@@ -15,6 +15,7 @@ export default defineConfig({
         "src/components/search/SearchSuggestions.tsx",
         "src/components/search/use-search-suggestions.ts",
         "src/components/content/TrendingContent.tsx",
+        "src/components/layout/Header.tsx",
         "src/components/generative/GenerativeAnswer.tsx",
         "src/components/generative/GenerativeAnswerSkeleton.tsx",
         "src/components/generative/GenerativeAnswerContent.tsx",

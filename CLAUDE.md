@@ -11,6 +11,8 @@ This repository is a Coveo TME take-home assessment: a secured Coveo Headless se
 
 ## Architecture
 
+Start at `outputs/architecture/README.md` for routing, component wiring, and data-flow context before exploring the codebase yourself — it's a maintained current-state snapshot (routes, ownership boundaries, request-flow cheatsheet) kept in sync by `architecture-docs-agent`. Only fall back to open-ended exploration for things it doesn't cover.
+
 - `src/app/api/search-token/route.ts` mints short-lived Coveo search tokens with the privileged API key for browser-side product search.
 - Browser code uses the generated token with `@coveo/headless` and calls Coveo Search API directly for product search.
 - `src/app/api/coveo/content/search/route.ts`, `src/app/api/coveo/generative/answer/route.ts`, and the `/blog/[id]` server-rendered page (via `src/lib/coveo/content-search.ts`) are narrow, content/RGA-support server paths that call Coveo directly with the server-only `COVEO_PLATFORM_API_KEY` — they are not a general search proxy.

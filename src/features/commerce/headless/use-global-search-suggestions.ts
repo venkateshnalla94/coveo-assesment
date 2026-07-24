@@ -18,16 +18,16 @@ import { fetchSearchTokenConfig } from "@/lib/coveo/search-token";
 
 const SUGGESTION_WAIT_TIMEOUT_MS = 900;
 
-type HomeSuggestionControllers = {
+type GlobalSuggestionControllers = {
   searchBox: HeadlessSearchBox;
 };
 
-export function useHomeCommerceSuggestions({
+export function useGlobalSearchSuggestions({
   authConfig,
 }: {
   authConfig: HeadlessCommerceAuthConfig;
 }): SuggestionsProvider {
-  const controllersRef = useRef<Promise<HomeSuggestionControllers> | null>(null);
+  const controllersRef = useRef<Promise<GlobalSuggestionControllers> | null>(null);
 
   return useMemo(
     () => ({
@@ -36,7 +36,7 @@ export function useHomeCommerceSuggestions({
           return [];
         }
 
-        controllersRef.current ??= createHomeSuggestionControllers(authConfig);
+        controllersRef.current ??= createGlobalSuggestionControllers(authConfig);
         const controllers = await controllersRef.current;
 
         if (options?.signal?.aborted) {
@@ -53,9 +53,9 @@ export function useHomeCommerceSuggestions({
   );
 }
 
-async function createHomeSuggestionControllers(
+async function createGlobalSuggestionControllers(
   authConfig: HeadlessCommerceAuthConfig,
-): Promise<HomeSuggestionControllers> {
+): Promise<GlobalSuggestionControllers> {
   const resolvedAuth = await resolveCommerceAuth(authConfig);
   const engine = buildCommerceEngine({
     configuration: {
@@ -134,7 +134,7 @@ function waitForSuggestions(
       unsubscribe();
       resolve(
         searchBox.state.suggestions.map((suggestion) => ({
-          id: `home-commerce-suggestion-${suggestion.rawValue}`,
+          id: `global-commerce-suggestion-${suggestion.rawValue}`,
           label: suggestion.rawValue,
           value: suggestion.rawValue,
         })),

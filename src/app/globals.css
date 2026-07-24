@@ -136,12 +136,34 @@ p {
 .main-header {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "brand search actions"
+    "nav nav nav";
   align-items: center;
-  gap: 36px;
-  min-height: 82px;
+  column-gap: 36px;
+  row-gap: 12px;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
-  padding: 0 max(24px, calc((100vw - 1500px) / 2));
+  padding: 14px max(24px, calc((100vw - 1500px) / 2)) 12px;
+}
+
+.main-header .brand {
+  grid-area: brand;
+}
+
+.header-search {
+  grid-area: search;
+  min-width: 0;
+}
+
+.header-search .search-box-wrap,
+.header-search .search-box {
+  width: 100%;
+  margin: 0;
+}
+
+.main-header .header-actions {
+  grid-area: actions;
 }
 
 .main-header > * {
@@ -169,10 +191,11 @@ p {
 }
 
 .primary-nav {
+  grid-area: nav;
   display: flex;
   align-items: stretch;
   gap: 30px;
-  height: 82px;
+  height: 48px;
   min-width: 0;
   max-width: 100%;
 }
@@ -228,12 +251,6 @@ p {
   color: #ffffff;
   font-size: 0.78rem;
   font-weight: 750;
-}
-
-.search-command-bar {
-  border-bottom: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.94);
-  padding: 16px 24px;
 }
 
 .search-box-wrap,
@@ -1523,10 +1540,6 @@ p {
   animation: shimmer 1.2s ease-in-out infinite;
 }
 
-.product-search-command .search-box-wrap,
-.product-search-command .search-box {
-  width: min(900px, 100%);
-}
 
 .product-app-shell {
   width: min(1500px, calc(100% - 48px));
@@ -2243,14 +2256,15 @@ p {
 
   .main-header {
     grid-template-columns: 1fr auto;
-    gap: 18px;
-    padding: 0 16px;
+    grid-template-areas:
+      "brand actions"
+      "search search"
+      "nav nav";
+    column-gap: 18px;
+    padding: 12px 16px;
   }
 
   .primary-nav {
-    grid-column: 1 / -1;
-    order: 3;
-    height: 48px;
     overflow-x: auto;
     overflow-y: hidden;
     overscroll-behavior-inline: contain;
@@ -2318,11 +2332,6 @@ p {
     grid-template-columns: auto minmax(0, 1fr) auto;
   }
 
-  .main-header {
-    min-height: auto;
-    padding-top: 14px;
-  }
-
   .brand {
     font-size: 1.25rem;
   }
@@ -2331,17 +2340,9 @@ p {
     display: none;
   }
 
-  .search-command-bar {
-    padding: 12px;
-  }
-
   .search-box {
     grid-template-columns: auto minmax(0, 1fr) auto auto;
     gap: 6px;
-  }
-
-  .search-command-bar {
-    padding-inline: 12px;
   }
 
   .search-home {

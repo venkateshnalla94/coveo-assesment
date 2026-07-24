@@ -130,25 +130,26 @@ export function SearchBox({
             setSuggestionsOpen(true);
           }}
           onKeyDown={handleKeyDown}
-          placeholder={SEARCH_UI.defaultQuery}
+          placeholder={SEARCH_UI.searchPlaceholder}
           role="combobox"
           type="search"
           value={query}
         />
-        {query ? (
-          <button
-            aria-label="Clear search"
-            className="icon-button"
-            onClick={() => {
-              setSuggestionsOpen(false);
-              setActiveIndex(-1);
-              onClear();
-            }}
-            type="button"
-          >
-            <X aria-hidden="true" size={18} />
-          </button>
-        ) : null}
+        <button
+          aria-hidden={query ? undefined : true}
+          aria-label="Clear search"
+          className="icon-button"
+          disabled={!query}
+          onClick={() => {
+            setSuggestionsOpen(false);
+            setActiveIndex(-1);
+            onClear();
+          }}
+          style={query ? undefined : { pointerEvents: "none", visibility: "hidden" }}
+          type="button"
+        >
+          <X aria-hidden="true" size={18} />
+        </button>
         <button
           aria-label="Search"
           className="primary-button"

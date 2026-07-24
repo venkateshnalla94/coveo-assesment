@@ -1,6 +1,7 @@
 export const SEARCH_UI = {
   announcement: "RoboMotion Industries product discovery demo powered by Coveo.",
   defaultQuery: "welding arm",
+  searchPlaceholder: "What are you looking for?",
   facets: {
     clearAllLabel: "Clear all",
     title: "Refine your results",

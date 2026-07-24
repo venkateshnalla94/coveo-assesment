@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { SearchBox } from "@/components/search/SearchBox";
+import { SEARCH_UI } from "@/components/search/search-ui.constants";
 
 afterEach(() => {
   cleanup();
@@ -81,5 +82,41 @@ describe("SearchBox", () => {
     expect(screen.getByRole("button", { name: "Search" }).getAttribute("disabled")).not.toBeNull();
     await userEvent.keyboard("[Enter]");
     expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("shows the 'what are you looking for' placeholder instead of a hardcoded query", () => {
+    render(
+      <SearchBox
+        isLoading={false}
+        onClear={vi.fn()}
+        onQueryChange={vi.fn()}
+        onSubmit={vi.fn()}
+        provider={{ getSuggestions: vi.fn().mockResolvedValue([]) }}
+        query=""
+      />,
+    );
+
+    expect(screen.getByPlaceholderText(SEARCH_UI.searchPlaceholder)).toBeTruthy();
+  });
+
+  it("keeps the clear button mounted (hidden, not removed) when the query is empty", () => {
+    const { container } = render(
+      <SearchBox
+        isLoading={false}
+        onClear={vi.fn()}
+        onQueryChange={vi.fn()}
+        onSubmit={vi.fn()}
+        provider={{ getSuggestions: vi.fn().mockResolvedValue([]) }}
+        query=""
+      />,
+    );
+
+    const clearButton = container.querySelector<HTMLButtonElement>(
+      "button[aria-label='Clear search']",
+    );
+
+    expect(clearButton).not.toBeNull();
+    expect(clearButton?.disabled).toBe(true);
+    expect(clearButton?.style.visibility).toBe("hidden");
   });
 });

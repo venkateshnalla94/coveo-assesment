@@ -121,7 +121,7 @@ describe("Header", () => {
     expect(screen.getByRole("link", { name: "Blog" }).getAttribute("href")).toBe("/blog");
   });
 
-  it("seeds the uncontrolled search input from the current query", () => {
+  it("renders the uncontrolled search input blank even when a current query is carried over", () => {
     render(
       <Header
         activePath="/catalog"
@@ -131,7 +131,7 @@ describe("Header", () => {
     );
 
     expect((screen.getByRole("combobox", { name: "Search" }) as HTMLInputElement).value).toBe(
-      "servo motor",
+      "",
     );
   });
 });

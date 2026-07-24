@@ -42,7 +42,9 @@ export function Header({
   search?: HeaderSearchOverride;
 }) {
   const router = useRouter();
-  const [defaultQuery, setDefaultQuery] = useState(currentQuery ?? "");
+  // Only the listing page (catalog) keeps a live search box; every other page renders this
+  // fallback starting blank so the search clears on navigation instead of carrying over.
+  const [defaultQuery, setDefaultQuery] = useState("");
   const defaultSuggestionsProvider = useGlobalSearchSuggestions({ authConfig });
 
   const activeSearch: HeaderSearchOverride = search ?? {

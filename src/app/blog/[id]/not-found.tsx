@@ -6,7 +6,7 @@ import { Header } from "@/components/layout/Header";
 export default function BlogArticleNotFound() {
   return (
     <div className="search-app">
-      <Header />
+      <Header activePath="/blog" />
       <main className="blog-page">
         <div className="empty-state">
           <p>This article is no longer available.</p>

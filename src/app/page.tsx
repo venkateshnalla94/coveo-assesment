@@ -10,7 +10,7 @@ export default function Home() {
 
   return (
     <div className="search-app">
-      <Header />
+      <Header activePath="/" />
       <main className="search-home">
         <HomeSearchExperience authConfig={commerceAuthConfig} />
       </main>

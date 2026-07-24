@@ -24,7 +24,7 @@ Industrial robotics buyers rarely know the exact SKU they need at the start of d
 - Product detail drawer with descriptions, images, compatibility, and next actions
 - AI Product Guidance through RGA
 - RGA citations and feedback
-- Search API Technical Resources, with an internal `/blog/[id]` article detail page (sanitized full article body, author/date/category/tags, link out to the original source)
+- Search API Technical Resources, with an internal `/blog` index page and `/blog/[id]` article detail pages (sanitized full article body, author/date/category/tags, link out to the original source)
 - Accessible keyboard and screen-reader behavior
 - Responsive layouts across mobile, tablet, and desktop
 - App-level analytics plus Headless Commerce analytics
@@ -40,10 +40,11 @@ Next.js UI
 │   └── RGA
 └── Content Provider
     ├── Coveo Search API
+    ├── /blog (index page)
     └── /blog/[id] (article detail page)
 ```
 
-The `/` route uses Headless Commerce query suggestions and sends buyers into `/catalog?q=<query>`. Live product search, facets, pagination, summaries, and relevance sorting are handled by Headless Commerce in the browser on `/catalog`. AI Product Guidance and Technical Resources are isolated server-backed paths, not Commerce product recommendation paths. Clicking a Technical Resources card opens `/blog/<id>`, a server-rendered article page built from the same Coveo content result — the external source link moves there instead of leaving the catalog page directly.
+The `/` route uses Headless Commerce query suggestions and sends buyers into `/catalog?q=<query>`. Live product search, facets, pagination, summaries, and relevance sorting are handled by Headless Commerce in the browser on `/catalog`. AI Product Guidance and Technical Resources are isolated server-backed paths, not Commerce product recommendation paths. The header's Blog nav link opens `/blog`, a server-rendered index of Technical Resources content reusing the same `searchTrendingContent` provider as the right-rail cards. Clicking a Technical Resources card, or an article on `/blog`, opens `/blog/<id>`, a server-rendered article page built from the same Coveo content result — the external source link moves there instead of leaving the catalog page directly.
 
 ## Authentication
 

@@ -1,10 +1,13 @@
 import { Bell, ExternalLink, HelpCircle, LayoutGrid, X } from "lucide-react";
 import Link from "next/link";
-import type { ReactNode } from "react";
 
 import { SEARCH_UI } from "@/components/search/search-ui.constants";
 
-export function Header() {
+function isActiveNavItem(href: string, activePath: string) {
+  return href === activePath || (href !== "/" && activePath.startsWith(href));
+}
+
+export function Header({ activePath }: { activePath: string }) {
   return (
     <>
       <div className="announcement-bar">
@@ -29,13 +32,13 @@ export function Header() {
 
         <nav className="primary-nav" aria-label="Primary navigation">
           {SEARCH_UI.navItems.map((item) => (
-            <LinkOrAnchor
-              ariaCurrent={item.active ? "page" : undefined}
+            <Link
+              aria-current={isActiveNavItem(item.href, activePath) ? "page" : undefined}
               href={item.href}
               key={item.label}
             >
               {item.label}
-            </LinkOrAnchor>
+            </Link>
           ))}
         </nav>
 
@@ -53,29 +56,5 @@ export function Header() {
         </div>
       </header>
     </>
-  );
-}
-
-function LinkOrAnchor({
-  ariaCurrent,
-  children,
-  href,
-}: {
-  ariaCurrent?: "page";
-  children: ReactNode;
-  href: string;
-}) {
-  if (href.startsWith("/")) {
-    return (
-      <Link aria-current={ariaCurrent} href={href}>
-        {children}
-      </Link>
-    );
-  }
-
-  return (
-    <a aria-current={ariaCurrent} href={href}>
-      {children}
-    </a>
   );
 }

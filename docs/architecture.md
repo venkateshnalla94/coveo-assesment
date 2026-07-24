@@ -10,6 +10,7 @@ Next.js UI
 │   └── RGA
 └── Content Provider
     ├── Coveo Search API
+    ├── /blog (index page)
     └── /blog/[id] (article detail page)
 ```
 
@@ -111,10 +112,11 @@ Technical Resources:
 ```text
 TrendingContent -> CoveoContentTrendingProvider -> /api/coveo/content/search -> Coveo Search API
                                                     (shared) src/lib/coveo/content-search.ts
+/blog (Server Component) -------------------------> searchTrendingContent ---> Coveo Search API
 /blog/[id] (Server Component) -----------------> fetchTrendingArticle -------> Coveo Search API
 ```
 
-`src/lib/coveo/content-search.ts` centralizes both Coveo content calls: `searchTrendingContent` (list results for the right-rail cards, no article body) and `fetchTrendingArticle` (a single result looked up by `raw.permanentid`, including the full article body). The route handler and the `/blog/[id]` Server Component both call this module directly — the page does not fetch its own API route over HTTP.
+`src/lib/coveo/content-search.ts` centralizes both Coveo content calls: `searchTrendingContent` (list results for the right-rail cards and the `/blog` index page, no article body) and `fetchTrendingArticle` (a single result looked up by `raw.permanentid`, including the full article body). The route handler, the `/blog` Server Component, and the `/blog/[id]` Server Component all call this module directly — none of these pages fetch their own API route over HTTP.
 
 The full article body (`raw.content`/`raw.body`) is untrusted third-party HTML from the external blog source. `fetchTrendingArticle` sanitizes it server-side with `sanitize-html` (allowlisted tags/attributes, forced `target="_blank" rel="noopener noreferrer"` on links) before it is ever sent to the client — this is the security boundary for rendering it with `dangerouslySetInnerHTML` on the article page. List results never include the body field, keeping the right-rail card payload small.
 

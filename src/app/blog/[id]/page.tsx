@@ -40,7 +40,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ id
 
   return (
     <div className="search-app">
-      <Header />
+      <Header activePath="/blog" />
       <main className="blog-page">
         <article className="blog-article">
           {item.imageUrl ? (

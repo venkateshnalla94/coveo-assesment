@@ -16,12 +16,8 @@ export const SEARCH_UI = {
   copyright: "© 2024 Coveo Solutions Inc. All rights reserved.",
   footerLinks: ["Privacy Policy", "Terms of Use", "Support", "Contact Us"],
   navItems: [
-    { href: "/catalog", label: "Products", active: true },
-    { href: "#", label: "Solutions" },
-    { href: "#", label: "Industries" },
-    { href: "#", label: "Resources" },
-    { href: "#", label: "Support" },
-    { href: "#", label: "About" },
+    { href: "/catalog", label: "Products" },
+    { href: "/blog", label: "Blog" },
   ],
   user: {
     initials: "VN",

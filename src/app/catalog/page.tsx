@@ -19,7 +19,7 @@ export default async function CatalogPage({
 
   return (
     <div className="search-app">
-      <Header />
+      <Header activePath="/catalog" />
       <ProductDiscoveryExperience
         commerceAuthConfig={commerceAuthConfig}
         featureFlags={featureFlags}

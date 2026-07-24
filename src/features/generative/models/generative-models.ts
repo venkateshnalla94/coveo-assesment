@@ -3,7 +3,9 @@ export interface GenerativeCitation {
   title: string;
   url: string;
   source?: string;
+  filetype?: string;
   excerpt?: string;
+  permanentId?: string;
 }
 
 export interface GenerativeAnswer {

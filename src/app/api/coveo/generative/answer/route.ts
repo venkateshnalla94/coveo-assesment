@@ -73,12 +73,18 @@ function parseEventStream(text: string) {
         const item = citation && typeof citation === "object" ? (citation as Record<string, unknown>) : {};
         const id = typeof item.id === "string" ? item.id : typeof item.uri === "string" ? item.uri : undefined;
         const url = typeof item.clickUri === "string" ? item.clickUri : typeof item.uri === "string" ? item.uri : undefined;
+        // Fields requested via citationsFieldToInclude come back nested under `fields`, not flattened onto the citation.
+        const fields = item.fields && typeof item.fields === "object" ? (item.fields as Record<string, unknown>) : {};
 
         if (id && url) {
           citations.set(id, {
             excerpt: typeof item.text === "string" ? item.text : undefined,
+            filetype: typeof fields.filetype === "string" ? fields.filetype : undefined,
             id,
-            source: typeof item.source === "string" ? item.source : undefined,
+            // Same permanentid scheme trending content and /blog/[id] key off of, so a citation
+            // pointing at one of our indexed articles can link internally instead of externally.
+            permanentId: typeof item.permanentid === "string" ? item.permanentid : undefined,
+            source: typeof fields.source === "string" ? fields.source : undefined,
             title: typeof item.title === "string" ? item.title : url,
             url,
           });

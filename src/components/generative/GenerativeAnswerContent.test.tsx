@@ -41,12 +41,13 @@ describe("GenerativeAnswerContent", () => {
     });
 
     expect(screen.getByText(/The welding arm/)).toBeTruthy();
-    expect(screen.queryByRole("link", { name: /Welding robotics guide/ })).toBeNull();
+    expect(screen.queryByText("Welding robotics guide")).toBeNull();
 
     await userEvent.click(screen.getByRole("button", { name: "Read full guidance and citations" }));
     expect(screen.getByRole("dialog", { name: "AI Product Guidance" })).toBeTruthy();
     await userEvent.click(screen.getByRole("tab", { name: "Citations (1)" }));
-    expect(screen.getByRole("link", { name: /Welding robotics guide/ })).toBeTruthy();
+    expect(screen.getByText("Welding robotics guide")).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Read more/ })).toBeTruthy();
   });
 
   it("supports Escape close and restores the compact trigger", async () => {
@@ -63,7 +64,8 @@ describe("GenerativeAnswerContent", () => {
     renderContent({ compact: false });
 
     expect(screen.getByText("Short guidance.")).toBeTruthy();
-    expect(screen.getByRole("link", { name: /Welding robotics guide/ })).toBeTruthy();
+    expect(screen.getByText("Welding robotics guide")).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Read more/ })).toBeTruthy();
   });
 
   it("shows a compact inline 'more' trigger with a full accessible name", () => {

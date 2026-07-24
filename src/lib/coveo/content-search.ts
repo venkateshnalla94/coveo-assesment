@@ -37,17 +37,17 @@ function numberFrom(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 
-function tagsFrom(value: unknown): string[] | undefined {
+function semicolonListFrom(value: unknown): string[] | undefined {
   if (typeof value !== "string" || !value.trim()) {
     return undefined;
   }
 
-  const tags = value
+  const items = value
     .split(";")
-    .map((tag) => tag.trim())
+    .map((item) => item.trim())
     .filter(Boolean);
 
-  return tags.length > 0 ? tags : undefined;
+  return items.length > 0 ? items : undefined;
 }
 
 function dateFrom(value: unknown): string | undefined {
@@ -111,13 +111,16 @@ function mapResultToTrendingItem(
     category: stringFrom(raw.category),
     imageUrl: stringFrom(raw.featured_image_url),
     publishedAt: dateFrom(raw.date) ?? dateFrom(raw.created_date),
-    tags: tagsFrom(raw.tags),
+    tags: semicolonListFrom(raw.tags),
     wordCount: numberFrom(raw.word_count),
   };
 
   if (options.includeBody) {
     const rawBody = stringFrom(raw.content) ?? stringFrom(raw.body);
     trendingItem.body = rawBody ? sanitizeHtml(rawBody, ARTICLE_SANITIZE_OPTIONS) : undefined;
+    // `images` mirrors `featured_image_url` as its first entry; drop that duplicate so the
+    // gallery only shows the additional product shots, not the hero image twice.
+    trendingItem.images = semicolonListFrom(raw.images)?.filter((url) => url !== trendingItem.imageUrl);
   }
 
   return trendingItem;

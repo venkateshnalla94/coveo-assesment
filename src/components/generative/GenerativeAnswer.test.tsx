@@ -50,12 +50,13 @@ describe("GenerativeAnswer", () => {
     );
 
     expect(await screen.findByText(/Fixture-backed summary/)).toBeTruthy();
-    expect(screen.queryByRole("link", { name: /The Ultimate Guide/ })).toBeNull();
+    expect(screen.queryByText("The Ultimate Guide to Digital Transformation")).toBeNull();
 
     await userEvent.click(screen.getByRole("button", { name: "Read full guidance and citations" }));
     expect(screen.getByRole("dialog", { name: "AI Product Guidance" })).toBeTruthy();
     await userEvent.click(screen.getByRole("tab", { name: /Citations/ }));
-    expect(screen.getByRole("link", { name: /The Ultimate Guide/ })).toBeTruthy();
+    expect(screen.getByText("The Ultimate Guide to Digital Transformation")).toBeTruthy();
+    expect(screen.getAllByRole("link", { name: /Read more/ })[0]).toBeTruthy();
     await userEvent.click(screen.getByRole("button", { name: "Close AI product guidance" }));
 
     await userEvent.click(screen.getByRole("button", { name: "Helpful" }));

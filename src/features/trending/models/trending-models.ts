@@ -18,4 +18,6 @@ export interface TrendingItem {
   wordCount?: number;
   /** Sanitized article body HTML. Only populated by a single-article fetch, never in list results. */
   body?: string;
+  /** Additional product images beyond the hero. Only populated by a single-article fetch. */
+  images?: string[];
 }

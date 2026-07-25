@@ -2,7 +2,7 @@
 
 ## Layers
 
-- Vitest covers runtime config, auth boundaries, Headless Commerce mapping, product UI, RGA components, Technical Resources, logging, and security helpers.
+- Vitest covers runtime config, auth boundaries, Headless Commerce mapping, product UI, RGA components, Technical Resources, the conversational agent's AG-UI stream transform and provider, logging, and security helpers.
 - `npm run test:coverage` enforces 80% global thresholds for included application logic.
 - Playwright covers the live RoboMotion product discovery workflow against the local Next.js app.
 - Axe checks fail on serious or critical accessibility violations.
@@ -39,6 +39,7 @@ Retained coverage includes:
 - RGA answer rendering, citations, feedback, errors, and no-answer states
 - Technical Resources rendering and provider behavior
 - Coveo content mapping and HTML sanitization for article bodies (`src/lib/coveo/content-search.ts`)
+- conversational agent AG-UI-to-app SSE contract transform (`src/lib/coveo/ag-ui-stream.ts`), Search Agent URL builders, and the `/api/coveo/conversation` route
 - error isolation
 - security boundaries
 - accessibility-oriented component behavior
@@ -69,3 +70,4 @@ E2E depends on the active Headless Commerce path and does not use removed profil
 - There is no visual-regression service; responsive tests assert usability and horizontal overflow.
 - Build may report the known Coveo Headless Webpack warning.
 - The `/blog/[id]` article detail page has Vitest coverage for its data layer (mapping, sanitization) but no Playwright E2E coverage yet.
+- The conversational agent has Vitest coverage for its stream transform, provider, and route but no Playwright E2E coverage yet.

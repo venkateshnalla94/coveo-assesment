@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
 
+import { usePublishPageContext } from "@/components/conversation/AgentContextProvider";
 import { ProductDetailView } from "@/components/commerce/ProductDetailView";
 import type { ProductResult } from "@/features/commerce/models/commerce-models";
 import { readProductForPdp } from "@/lib/commerce/product-session-cache";
@@ -32,6 +33,8 @@ function getSnapshot(id: string) {
 // sessionStorage instead of fetching it. Direct visits / expired tabs fall back below.
 export function ProductDetailClient({ id }: { id: string }) {
   const product = useSyncExternalStore(subscribe, () => getSnapshot(id), getServerSnapshot);
+
+  usePublishPageContext(product ? { id: product.id, kind: "product", title: product.title } : undefined);
 
   if (!product) {
     return (

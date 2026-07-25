@@ -3,6 +3,7 @@
 import { ExternalLink } from "lucide-react";
 import { useEffect } from "react";
 
+import { usePublishPageContext } from "@/components/conversation/AgentContextProvider";
 import { AnalyticsProviderRoot, ConsoleAnalyticsProvider, useAnalytics } from "@/features/analytics/analytics";
 import type { TrendingItem } from "@/features/trending/models/trending-models";
 import { getSafeTrendingUrl } from "@/features/trending/services/trending-urls";
@@ -20,6 +21,8 @@ export function BlogArticleActions({ item }: { item: TrendingItem }) {
 function BlogArticleActionsContent({ item }: { item: TrendingItem }) {
   const analytics = useAnalytics();
   const safeUrl = getSafeTrendingUrl(item);
+
+  usePublishPageContext({ id: item.id, kind: "article", title: item.title });
 
   useEffect(() => {
     analytics.track("trending_article_opened", { itemId: item.id, title: item.title });

@@ -11,7 +11,7 @@ npm run test:e2e
 npm run workflow:check
 ```
 
-`npm run test:coverage` enforces 80% coverage for included application logic, including token handling, Headless Commerce mapping, shared search controls, product UI, RGA components, Technical Resources, logging, and runtime configuration.
+`npm run test:coverage` enforces 80% coverage for included application logic, including token handling, Headless Commerce mapping, shared search controls, product UI, RGA components, Technical Resources, the conversational agent (AG-UI stream transform, provider, route), logging, and runtime configuration.
 
 ## Current Gaps
 

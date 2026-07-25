@@ -26,6 +26,7 @@ Industrial robotics buyers rarely know the exact SKU they need at the start of d
 - AI Product Guidance through RGA
 - RGA citations and feedback
 - Search API Technical Resources, with an internal `/blog` index page and `/blog/[id]` article detail pages (sanitized full article body, author/date/category/tags, link out to the original source)
+- Global conversational search agent (floating chat widget on every page) backed by Coveo's Search Agent API (agentic RAG, AG-UI protocol streamed through a server route), feature-flagged off by default
 - Accessible keyboard and screen-reader behavior
 - Responsive layouts across mobile, tablet, and desktop
 - App-level analytics plus Headless Commerce analytics
@@ -40,13 +41,17 @@ Next.js UI
 │   └── /products/[id] (product detail page, sessionStorage handoff)
 ├── Generative Provider
 │   └── RGA
-└── Content Provider
-    ├── Coveo Search API
-    ├── /blog (index page)
-    └── /blog/[id] (article detail page)
+├── Content Provider
+│   ├── Coveo Search API
+│   ├── /blog (index page)
+│   └── /blog/[id] (article detail page)
+└── Conversational Agent (global floating widget, all pages)
+    └── Coveo Search Agent API (agentic RAG, AG-UI protocol)
 ```
 
 The `/` route uses Headless Commerce query suggestions and sends buyers into `/catalog?q=<query>`. Live product search, facets, pagination, summaries, and relevance sorting are handled by Headless Commerce in the browser on `/catalog`. AI Product Guidance and Technical Resources are isolated server-backed paths, not Commerce product recommendation paths. The header's Blog nav link opens `/blog`, a server-rendered index of Technical Resources content reusing the same `searchTrendingContent` provider as the right-rail cards. Clicking a Technical Resources card, or an article on `/blog`, opens `/blog/<id>`, a server-rendered article page built from the same Coveo content result — the external source link moves there instead of leaving the catalog page directly. Clicking a product tile on `/catalog` opens `/products/<id>` in a new tab; unlike `/blog/[id]`, this page has no server-side data fetch — there is deliberately no product-detail API route, so the tile hands the `ProductResult` it already has in memory to the new tab via sessionStorage. See ADR 0010.
+
+A floating chat widget is mounted globally in `src/app/layout.tsx` (sibling of the page tree, not inside any one route) and talks to `/api/coveo/conversation`, which calls Coveo's Search Agent API — a distinct upstream from the Search API used by RGA and Technical Resources. It is feature-flagged off by default (`COVEO_FEATURE_CONVERSATION_ENABLED`). See ADR 0012.
 
 ## Authentication
 
@@ -66,7 +71,7 @@ COVEO_AUTHENTICATED_SEARCH_API_KEY=
 
 In secured mode, `/api/search-token` mints short-lived tokens using the server-only authenticated search key.
 
-There is no credential fallback. Anonymous mode uses only `NEXT_PUBLIC_COVEO_ANONYMOUS_SEARCH_API_KEY`; search-token mode uses only `COVEO_AUTHENTICATED_SEARCH_API_KEY`. `COVEO_PLATFORM_API_KEY` remains server-only for RGA and Technical Resources.
+There is no credential fallback. Anonymous mode uses only `NEXT_PUBLIC_COVEO_ANONYMOUS_SEARCH_API_KEY`; search-token mode uses only `COVEO_AUTHENTICATED_SEARCH_API_KEY`. `COVEO_PLATFORM_API_KEY` remains server-only for RGA, Technical Resources, and the conversational agent (`COVEO_SEARCH_AGENT_ID`, required only when `COVEO_FEATURE_CONVERSATION_ENABLED=true`).
 
 ## Setup
 
@@ -113,6 +118,7 @@ npm audit
 - Live sorting is relevance-only: verified directly against the raw `/commerce/v2/search` response (`sort.availableSorts` returns only `{sortCriteria: "relevance"}`), so this is a Merchandising Hub interface-config gap, not a frontend gap — the toolbar's sort control is already data-driven (`mapHeadlessSort()`/`updateSort()`, see ADR 0011) and renders a `<select>` the moment more than one criterion is configured; it falls back to a read-only "Relevance" label only because that's the only option offered today. In a live engagement I'd enable field sorting for `ec_price`/`ec_rating` on the commerce listing config; no frontend change would be needed to pick it up.
 - Payload, reach, precision, mounting, certification, industry, controller, and datasheet fields are not available as consistent structured catalog fields.
 - RGA is grounded in blog/content material and is not a product recommendation engine.
+- The conversational agent is feature-flagged off by default (`COVEO_FEATURE_CONVERSATION_ENABLED`) and has Vitest coverage for its stream transform, provider, and route but no Playwright E2E coverage yet.
 - Commerce Product Recommendations and Product Listings are not configured.
 - Contact Sales and Request Quote are demo interactions unless connected to production CRM or commerce workflows.
 - Coveo Headless emits a Webpack critical-dependency warning from the third-party bundle.

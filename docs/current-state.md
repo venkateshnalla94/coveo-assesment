@@ -6,6 +6,7 @@
 - React `^19.2.7`
 - TypeScript `^6.0.3`
 - `@coveo/headless` `^3.53.1`
+- `react-markdown` `^10.1.0` (renders conversational agent answers; no `rehype-raw`, so raw HTML in answers is never rendered)
 - Vitest, React Testing Library, Playwright, and axe
 - Webpack-based Next commands because of a known Coveo Headless bundle warning
 
@@ -15,6 +16,7 @@
 RoboMotion Product Discovery -> @coveo/headless/commerce -> Coveo Commerce API
 AI Product Guidance -> RGA
 Technical Resources -> Search API
+Conversational Agent (global floating widget, all pages) -> Coveo Search Agent API
 ```
 
 Active routes:
@@ -27,6 +29,9 @@ Active routes:
 - `src/app/api/search-token/route.ts`
 - `src/app/api/coveo/generative/answer/route.ts`
 - `src/app/api/coveo/content/search/route.ts`
+- `src/app/api/coveo/conversation/route.ts` (Search Agent API, feature-flagged by `COVEO_FEATURE_CONVERSATION_ENABLED`)
+
+`src/app/layout.tsx` resolves `resolveRuntimeConfig()` server-side and wraps `{children}` in `AgentContextProvider`, with `AgentMountpoint` (the floating chat widget) mounted as a sibling — this is the app's only global (all-pages) provider/mount point.
 
 Active Commerce composition:
 
@@ -37,6 +42,13 @@ Active Commerce composition:
 - `src/features/commerce/config/commerce-config.ts`
 - `src/components/commerce/ProductDetailClient.tsx` / `src/components/commerce/ProductDetailView.tsx` (product detail page)
 - `src/lib/commerce/product-session-cache.ts` (sessionStorage handoff for the product detail page)
+
+Active Conversational Agent composition:
+
+- `src/components/conversation/AgentMountpoint.tsx`, `ConversationalAgent.tsx`, `AgentLauncher.tsx`, `AgentPanel.tsx`, `AgentComposer.tsx`, `AgentTranscript.tsx`, `AgentMessage.tsx`, `AgentCitations.tsx`, `AgentStepIndicator.tsx`, `AgentContextProvider.tsx`
+- `src/features/conversation/providers/coveo-conversation-provider.ts` (live) and `mock-conversation-provider.ts` (tests)
+- `src/features/conversation/services/conversation-state.ts` (reducer-driven streaming state machine)
+- `src/lib/coveo/search-agent-api.ts` (Search Agent URL builders), `src/lib/coveo/ag-ui-stream.ts` (AG-UI SSE to app SSE contract transform)
 
 Shared UI retained by Commerce:
 
@@ -50,9 +62,11 @@ Anonymous mode is validated live. It uses only `NEXT_PUBLIC_COVEO_ANONYMOUS_SEAR
 
 Search-token mode remains supported through `/api/search-token` and uses only `COVEO_AUTHENTICATED_SEARCH_API_KEY` server-side.
 
-`COVEO_PLATFORM_API_KEY` remains server-only for RGA and Technical Resources.
+`COVEO_PLATFORM_API_KEY` remains server-only for RGA, Technical Resources, and the Conversational Agent.
 
 There is no silent fallback between credentials or provider paths.
+
+The Conversational Agent additionally requires `COVEO_SEARCH_AGENT_ID` (server-only) when `COVEO_FEATURE_CONVERSATION_ENABLED` (default `false`) is on.
 
 ## Confirmed Commerce Behavior
 

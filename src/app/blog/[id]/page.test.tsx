@@ -5,6 +5,7 @@ vi.mock("next/navigation", () => ({
   notFound: () => {
     throw new Error("NEXT_NOT_FOUND");
   },
+  usePathname: () => "/blog/test-article",
   useRouter: () => ({ push: vi.fn() }),
 }));
 

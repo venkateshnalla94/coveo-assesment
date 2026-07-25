@@ -11,7 +11,10 @@ export default defineConfig({
     coverage: {
       include: [
         "src/app/api/search-token/route.ts",
+        "src/app/api/coveo/conversation/route.ts",
         "src/lib/coveo/search-token.ts",
+        "src/lib/coveo/ag-ui-stream.ts",
+        "src/lib/coveo/search-agent-api.ts",
         "src/components/search/SearchSuggestions.tsx",
         "src/components/search/use-search-suggestions.ts",
         "src/components/content/TrendingContent.tsx",
@@ -35,6 +38,10 @@ export default defineConfig({
         "src/features/generative/providers/coveo-generative-provider.ts",
         "src/features/generative/providers/feedback-provider.ts",
         "src/features/generative/providers/mock-generative-provider.ts",
+        "src/features/conversation/providers/coveo-conversation-provider.ts",
+        "src/features/conversation/providers/mock-conversation-provider.ts",
+        "src/features/conversation/providers/conversation-errors.ts",
+        "src/features/conversation/services/conversation-state.ts",
         "src/features/generative/services/citations.ts",
         "src/features/generative/services/generative-state.ts",
         "src/features/search/models/search-models.ts",

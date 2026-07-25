@@ -36,6 +36,7 @@
 - [ ] RGA appears or fails independently.
 - [ ] Technical Resources appear or fail independently.
 - [ ] Clicking a Technical Resources card opens `/blog/[id]` with the full article and a working "View original source" link; an unknown id renders the 404 page.
+- [ ] If `COVEO_FEATURE_CONVERSATION_ENABLED=true`, the floating conversational agent widget opens on every page and answers or fails independently; if unset, confirm the widget stays hidden.
 - [ ] Mobile layout is usable.
 - [ ] Keyboard-only navigation is usable.
 

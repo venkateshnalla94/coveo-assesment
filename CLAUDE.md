@@ -16,6 +16,7 @@ Start at `outputs/architecture/README.md` for routing, component wiring, and dat
 - `src/app/api/search-token/route.ts` mints short-lived Coveo search tokens with the privileged API key for browser-side product search.
 - Browser code uses the generated token with `@coveo/headless` and calls Coveo Search API directly for product search.
 - `src/app/api/coveo/content/search/route.ts`, `src/app/api/coveo/generative/answer/route.ts`, and the `/blog/[id]` server-rendered page (via `src/lib/coveo/content-search.ts`) are narrow, content/RGA-support server paths that call Coveo directly with the server-only `COVEO_PLATFORM_API_KEY` — they are not a general search proxy.
+- `src/app/api/coveo/conversation/route.ts` follows the same server-only-`COVEO_PLATFORM_API_KEY` boundary but calls a different upstream family, the Search Agent API (`{orgId}.org.coveo.com/api/v1/organizations/{orgId}/agents/{agentId}/answer` and `/follow-up`, agentic RAG over AG-UI), not the Search API the routes above use. It backs the global floating chat widget mounted in `src/app/layout.tsx` (gated by `COVEO_FEATURE_CONVERSATION_ENABLED`, off by default) and shares no code with the RGA route.
 - Do not turn any of these into a full search proxy unless the assessment scope changes.
 - Do not expose `COVEO_PLATFORM_API_KEY` to client code or any `NEXT_PUBLIC_` variable.
 

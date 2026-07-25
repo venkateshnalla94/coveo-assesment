@@ -37,6 +37,9 @@ export function getEnvironmentFeatureFlagOverrides(
     analytics: {
       enabled: readBooleanOverride(environment, "COVEO_FEATURE_ANALYTICS"),
     },
+    conversation: {
+      enabled: readBooleanOverride(environment, "COVEO_FEATURE_CONVERSATION_ENABLED"),
+    },
     generative: {
       citations: readBooleanOverride(environment, "COVEO_FEATURE_GENERATIVE_CITATIONS"),
       disclaimer: readBooleanOverride(environment, "COVEO_FEATURE_GENERATIVE_DISCLAIMER"),

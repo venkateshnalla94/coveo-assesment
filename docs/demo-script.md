@@ -70,6 +70,10 @@ Explain that RGA is grounded in content/blog material and supports technical res
 
 Click a Technical Resources card to open its `/blog/[id]` article page — full article body, author/date/category/tags, and a "View original source" link out to the original blog. This shows the same content result carrying more than a title and an excerpt.
 
+If `COVEO_FEATURE_CONVERSATION_ENABLED=true` is set for the demo, open the floating chat widget (bottom corner, every page) and ask a question. Explain it's a fourth, separate Coveo integration — the Search Agent API (agentic RAG, AG-UI protocol), not the Search API RGA/Technical Resources use — and that it fails independently in-panel like RGA does. It's off by default; call that out if it isn't enabled for this run.
+
+**Timing risk, live-tested — do not take an ad-hoc audience question here.** A head-turn question frequently comes back "no answer found" in ~1s (the agent's first-pass retrieval misses), and a successful follow-up can take 15-25s end-to-end (multiple internal search/think loops) before the first token streams — the "Searching…"/"Thinking…" step indicator is the only feedback during that wait. Before the demo starts, open the widget and ask a known-good warm-up question (e.g. "Tell me about collision sensors and force/torque sensors") so the thread is established and the audience only sees a fast, well-formatted follow-up. If asking live anyway, narrate through the wait rather than let it sit in silence.
+
 ## 17:00-19:00: Architecture, Auth, Analytics, Failure Isolation
 
 Use the architecture summary:
@@ -80,8 +84,10 @@ Next.js UI
 │   └── Coveo Commerce API
 ├── Generative Provider
 │   └── RGA
-└── Content Provider
-    └── Coveo Search API
+├── Content Provider
+│   └── Coveo Search API
+└── Conversational Agent (global widget, feature-flagged)
+    └── Coveo Search Agent API
 ```
 
 Explain:
@@ -90,7 +96,7 @@ Explain:
 - secured production mode uses `/api/search-token`
 - there is no credential fallback
 - Headless Commerce owns product search behavior and analytics
-- RGA and resources fail independently from product search
+- RGA, resources, and the conversational agent all fail independently from product search
 
 ## Address The Data Model Directly
 

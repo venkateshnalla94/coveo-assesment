@@ -6,6 +6,9 @@ export interface FeatureFlags {
     feedback: boolean;
     disclaimer: boolean;
   };
+  conversation: {
+    enabled: boolean;
+  };
   trending: {
     enabled: boolean;
   };
@@ -21,6 +24,9 @@ export type FeatureFlagOverrides = {
 export const defaultFeatureFlags: Readonly<FeatureFlags> = Object.freeze({
   analytics: Object.freeze({
     enabled: true,
+  }),
+  conversation: Object.freeze({
+    enabled: false,
   }),
   generative: Object.freeze({
     citations: true,
@@ -45,6 +51,7 @@ export function mergeFeatureFlags(
 
     return {
       analytics: { ...current.analytics, ...pickBooleanOverrides(override.analytics) },
+      conversation: { ...current.conversation, ...pickBooleanOverrides(override.conversation) },
       generative: { ...current.generative, ...pickBooleanOverrides(override.generative) },
       trending: { ...current.trending, ...pickBooleanOverrides(override.trending) },
     };
@@ -74,6 +81,7 @@ function pickBooleanOverrides<T extends Record<string, boolean>>(input: Partial<
 function cloneFeatureFlags(flags: FeatureFlags): FeatureFlags {
   return {
     analytics: { ...flags.analytics },
+    conversation: { ...flags.conversation },
     generative: { ...flags.generative },
     trending: { ...flags.trending },
   };

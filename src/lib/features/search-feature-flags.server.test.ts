@@ -10,6 +10,7 @@ describe("getSearchFeatureFlags", () => {
   it("resolves the live product-discovery flags by default", () => {
     expect(getSearchFeatureFlags()).toEqual({
       enableAnalytics: true,
+      enableConversationalAgent: false,
       enableGenerativeAnswers: false,
       enableGenerativeCitations: true,
       enableGenerativeDisclaimer: true,
@@ -30,6 +31,7 @@ describe("getSearchFeatureFlags", () => {
 
     expect(getSearchFeatureFlags()).toEqual({
       enableAnalytics: false,
+      enableConversationalAgent: false,
       enableGenerativeAnswers: true,
       enableGenerativeCitations: false,
       enableGenerativeDisclaimer: false,

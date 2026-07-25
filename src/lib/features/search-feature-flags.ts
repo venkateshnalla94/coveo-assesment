@@ -2,6 +2,7 @@ import type { FeatureFlags } from "@/features/feature-flags/feature-flags";
 
 export type SearchFeatureFlags = {
   enableAnalytics: boolean;
+  enableConversationalAgent: boolean;
   enableGenerativeAnswers: boolean;
   enableGenerativeCitations: boolean;
   enableGenerativeDisclaimer: boolean;
@@ -12,6 +13,7 @@ export type SearchFeatureFlags = {
 
 export const defaultSearchFeatureFlags: SearchFeatureFlags = {
   enableAnalytics: true,
+  enableConversationalAgent: false,
   enableGenerativeAnswers: false,
   enableGenerativeCitations: true,
   enableGenerativeDisclaimer: true,
@@ -23,6 +25,7 @@ export const defaultSearchFeatureFlags: SearchFeatureFlags = {
 export function toSearchFeatureFlags(flags: FeatureFlags): SearchFeatureFlags {
   return {
     enableAnalytics: flags.analytics.enabled,
+    enableConversationalAgent: flags.conversation.enabled,
     enableGenerativeAnswers: flags.generative.enabled,
     enableGenerativeCitations: flags.generative.citations,
     enableGenerativeDisclaimer: flags.generative.disclaimer,

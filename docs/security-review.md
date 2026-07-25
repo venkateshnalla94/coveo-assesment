@@ -4,7 +4,8 @@
 
 - Anonymous mode uses only `NEXT_PUBLIC_COVEO_ANONYMOUS_SEARCH_API_KEY`.
 - Search-token mode uses only server-side `COVEO_AUTHENTICATED_SEARCH_API_KEY`.
-- `COVEO_PLATFORM_API_KEY` is server-side only for RGA and Technical Resources.
+- `COVEO_PLATFORM_API_KEY` is server-side only for RGA, Technical Resources, and the conversational agent (`/api/coveo/conversation`).
+- The conversational agent's answer text is untrusted model output rendered with `react-markdown` (`AgentMessage.tsx`); no `rehype-raw` plugin is wired in, so raw HTML in an answer is never rendered — only markdown syntax is. Answer-body links are forced to `target="_blank" rel="noreferrer"` before rendering, the only additional link surface it introduces.
 - `/api/search-token` returns only a generated search token and non-secret configuration.
 - Coveo token minting failures are redacted before returning to the browser.
 - Token-like log metadata is sanitized by shared logger and error helpers.

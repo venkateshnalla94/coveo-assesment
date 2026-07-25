@@ -9,13 +9,15 @@ Next.js UI
 │   └── /products/[id] (product detail page, sessionStorage handoff)
 ├── Generative Provider
 │   └── RGA
-└── Content Provider
-    ├── Coveo Search API
-    ├── /blog (index page)
-    └── /blog/[id] (article detail page)
+├── Content Provider
+│   ├── Coveo Search API
+│   ├── /blog (index page)
+│   └── /blog/[id] (article detail page)
+└── Conversational Agent (global floating widget, all pages)
+    └── Coveo Search Agent API (agentic RAG, AG-UI protocol)
 ```
 
-The application is a customer-facing RoboMotion product discovery experience. Product search uses `@coveo/headless/commerce`; AI Product Guidance uses RGA; Technical Resources use the Coveo Search API.
+The application is a customer-facing RoboMotion product discovery experience. Product search uses `@coveo/headless/commerce`; AI Product Guidance uses RGA; Technical Resources use the Coveo Search API; the global conversational agent uses the Coveo Search Agent API.
 
 The `/` route is a search entry page. It initializes Headless Commerce query suggestions and navigates into `/catalog?q=<query>` without rendering product listings on the home page.
 
@@ -132,6 +134,23 @@ The full article body (`raw.content`/`raw.body`) is untrusted third-party HTML f
 Trending cards link internally to `/blog/{id}` (the article's `permanentid`, not a product SKU) instead of opening the external source directly; the article page itself carries a "View original source" link out, reusing the existing `getSafeTrendingUrl` protocol allowlist. See ADR 0007.
 
 Both are isolated from product search. If RGA or resources fail, product discovery remains usable. RGA guidance is blog/content-grounded research support, not product recommendation.
+
+## Conversational Search Agent
+
+A floating chat widget (`AgentLauncher`/`AgentPanel`, mounted by `AgentMountpoint` in `src/app/layout.tsx`) is global — it renders as a sibling of `{children}` on every page, not inside any one route tree — and is gated by the `COVEO_FEATURE_CONVERSATION_ENABLED` flag (default off).
+
+```text
+ConversationalAgent -> CoveoConversationProvider -> /api/coveo/conversation -> Coveo Search Agent API
+                                                      (server-only COVEO_PLATFORM_API_KEY)
+```
+
+This is a distinct upstream from RGA and Technical Resources: the Search Agent API (`{orgId}.org.coveo.com/api/v1/organizations/{orgId}/agents/{agentId}/answer` and `/follow-up`, agentic RAG over the AG-UI protocol) rather than the Search API (`platform-eu.cloud.coveo.com/rest/search/v2`). `src/app/api/coveo/conversation/route.ts` shares the same server-only-`COVEO_PLATFORM_API_KEY` boundary as the RGA/content routes but shares no code with them — `src/lib/coveo/search-agent-api.ts` builds the Search Agent URLs and `src/lib/coveo/ag-ui-stream.ts` re-encodes the upstream AG-UI SSE event stream (`RUN_STARTED`/`STEP_STARTED`/`TEXT_MESSAGE_CHUNK`/`RUN_FINISHED`/`RUN_ERROR`/citation `CUSTOM` events) into this app's own smaller `step`/`token`/`citations`/`done`/`no-answer`/`error` SSE contract before it reaches the browser.
+
+`CoveoConversationProvider` (mirroring the `GenerativeProvider` abstraction in ADR 0003) consumes that contract client-side and drives a `useReducer` conversation state machine; a `mock-conversation-provider.ts` exists for deterministic tests. `AgentContextProvider` publishes the current page's `PageContext` (kind, title, id, query) via two split React contexts so PDP/blog pages can enrich what the agent knows about the page the buyer is on, without making the globally-mounted agent a parent of `children`.
+
+Answer text is untrusted model output rendered with `react-markdown` (`AgentMessage.tsx`) — no `rehype-raw` plugin is wired in, so raw HTML in the answer is never rendered, only markdown syntax; the only added surface is forcing answer-body links to open with safe `target="_blank" rel="noreferrer"`.
+
+The agent is isolated from product search and Technical Resources the same way RGA is: it fails independently (visible in-panel error state) and never blocks or alters product discovery, facets, pagination, or Technical Resources.
 
 ## Analytics
 

@@ -42,8 +42,12 @@ describe("ProductFacetPanel", () => {
     await userEvent.click(screen.getByRole("button", { name: /NexBot Robotics 2/i }));
 
     const [minSlider, maxSlider] = screen.getAllByRole("slider");
+    // The range only commits (calls onToggleRange) on blur/keyup/pointerup, not on every
+    // change event, so dragging doesn't fire a query per pixel — fire blur to simulate release.
     fireEvent.change(minSlider, { target: { value: "25" } });
+    fireEvent.blur(minSlider);
     fireEvent.change(maxSlider, { target: { value: "80" } });
+    fireEvent.blur(maxSlider);
 
     expect(onToggleFacetValue).toHaveBeenCalledWith("ec_brand", "NexBot Robotics", "regular");
     expect(onToggleRange).toHaveBeenCalledWith("ec_price", 25, 100);

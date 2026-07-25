@@ -43,6 +43,21 @@ vi.mock("@/features/commerce/headless/use-headless-commerce", () => ({
   },
 }));
 
+// Shallow-mocked so the test can assert on the `query` prop each receives without exercising
+// their real Coveo trending/RGA network calls — the gating behavior under test (committedQuery
+// vs. live per-keystroke query) lives in ProductDiscoveryExperience, not in these components.
+vi.mock("@/components/commerce/ProductRightRail", () => ({
+  ProductRightRail: ({ query }: { query: string }) => (
+    <div data-testid="right-rail-query">{query}</div>
+  ),
+}));
+
+vi.mock("@/components/generative/GenerativeAnswer", () => ({
+  GenerativeAnswer: ({ query }: { query: string }) => (
+    <div data-testid="generative-answer-query">{query}</div>
+  ),
+}));
+
 import { ProductDiscoveryExperience } from "@/components/commerce/ProductDiscoveryExperience";
 import { CoveoAnalyticsProvider } from "@/features/analytics/analytics";
 import { defaultSearchFeatureFlags } from "@/lib/features/search-feature-flags";
@@ -183,5 +198,34 @@ describe("ProductDiscoveryExperience", () => {
         payload: { query: "welding arm", sort: "ec_price:desc" },
       }),
     );
+  });
+
+  it("keeps the right rail and generative answer query pinned to committedQuery while typing, and updates only on submit", async () => {
+    mockTrendingFetch();
+
+    render(
+      <ProductDiscoveryExperience
+        commerceAuthConfig={configurationErrorAuthConfig}
+        featureFlags={defaultSearchFeatureFlags}
+        initialQuery="welding arm"
+      />,
+    );
+
+    expect(screen.getByTestId("right-rail-query").textContent).toBe("welding arm");
+    expect(screen.getByTestId("generative-answer-query").textContent).toBe("welding arm");
+
+    const input = screen.getByRole("combobox", { name: "Search" });
+    await userEvent.clear(input);
+    await userEvent.type(input, "gripper arm");
+
+    // Typing alone (no submit) must not move either query off the last committed search.
+    expect(screen.getByTestId("right-rail-query").textContent).toBe("welding arm");
+    expect(screen.getByTestId("generative-answer-query").textContent).toBe("welding arm");
+
+    await userEvent.click(screen.getByRole("button", { name: "Search" }));
+
+    // Submitting advances committedQuery, so both should now reflect the new query.
+    expect(screen.getByTestId("right-rail-query").textContent).toBe("gripper arm");
+    expect(screen.getByTestId("generative-answer-query").textContent).toBe("gripper arm");
   });
 });

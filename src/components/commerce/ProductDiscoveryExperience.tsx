@@ -66,12 +66,14 @@ function HeadlessProductDiscoveryContent({
   const [comparedProducts, setComparedProducts] = useState<ProductResult[]>([]);
   const [comparisonOpen, setComparisonOpen] = useState(false);
   const [detailsProduct, setDetailsProduct] = useState<ProductResult | null>(null);
-  // Tracks the last *submitted* query for the Header nav links (`?q=` on Products/Blog), so
-  // they stay stable while the user is mid-keystroke instead of updating on every change.
+  // Tracks the last *submitted* query. Drives the Header nav links (`?q=` on Products/Blog) and
+  // gates the RGA / Trending Content fetches so they run once per search submission instead of
+  // once per keystroke — those are isolated, non-product-search Coveo calls and must not re-fire
+  // while the user is still typing in the product search box.
   const [committedQuery, setCommittedQuery] = useState(initialQuery);
   const response = commerce.response;
   const pagination = response?.pagination;
-  const rightRailQuery = commerce.query || "welding arm";
+  const rightRailQuery = committedQuery || "welding arm";
   const generativeProvider = useMemo(() => new CoveoGenerativeProvider(), []);
   const feedbackProvider = useMemo(() => new InMemoryFeedbackProvider(), []);
 
@@ -162,7 +164,7 @@ function HeadlessProductDiscoveryContent({
               feedbackProvider={feedbackProvider}
               featureFlags={featureFlags}
               provider={generativeProvider}
-              query={commerce.query}
+              query={committedQuery}
             />
 
             <div className="results-toolbar">

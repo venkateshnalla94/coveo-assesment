@@ -81,14 +81,16 @@ describe("Header", () => {
     expect(pushMock).not.toHaveBeenCalled();
   });
 
-  it("marks the active nav item and renders both nav links", () => {
+  it("marks the active nav item and renders the Blog nav link", () => {
     render(<Header activePath="/catalog" authConfig={configurationErrorAuthConfig} />);
 
-    expect(screen.getByRole("link", { name: "Products" }).getAttribute("aria-current")).toBe("page");
+    expect(screen.getByRole("button", { name: "Products" }).getAttribute("aria-current")).toBe(
+      "page",
+    );
     expect(screen.getByRole("link", { name: "Blog" }).getAttribute("aria-current")).toBeNull();
   });
 
-  it("appends the current query onto nav links when provided", () => {
+  it("appends the current query onto the Blog nav link when provided", () => {
     render(
       <Header
         activePath="/catalog"
@@ -97,28 +99,36 @@ describe("Header", () => {
       />,
     );
 
-    expect(screen.getByRole("link", { name: "Products" }).getAttribute("href")).toBe(
-      "/catalog?q=welding%20arm",
-    );
     expect(screen.getByRole("link", { name: "Blog" }).getAttribute("href")).toBe(
       "/blog?q=welding%20arm",
     );
   });
 
-  it("leaves nav link hrefs unchanged when the current query is absent or blank", () => {
+  it("leaves the Blog nav link href unchanged when the current query is absent or blank", () => {
     const { rerender } = render(
       <Header activePath="/catalog" authConfig={configurationErrorAuthConfig} />,
     );
 
-    expect(screen.getByRole("link", { name: "Products" }).getAttribute("href")).toBe("/catalog");
     expect(screen.getByRole("link", { name: "Blog" }).getAttribute("href")).toBe("/blog");
 
     rerender(
       <Header activePath="/catalog" authConfig={configurationErrorAuthConfig} currentQuery="   " />,
     );
 
-    expect(screen.getByRole("link", { name: "Products" }).getAttribute("href")).toBe("/catalog");
     expect(screen.getByRole("link", { name: "Blog" }).getAttribute("href")).toBe("/blog");
+  });
+
+  it("shows the product categories on hover and navigates to the catalog with the selected category as the query", async () => {
+    render(<Header activePath="/" authConfig={configurationErrorAuthConfig} />);
+
+    expect(screen.queryByRole("menuitem", { name: "Drive Systems" })).toBeNull();
+
+    await userEvent.hover(screen.getByRole("button", { name: "Products" }));
+    const category = await screen.findByRole("menuitem", { name: "Drive Systems" });
+
+    await userEvent.click(category);
+
+    expect(pushMock).toHaveBeenCalledWith("/catalog?q=Drive%20Systems");
   });
 
   it("renders the uncontrolled search input blank even when a current query is carried over", () => {

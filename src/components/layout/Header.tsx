@@ -1,9 +1,9 @@
 "use client";
 
-import { Bell, ExternalLink, HelpCircle, LayoutGrid, X } from "lucide-react";
+import { Bell, ChevronDown, ExternalLink, HelpCircle, LayoutGrid, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { SearchBox } from "@/components/search/SearchBox";
 import { SEARCH_UI } from "@/components/search/search-ui.constants";
@@ -45,7 +45,34 @@ export function Header({
   // Only the listing page (catalog) keeps a live search box; every other page renders this
   // fallback starting blank so the search clears on navigation instead of carrying over.
   const [defaultQuery, setDefaultQuery] = useState("");
+  const [isProductsMenuOpen, setIsProductsMenuOpen] = useState(false);
+  const closeProductsMenuTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const defaultSuggestionsProvider = useGlobalSearchSuggestions({ authConfig });
+
+  useEffect(() => {
+    return () => {
+      if (closeProductsMenuTimeout.current) {
+        clearTimeout(closeProductsMenuTimeout.current);
+      }
+    };
+  }, []);
+
+  // A short delay before closing tolerates the gap between the nav trigger and the
+  // full-width menu below it, so the mouse can travel diagonally without the menu
+  // disappearing mid-path.
+  function openProductsMenu() {
+    if (closeProductsMenuTimeout.current) {
+      clearTimeout(closeProductsMenuTimeout.current);
+      closeProductsMenuTimeout.current = null;
+    }
+    setIsProductsMenuOpen(true);
+  }
+
+  function scheduleProductsMenuClose() {
+    closeProductsMenuTimeout.current = setTimeout(() => {
+      setIsProductsMenuOpen(false);
+    }, 200);
+  }
 
   const activeSearch: HeaderSearchOverride = search ?? {
     isLoading: false,
@@ -109,15 +136,54 @@ export function Header({
         </div>
 
         <nav className="primary-nav" aria-label="Primary navigation">
-          {SEARCH_UI.navItems.map((item) => (
-            <Link
-              aria-current={isActiveNavItem(item.href, activePath) ? "page" : undefined}
-              href={withCurrentQuery(item.href, currentQuery)}
-              key={item.label}
-            >
-              {item.label}
-            </Link>
-          ))}
+          {SEARCH_UI.navItems.map((item) =>
+            item.label === "Products" ? (
+              <div
+                className="primary-nav-item primary-nav-item--products"
+                key={item.label}
+                onMouseEnter={openProductsMenu}
+                onMouseLeave={scheduleProductsMenuClose}
+              >
+                <button
+                  aria-current={isActiveNavItem(item.href, activePath) ? "page" : undefined}
+                  aria-expanded={isProductsMenuOpen}
+                  aria-haspopup="true"
+                  className="primary-nav-trigger"
+                  onClick={() => setIsProductsMenuOpen((open) => !open)}
+                  type="button"
+                >
+                  {item.label}
+                  <ChevronDown aria-hidden="true" className="primary-nav-trigger-chevron" size={16} />
+                </button>
+
+                {isProductsMenuOpen ? (
+                  <div className="products-menu" role="menu">
+                    {SEARCH_UI.productCategories.map((category) => (
+                      <button
+                        key={category}
+                        onClick={() => {
+                          setIsProductsMenuOpen(false);
+                          router.push(`/catalog?q=${encodeURIComponent(category)}`);
+                        }}
+                        role="menuitem"
+                        type="button"
+                      >
+                        {category}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <Link
+                aria-current={isActiveNavItem(item.href, activePath) ? "page" : undefined}
+                href={withCurrentQuery(item.href, currentQuery)}
+                key={item.label}
+              >
+                {item.label}
+              </Link>
+            ),
+          )}
         </nav>
       </header>
     </>

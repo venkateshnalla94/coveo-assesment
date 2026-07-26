@@ -20,6 +20,16 @@ export const SEARCH_UI = {
     { href: "/catalog", label: "Products" },
     { href: "/blog", label: "Blog" },
   ],
+  productCategories: [
+    "Industrial Robots",
+    "Drive Systems",
+    "Sensor And Visions",
+    "Safety Systems",
+    "Controling & Software",
+    "End of Arm Tooling",
+    "Accessory & Mounting",
+    "Cables and Connectors",
+  ],
   user: {
     initials: "VN",
     name: "Venkatesh N.",

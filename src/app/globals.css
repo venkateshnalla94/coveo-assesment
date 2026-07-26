@@ -134,6 +134,7 @@ p {
 }
 
 .main-header {
+  position: relative;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   grid-template-areas:
@@ -213,6 +214,75 @@ p {
   border-color: var(--accent);
   color: var(--accent-strong);
   font-weight: 750;
+}
+
+.primary-nav-item {
+  display: flex;
+  align-items: stretch;
+}
+
+.primary-nav-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: #26314f;
+  font-size: 0.95rem;
+  font-weight: 560;
+  padding: 0;
+}
+
+.primary-nav-trigger[aria-current="page"],
+.primary-nav-trigger[aria-expanded="true"] {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+  font-weight: 750;
+}
+
+.primary-nav-trigger-chevron {
+  transition: transform 0.15s ease;
+}
+
+.primary-nav-trigger[aria-expanded="true"] .primary-nav-trigger-chevron {
+  transform: rotate(180deg);
+}
+
+.products-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(2, auto);
+  justify-content: start;
+  column-gap: 48px;
+  row-gap: 16px;
+  background: var(--navy);
+  padding: 28px max(24px, calc((100vw - 1500px) / 2));
+}
+
+.products-menu button {
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  padding: 0;
+  font-size: 0.8rem;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.products-menu button:hover,
+.products-menu button:focus-visible {
+  color: #ffffff;
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 
 .header-actions {

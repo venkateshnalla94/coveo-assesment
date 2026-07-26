@@ -32,7 +32,7 @@ export function AgentCitations({ citations }: { citations: GenerativeCitation[] 
         if (internalHref) {
           return (
             <li key={citation.id}>
-              <Link href={internalHref} onClick={() => trackClick("internal")}>
+              <Link href={internalHref} onClick={() => trackClick("internal")} rel="noreferrer" target="_blank">
                 [{position}] {citation.title}
               </Link>
             </li>

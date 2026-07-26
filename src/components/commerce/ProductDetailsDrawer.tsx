@@ -15,11 +15,13 @@ import type { ProductResult } from "@/features/commerce/models/commerce-models";
 export function ProductDetailsDrawer({
   onClose,
   onContactSales,
+  onProductClick,
   onRequestQuote,
   product,
 }: {
   onClose: () => void;
   onContactSales: (product: ProductResult) => void;
+  onProductClick: (product: ProductResult) => void;
   onRequestQuote: (product: ProductResult) => void;
   product: ProductResult;
 }) {
@@ -79,7 +81,13 @@ export function ProductDetailsDrawer({
 
         <div className="details-actions">
           {safeUrl !== "#" ? (
-            <a className="primary-text-button" href={safeUrl} rel="noreferrer" target="_blank">
+            <a
+              className="primary-text-button"
+              href={safeUrl}
+              onClick={() => onProductClick(product)}
+              rel="noreferrer"
+              target="_blank"
+            >
               View Product
               <ExternalLink aria-hidden="true" size={15} />
             </a>

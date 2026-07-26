@@ -37,6 +37,7 @@ describe("ProductResultCard", () => {
   it("renders confirmed Commerce fields and actions", async () => {
     const onCompare = vi.fn();
     const onOpenDetails = vi.fn();
+    const onProductClick = vi.fn();
 
     render(
       <ProductResultCard
@@ -44,6 +45,7 @@ describe("ProductResultCard", () => {
         isCompared={false}
         onCompare={onCompare}
         onOpenDetails={onOpenDetails}
+        onProductClick={onProductClick}
         product={product}
       />,
     );
@@ -60,8 +62,9 @@ describe("ProductResultCard", () => {
     expect(onOpenDetails).toHaveBeenCalledWith(product);
   });
 
-  it("stores the product and opens the PDP in a new tab on a plain click of the title link", async () => {
+  it("stores the product, tracks the click, and opens the PDP in a new tab on a plain click of the title link", async () => {
     const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+    const onProductClick = vi.fn();
 
     render(
       <ProductResultCard
@@ -69,6 +72,7 @@ describe("ProductResultCard", () => {
         isCompared={false}
         onCompare={vi.fn()}
         onOpenDetails={vi.fn()}
+        onProductClick={onProductClick}
         product={product}
       />,
     );
@@ -77,6 +81,7 @@ describe("ProductResultCard", () => {
     await userEvent.click(titleLink);
 
     expect(storeProductForPdpMock).toHaveBeenCalledWith(product);
+    expect(onProductClick).toHaveBeenCalledWith(product);
     expect(openSpy).toHaveBeenCalledWith(`/products/${encodeURIComponent(product.id)}`, "_blank");
   });
 
@@ -89,6 +94,7 @@ describe("ProductResultCard", () => {
         isCompared={false}
         onCompare={vi.fn()}
         onOpenDetails={vi.fn()}
+        onProductClick={vi.fn()}
         product={product}
       />,
     );
@@ -109,6 +115,7 @@ describe("ProductResultCard", () => {
         isCompared={false}
         onCompare={vi.fn()}
         onOpenDetails={vi.fn()}
+        onProductClick={vi.fn()}
         product={product}
       />,
     );

@@ -8,6 +8,7 @@ import type { ProductResult } from "@/features/commerce/models/commerce-models";
 describe("ProductDetailsDrawer", () => {
   it("renders details and demo-safe actions without datasheet claims", async () => {
     const onContactSales = vi.fn();
+    const onProductClick = vi.fn();
     const onRequestQuote = vi.fn();
     const product: ProductResult = {
       brand: "NexBot",
@@ -30,6 +31,7 @@ describe("ProductDetailsDrawer", () => {
       <ProductDetailsDrawer
         onClose={vi.fn()}
         onContactSales={onContactSales}
+        onProductClick={onProductClick}
         onRequestQuote={onRequestQuote}
         product={product}
       />,
@@ -41,8 +43,10 @@ describe("ProductDetailsDrawer", () => {
 
     await userEvent.click(screen.getByRole("button", { name: /Contact Sales/i }));
     await userEvent.click(screen.getByRole("button", { name: /Request Quote/i }));
+    await userEvent.click(screen.getByRole("link", { name: /View Product/i }));
 
     expect(onContactSales).toHaveBeenCalledWith(product);
     expect(onRequestQuote).toHaveBeenCalledWith(product);
+    expect(onProductClick).toHaveBeenCalledWith(product);
   });
 });

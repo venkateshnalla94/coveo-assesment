@@ -18,8 +18,14 @@ import { storeProductForPdp } from "@/lib/commerce/product-session-cache";
 // this tab's sessionStorage. That inheritance needs an opener relationship, which a plain
 // `<a target="_blank">` click doesn't reliably establish — window.open() does. Modifier/middle
 // clicks are left to the browser's native handling (and the PDP's own "not found" fallback).
-function openInNewTab(event: MouseEvent<HTMLAnchorElement>, product: ProductResult, href: string) {
+function openInNewTab(
+  event: MouseEvent<HTMLAnchorElement>,
+  product: ProductResult,
+  href: string,
+  onProductClick: (product: ProductResult) => void,
+) {
   storeProductForPdp(product);
+  onProductClick(product);
 
   if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
     return;
@@ -35,6 +41,7 @@ export function ProductResultCard({
   isCompared,
   onCompare,
   onOpenDetails,
+  onProductClick,
   product,
 }: {
   compareDisabled: boolean;
@@ -42,6 +49,7 @@ export function ProductResultCard({
   isCompared: boolean;
   onCompare: (product: ProductResult) => void;
   onOpenDetails: (product: ProductResult) => void;
+  onProductClick: (product: ProductResult) => void;
   product: ProductResult;
 }) {
   const category = getLeafCategory(product);
@@ -53,7 +61,7 @@ export function ProductResultCard({
         aria-label={`Open ${product.title} product page in a new tab`}
         className="product-tile-link"
         href={pdpHref}
-        onClick={(event) => openInNewTab(event, product, pdpHref)}
+        onClick={(event) => openInNewTab(event, product, pdpHref, onProductClick)}
         target="_blank"
       >
         <div className="product-image-wrap">
@@ -86,7 +94,7 @@ export function ProductResultCard({
             <Link
               className="product-title-link"
               href={pdpHref}
-              onClick={(event) => openInNewTab(event, product, pdpHref)}
+              onClick={(event) => openInNewTab(event, product, pdpHref, onProductClick)}
               target="_blank"
             >
               <HighlightedText highlights={product.nameHighlights} text={product.title} />

@@ -230,6 +230,7 @@ function HeadlessProductDiscoveryContent({
                 comparedProducts={comparedProducts}
                 onCompare={toggleCompare}
                 onOpenDetails={openDetails}
+                onProductClick={(product) => commerce.trackProductClick(product.id)}
                 products={response.products}
               />
             ) : null}
@@ -284,6 +285,7 @@ function HeadlessProductDiscoveryContent({
         <ProductDetailsDrawer
           onClose={() => setDetailsProduct(null)}
           onContactSales={(product) => analytics.track("contact_sales_clicked", { productId: product.id })}
+          onProductClick={(product) => commerce.trackProductClick(product.id)}
           onRequestQuote={(product) => analytics.track("request_quote_clicked", { productId: product.id })}
           product={detailsProduct}
         />

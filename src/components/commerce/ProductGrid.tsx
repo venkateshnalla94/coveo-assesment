@@ -5,11 +5,13 @@ export function ProductGrid({
   comparedProducts,
   onCompare,
   onOpenDetails,
+  onProductClick,
   products,
 }: {
   comparedProducts: ProductResult[];
   onCompare: (product: ProductResult) => void;
   onOpenDetails: (product: ProductResult) => void;
+  onProductClick: (product: ProductResult) => void;
   products: ProductResult[];
 }) {
   return (
@@ -25,6 +27,7 @@ export function ProductGrid({
               imagePriority={index < 3}
               onCompare={onCompare}
               onOpenDetails={onOpenDetails}
+              onProductClick={onProductClick}
               product={product}
             />
           </div>

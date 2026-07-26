@@ -33,6 +33,8 @@ Active routes:
 
 `src/app/layout.tsx` resolves `resolveRuntimeConfig()`/`resolveHeadlessCommerceAuthConfig()` once, server-side, and renders the global chrome: `Header` (via the Client Component `AppChrome`, inside `HeaderSearchProvider`) and `Footer` wrap every route's page content, and `{children}` is also wrapped in `AgentContextProvider`, with `AgentMountpoint` (the floating chat widget) mounted as a sibling. No individual page renders its own `Header`/`Footer` or resolves auth config anymore. See ADR 0013.
 
+`AppChrome` forwards `HeaderSearchProvider`'s live `search` override to `Header` only once `useHasHydrated()` (a `useSyncExternalStore` gate) reports `true` — the first client render always passes `search={undefined}`, matching the server-rendered `Header`, since a page's `usePublishHeaderSearch` effect can set the override the instant it mounts and doing so before hydration would mismatch the server markup.
+
 Active Commerce composition:
 
 - `src/components/commerce/ProductDiscoveryExperience.tsx`

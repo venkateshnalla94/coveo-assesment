@@ -4,13 +4,14 @@ Phase 7 details live in `docs/agent-workflows.md`. This file remains as the shor
 
 Use these task lanes independently. Each lane has a clear owner boundary and validation target.
 
-Concrete triggerable agents live in `.codex/agents/`:
+Report-only role prompts for these lanes live in `.codex/agents/`. The versions actually triggered in Claude Code are `.claude/agents/*.md` (gitignored, local-only) — adapted from the `.codex/agents/` prompts but able to act (edit files, run commands, create commits) instead of only reporting:
 
-- `code-review-agent` reviews correctness, architecture, accessibility, security, performance, analytics, tests, and demo readiness.
-- `commit-agent` reviews the tree before commits and coordinates validation.
+- `code-review-agent` reviews correctness, architecture, accessibility, security, performance, analytics, tests, and demo readiness. Report-only.
+- `commit-agent` reviews the tree before commits, updates docs/tests as needed, and creates the commit itself.
 - `test-agent` creates focused tests for changed code.
-- `context-agent` updates docs only when architecture, setup, workflow, or reviewer-facing context changes.
-- `demo-readiness-agent` reviews setup reliability, mock/live clarity, functional readiness, and presentation risk.
+- `context-agent` updates docs directly when architecture, setup, workflow, or reviewer-facing context changes.
+- `demo-readiness-agent` reviews setup reliability, mock/live clarity, functional readiness, and presentation risk. Report-only.
+- `architecture-docs-agent` (no `.codex/agents/` counterpart) refreshes `outputs/architecture/*.md` after routing, component, or data-flow changes.
 
 ## 1. Repo Steward
 
@@ -26,7 +27,7 @@ Goal: keep the assessment readable for a cold reviewer.
 
 Done when: repo setup, scripts, docs, and git hygiene are correct.
 
-Trigger: use `.codex/agents/commit-agent.md` before every commit.
+Trigger: use `commit-agent` before every commit.
 
 Hook: run `npm run hooks:install` once per clone so Git uses `.githooks/pre-commit` and `.githooks/pre-push`.
 
@@ -83,7 +84,7 @@ Goal: make the project story obvious in 15 minutes.
 
 Done when: the repo can be reviewed cold without a live walkthrough.
 
-Trigger: use `.codex/agents/context-agent.md` when architecture, env vars, validation commands, or workflow expectations change.
+Trigger: use `context-agent` when architecture, env vars, validation commands, or workflow expectations change.
 
 ## Pull Request Workflow
 

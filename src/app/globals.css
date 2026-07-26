@@ -2660,6 +2660,30 @@ p {
   text-align: center;
 }
 
+.agent-starter-prompts {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  list-style: none;
+  padding: 0;
+}
+
+.agent-starter-prompt {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.agent-starter-prompt:hover {
+  border-color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+
 .agent-message {
   display: grid;
   gap: 8px;

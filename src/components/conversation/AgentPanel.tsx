@@ -60,7 +60,7 @@ export function AgentPanel({
           </button>
         </div>
 
-        <AgentTranscript currentStep={currentStep} messages={messages} showCitations={showCitations} />
+        <AgentTranscript currentStep={currentStep} messages={messages} onSend={onSend} showCitations={showCitations} />
         <AgentComposer isStreaming={isStreaming} onSend={onSend} onStop={onStop} />
       </section>
     </div>

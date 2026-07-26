@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useState } from "react";
+import { useState, type ComponentProps } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const replaceMock = vi.fn();
@@ -60,12 +60,38 @@ vi.mock("@/components/generative/GenerativeAnswer", () => ({
 
 import { ProductDiscoveryExperience } from "@/components/commerce/ProductDiscoveryExperience";
 import { CoveoAnalyticsProvider } from "@/features/analytics/analytics";
+import { Header } from "@/components/layout/Header";
+import {
+  HeaderSearchProvider,
+  useHeaderSearchOverride,
+} from "@/components/layout/header-search-context";
+import type { HeadlessCommerceAuthConfig } from "@/features/commerce/headless/commerce-auth";
 import { defaultSearchFeatureFlags } from "@/lib/features/search-feature-flags";
 
 const configurationErrorAuthConfig = {
   message: "not configured",
   mode: "configuration-error" as const,
 };
+
+// `Header` now lives in the root layout and reads its live search wiring from
+// `HeaderSearchContext` instead of a prop `ProductDiscoveryExperience` hands it directly. This
+// harness stands in for that layout-level consumer so these tests can still drive the real
+// `Header`/`SearchBox` UI to exercise ProductDiscoveryExperience's submit/query behavior.
+function HeaderSearchHarness({ authConfig }: { authConfig: HeadlessCommerceAuthConfig }) {
+  const override = useHeaderSearchOverride();
+  return <Header activePath="/catalog" authConfig={authConfig} search={override} />;
+}
+
+function renderProductDiscoveryExperience(
+  props: ComponentProps<typeof ProductDiscoveryExperience>,
+) {
+  return render(
+    <HeaderSearchProvider>
+      <HeaderSearchHarness authConfig={configurationErrorAuthConfig} />
+      <ProductDiscoveryExperience {...props} />
+    </HeaderSearchProvider>,
+  );
+}
 
 function mockTrendingFetch() {
   vi.spyOn(globalThis, "fetch").mockResolvedValue(
@@ -86,20 +112,14 @@ afterEach(() => {
 });
 
 describe("ProductDiscoveryExperience", () => {
-  it("trims a submitted query, replaces the URL, and carries it onto the Header nav links", async () => {
+  it("trims a submitted query and replaces the URL", async () => {
     mockTrendingFetch();
 
-    render(
-      <ProductDiscoveryExperience
-        commerceAuthConfig={configurationErrorAuthConfig}
-        featureFlags={defaultSearchFeatureFlags}
-        initialQuery="welding arm"
-      />,
-    );
-
-    expect(screen.getByRole("link", { name: "Blog" }).getAttribute("href")).toBe(
-      "/blog?q=welding%20arm",
-    );
+    renderProductDiscoveryExperience({
+      commerceAuthConfig: configurationErrorAuthConfig,
+      featureFlags: defaultSearchFeatureFlags,
+      initialQuery: "welding arm",
+    });
 
     const input = screen.getByRole("combobox", { name: "Search" });
     await userEvent.clear(input);
@@ -108,21 +128,16 @@ describe("ProductDiscoveryExperience", () => {
 
     expect(submitSearchSpy).toHaveBeenCalledWith("gripper arm");
     expect(replaceMock).toHaveBeenCalledWith("/catalog?q=gripper%20arm", { scroll: false });
-    expect(screen.getByRole("link", { name: "Blog" }).getAttribute("href")).toBe(
-      "/blog?q=gripper%20arm",
-    );
   });
 
-  it("no-ops on a blank submitted query, leaving the URL and Header nav links unchanged", async () => {
+  it("no-ops on a blank submitted query, leaving the URL unchanged", async () => {
     mockTrendingFetch();
 
-    render(
-      <ProductDiscoveryExperience
-        commerceAuthConfig={configurationErrorAuthConfig}
-        featureFlags={defaultSearchFeatureFlags}
-        initialQuery="welding arm"
-      />,
-    );
+    renderProductDiscoveryExperience({
+      commerceAuthConfig: configurationErrorAuthConfig,
+      featureFlags: defaultSearchFeatureFlags,
+      initialQuery: "welding arm",
+    });
 
     const input = screen.getByRole("combobox", { name: "Search" });
     await userEvent.clear(input);
@@ -131,9 +146,6 @@ describe("ProductDiscoveryExperience", () => {
 
     expect(submitSearchSpy).not.toHaveBeenCalled();
     expect(replaceMock).not.toHaveBeenCalled();
-    expect(screen.getByRole("link", { name: "Blog" }).getAttribute("href")).toBe(
-      "/blog?q=welding%20arm",
-    );
   });
 
   it("renders a read-only sort label when zero or one sort options are available", async () => {
@@ -147,13 +159,11 @@ describe("ProductDiscoveryExperience", () => {
       totalCount: 0,
     };
 
-    render(
-      <ProductDiscoveryExperience
-        commerceAuthConfig={configurationErrorAuthConfig}
-        featureFlags={defaultSearchFeatureFlags}
-        initialQuery="welding arm"
-      />,
-    );
+    renderProductDiscoveryExperience({
+      commerceAuthConfig: configurationErrorAuthConfig,
+      featureFlags: defaultSearchFeatureFlags,
+      initialQuery: "welding arm",
+    });
 
     expect(screen.queryByRole("combobox", { name: "Sort by" })).toBeNull();
     expect(screen.getByText("Relevance", { selector: ".sort-readonly" })).not.toBeNull();
@@ -174,13 +184,11 @@ describe("ProductDiscoveryExperience", () => {
       totalCount: 0,
     };
 
-    render(
-      <ProductDiscoveryExperience
-        commerceAuthConfig={configurationErrorAuthConfig}
-        featureFlags={defaultSearchFeatureFlags}
-        initialQuery="welding arm"
-      />,
-    );
+    renderProductDiscoveryExperience({
+      commerceAuthConfig: configurationErrorAuthConfig,
+      featureFlags: defaultSearchFeatureFlags,
+      initialQuery: "welding arm",
+    });
 
     const select = screen.getByRole<HTMLSelectElement>("combobox", { name: "Sort by" });
     expect(select.value).toBe("relevance");
@@ -203,13 +211,11 @@ describe("ProductDiscoveryExperience", () => {
   it("keeps the right rail and generative answer query pinned to committedQuery while typing, and updates only on submit", async () => {
     mockTrendingFetch();
 
-    render(
-      <ProductDiscoveryExperience
-        commerceAuthConfig={configurationErrorAuthConfig}
-        featureFlags={defaultSearchFeatureFlags}
-        initialQuery="welding arm"
-      />,
-    );
+    renderProductDiscoveryExperience({
+      commerceAuthConfig: configurationErrorAuthConfig,
+      featureFlags: defaultSearchFeatureFlags,
+      initialQuery: "welding arm",
+    });
 
     expect(screen.getByTestId("right-rail-query").textContent).toBe("welding arm");
     expect(screen.getByTestId("generative-answer-query").textContent).toBe("welding arm");

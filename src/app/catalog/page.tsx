@@ -1,4 +1,3 @@
-import { Footer } from "@/components/layout/Footer";
 import { ProductDiscoveryExperience } from "@/components/commerce/ProductDiscoveryExperience";
 import { SEARCH_UI } from "@/components/search/search-ui.constants";
 import { resolveHeadlessCommerceAuthConfig } from "@/features/commerce/headless/commerce-auth-resolver";
@@ -17,14 +16,11 @@ export default async function CatalogPage({
   const initialQuery = resolveInitialCatalogQuery(resolvedSearchParams?.q);
 
   return (
-    <div className="search-app">
-      <ProductDiscoveryExperience
-        commerceAuthConfig={commerceAuthConfig}
-        featureFlags={featureFlags}
-        initialQuery={initialQuery}
-      />
-      <Footer />
-    </div>
+    <ProductDiscoveryExperience
+      commerceAuthConfig={commerceAuthConfig}
+      featureFlags={featureFlags}
+      initialQuery={initialQuery}
+    />
   );
 }
 

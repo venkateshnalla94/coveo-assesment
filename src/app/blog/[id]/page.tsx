@@ -1,11 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { BlogArticleActions } from "@/components/content/BlogArticleActions";
-import { Footer } from "@/components/layout/Footer";
-import { Header } from "@/components/layout/Header";
-import { resolveHeadlessCommerceAuthConfig } from "@/features/commerce/headless/commerce-auth-resolver";
 import { fetchTrendingArticle } from "@/lib/coveo/content-search";
-import { resolveRuntimeConfig } from "@/lib/runtime/runtime-config";
 
 export const dynamic = "force-dynamic";
 
@@ -31,10 +27,8 @@ function estimateReadTime(wordCount: number | undefined) {
 
 export default async function BlogArticlePage({
   params,
-  searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { id } = await params;
   const item = await fetchTrendingArticle(decodeURIComponent(id)).catch(() => undefined);
@@ -45,15 +39,9 @@ export default async function BlogArticlePage({
 
   const publishedLabel = formatPublishedAt(item.publishedAt);
   const readTimeLabel = estimateReadTime(item.wordCount);
-  const runtimeConfig = resolveRuntimeConfig();
-  const commerceAuthConfig = resolveHeadlessCommerceAuthConfig(runtimeConfig);
-  const resolvedSearchParams = await searchParams;
-  const currentQueryParam = resolvedSearchParams?.q;
-  const currentQuery = (Array.isArray(currentQueryParam) ? currentQueryParam[0] : currentQueryParam)?.trim() || undefined;
 
   return (
-    <div className="search-app">
-      <Header activePath="/blog" authConfig={commerceAuthConfig} currentQuery={currentQuery} />
+    <>
       <main className="blog-page">
         <article className="blog-article">
           {item.imageUrl ? (
@@ -100,7 +88,6 @@ export default async function BlogArticlePage({
           <BlogArticleActions item={item} />
         </article>
       </main>
-      <Footer />
-    </div>
+    </>
   );
 }

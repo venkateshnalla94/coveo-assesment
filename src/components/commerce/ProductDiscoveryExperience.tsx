@@ -12,7 +12,7 @@ import { ProductGrid } from "@/components/commerce/ProductGrid";
 import { ProductRightRail } from "@/components/commerce/ProductRightRail";
 import { ProductStatus } from "@/components/commerce/ProductStatus";
 import { GenerativeAnswer } from "@/components/generative/GenerativeAnswer";
-import { Header } from "@/components/layout/Header";
+import { usePublishHeaderSearch } from "@/components/layout/header-search-context";
 import { Pagination } from "@/components/search/Pagination";
 import {
   AnalyticsProviderRoot,
@@ -117,22 +117,17 @@ function HeadlessProductDiscoveryContent({
     setDetailsProduct(product);
   }
 
+  usePublishHeaderSearch({
+    isLoading: commerce.status === "loading",
+    onClear: commerce.clearQuery,
+    onQueryChange: commerce.updateQuery,
+    onSubmit: submitSearch,
+    provider: commerce.suggestionsProvider,
+    query: commerce.query,
+  });
+
   return (
     <>
-      <Header
-        activePath="/catalog"
-        authConfig={authConfig}
-        currentQuery={committedQuery}
-        search={{
-          isLoading: commerce.status === "loading",
-          onClear: commerce.clearQuery,
-          onQueryChange: commerce.updateQuery,
-          onSubmit: submitSearch,
-          provider: commerce.suggestionsProvider,
-          query: commerce.query,
-        }}
-      />
-
       <main className="app-shell product-app-shell">
         <div className="search-context-row">
           <span>Live mode: Headless Commerce products, query suggestions, RGA guidance, and Search API resources</span>

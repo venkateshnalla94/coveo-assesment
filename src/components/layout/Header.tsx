@@ -20,7 +20,7 @@ function withCurrentQuery(href: string, currentQuery: string | undefined) {
   return trimmedQuery ? `${href}?q=${encodeURIComponent(trimmedQuery)}` : href;
 }
 
-type HeaderSearchOverride = {
+export type HeaderSearchOverride = {
   isLoading: boolean;
   onClear: () => void;
   onQueryChange: (query: string) => void;

@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
@@ -29,7 +29,7 @@ describe("BlogIndexPage", () => {
     delete process.env.COVEO_PLATFORM_API_KEY;
   });
 
-  it("falls back to the default query and unqueried nav links when ?q= is absent", async () => {
+  it("falls back to the default query when ?q= is absent", async () => {
     mockCoveoResponse([]);
 
     const jsx = await BlogIndexPage({ searchParams: Promise.resolve({}) });
@@ -39,10 +39,9 @@ describe("BlogIndexPage", () => {
       expect.any(String),
       expect.objectContaining({ body: expect.stringContaining('"q":"robotics"') }),
     );
-    expect(screen.getByRole("link", { name: "Blog" }).getAttribute("href")).toBe("/blog");
   });
 
-  it("resolves a string ?q= value and carries it onto the Header nav links", async () => {
+  it("resolves a string ?q= value", async () => {
     mockCoveoResponse([]);
 
     const jsx = await BlogIndexPage({ searchParams: Promise.resolve({ q: "grippers" }) });
@@ -52,7 +51,6 @@ describe("BlogIndexPage", () => {
       expect.any(String),
       expect.objectContaining({ body: expect.stringContaining('"q":"grippers"') }),
     );
-    expect(screen.getByRole("link", { name: "Blog" }).getAttribute("href")).toBe("/blog?q=grippers");
   });
 
   it("resolves an array ?q= value by taking the first entry", async () => {
@@ -65,7 +63,6 @@ describe("BlogIndexPage", () => {
       expect.any(String),
       expect.objectContaining({ body: expect.stringContaining('"q":"sensors"') }),
     );
-    expect(screen.getByRole("link", { name: "Blog" }).getAttribute("href")).toBe("/blog?q=sensors");
   });
 
   it("treats a blank ?q= the same as absent", async () => {
@@ -78,6 +75,5 @@ describe("BlogIndexPage", () => {
       expect.any(String),
       expect.objectContaining({ body: expect.stringContaining('"q":"robotics"') }),
     );
-    expect(screen.getByRole("link", { name: "Blog" }).getAttribute("href")).toBe("/blog");
   });
 });

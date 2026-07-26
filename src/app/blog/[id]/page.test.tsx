@@ -40,35 +40,12 @@ describe("BlogArticlePage", () => {
     delete process.env.COVEO_PLATFORM_API_KEY;
   });
 
-  it("passes the resolved ?q= through to Header without altering the article content", async () => {
+  it("renders the article", async () => {
     const jsx = await BlogArticlePage({
       params: Promise.resolve({ id: "article-1" }),
-      searchParams: Promise.resolve({ q: "welding" }),
     });
     render(jsx);
 
     expect(screen.getByRole("heading", { name: "Robot Arm Maintenance" })).not.toBeNull();
-    expect(screen.getByRole("link", { name: "Blog" }).getAttribute("href")).toBe("/blog?q=welding");
-  });
-
-  it("leaves nav links unqueried when ?q= is absent, still rendering the article", async () => {
-    const jsx = await BlogArticlePage({
-      params: Promise.resolve({ id: "article-1" }),
-      searchParams: Promise.resolve({}),
-    });
-    render(jsx);
-
-    expect(screen.getByRole("heading", { name: "Robot Arm Maintenance" })).not.toBeNull();
-    expect(screen.getByRole("link", { name: "Blog" }).getAttribute("href")).toBe("/blog");
-  });
-
-  it("resolves an array ?q= value by taking the first entry", async () => {
-    const jsx = await BlogArticlePage({
-      params: Promise.resolve({ id: "article-1" }),
-      searchParams: Promise.resolve({ q: ["sensors", "arms"] }),
-    });
-    render(jsx);
-
-    expect(screen.getByRole("link", { name: "Blog" }).getAttribute("href")).toBe("/blog?q=sensors");
   });
 });

@@ -31,7 +31,7 @@ Active routes:
 - `src/app/api/coveo/content/search/route.ts`
 - `src/app/api/coveo/conversation/route.ts` (Search Agent API, feature-flagged by `COVEO_FEATURE_CONVERSATION_ENABLED`)
 
-`src/app/layout.tsx` resolves `resolveRuntimeConfig()` server-side and wraps `{children}` in `AgentContextProvider`, with `AgentMountpoint` (the floating chat widget) mounted as a sibling — this is the app's only global (all-pages) provider/mount point.
+`src/app/layout.tsx` resolves `resolveRuntimeConfig()`/`resolveHeadlessCommerceAuthConfig()` once, server-side, and renders the global chrome: `Header` (via the Client Component `AppChrome`, inside `HeaderSearchProvider`) and `Footer` wrap every route's page content, and `{children}` is also wrapped in `AgentContextProvider`, with `AgentMountpoint` (the floating chat widget) mounted as a sibling. No individual page renders its own `Header`/`Footer` or resolves auth config anymore. See ADR 0013.
 
 Active Commerce composition:
 
@@ -42,6 +42,12 @@ Active Commerce composition:
 - `src/features/commerce/config/commerce-config.ts`
 - `src/components/commerce/ProductDetailClient.tsx` / `src/components/commerce/ProductDetailView.tsx` (product detail page)
 - `src/lib/commerce/product-session-cache.ts` (sessionStorage handoff for the product detail page)
+
+Active global chrome composition:
+
+- `src/components/layout/AppChrome.tsx` (Client Component; resolves `activePath`/`currentQuery` from the route and renders the single global `Header`)
+- `src/components/layout/header-search-context.tsx` (`HeaderSearchProvider`/`useHeaderSearchOverride`/`usePublishHeaderSearch`; only `/catalog` currently publishes a live-search override)
+- `src/components/layout/Header.tsx`, `src/components/layout/Footer.tsx`
 
 Active Conversational Agent composition:
 

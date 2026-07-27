@@ -151,7 +151,10 @@ export function useHeadlessCommerce({
         bundle.searchBox.submit();
       })
       .catch((error: unknown) => {
-        if (isCurrent && !(error instanceof DOMException && error.name === "AbortError")) {
+        if (
+          isCurrent &&
+          !(error instanceof DOMException && error.name === "AbortError")
+        ) {
           setSnapshot({
             message: "Product search could not be initialized.",
             query: initialQuery,
@@ -174,7 +177,10 @@ export function useHeadlessCommerce({
 
   const suggestionsProvider = useMemo(
     () => ({
-      getSuggestions: async (query: string, options?: { signal?: AbortSignal }) => {
+      getSuggestions: async (
+        query: string,
+        options?: { signal?: AbortSignal },
+      ) => {
         const bundle = bundleRef.current;
 
         if (!bundle || options?.signal?.aborted) {
@@ -215,7 +221,8 @@ export function useHeadlessCommerce({
       // the init effect re-fetches a fresh token before retrying.
       setRetryToken((count) => count + 1);
     },
-    selectPage: (page: number) => bundleRef.current?.pagination.selectPage(Math.max(0, page)),
+    selectPage: (page: number) =>
+      bundleRef.current?.pagination.selectPage(Math.max(0, page)),
     submitSearch: (query: string) => {
       const trimmedQuery = query.trim();
 
@@ -228,15 +235,31 @@ export function useHeadlessCommerce({
       bundle?.searchBox.submit();
     },
     suggestionsProvider,
-    toggleFacetValue: (field: string, value: string, type: "regular" | "hierarchical") => {
-      toggleFacetValue(bundleRef.current?.facetGenerator.facets ?? [], field, value, type);
+    toggleFacetValue: (
+      field: string,
+      value: string,
+      type: "regular" | "hierarchical",
+    ) => {
+      toggleFacetValue(
+        bundleRef.current?.facetGenerator.facets ?? [],
+        field,
+        value,
+        type,
+      );
     },
     toggleRange: (field: string, start: number, end: number) => {
-      toggleRangeValue(bundleRef.current?.facetGenerator.facets ?? [], field, start, end);
+      toggleRangeValue(
+        bundleRef.current?.facetGenerator.facets ?? [],
+        field,
+        start,
+        end,
+      );
     },
     updateSort: (sortId: string) => {
       const bundle = bundleRef.current;
-      const criterion = bundle?.sort.state.availableSorts.find((option) => getSortCriterionId(option) === sortId);
+      const criterion = bundle?.sort.state.availableSorts.find(
+        (option) => getSortCriterionId(option) === sortId,
+      );
 
       if (bundle && criterion) {
         bundle.sort.sortBy(criterion);
@@ -252,9 +275,12 @@ export function useHeadlessCommerce({
         return;
       }
 
-      bundle.search.interactiveProduct({ options: { product: rawProduct } }).select();
+      bundle.search
+        .interactiveProduct({ options: { product: rawProduct } })
+        .select();
     },
-    updateQuery: (query: string) => bundleRef.current?.searchBox.updateText(query),
+    updateQuery: (query: string) =>
+      bundleRef.current?.searchBox.updateText(query),
     ...snapshot,
   };
 }
@@ -342,7 +368,9 @@ async function resolveCommerceAuth(
   };
 }
 
-function readCommerceSnapshot(bundle: CommerceControllerBundle): CommerceAdapterSnapshot {
+function readCommerceSnapshot(
+  bundle: CommerceControllerBundle,
+): CommerceAdapterSnapshot {
   const query = bundle.searchBox.state.value;
   const response = buildSearchResponse(bundle);
 
@@ -355,7 +383,10 @@ function readCommerceSnapshot(bundle: CommerceControllerBundle): CommerceAdapter
     };
   }
 
-  if (bundle.search.state.isLoading && !bundle.summary.state.firstRequestExecuted) {
+  if (
+    bundle.search.state.isLoading &&
+    !bundle.summary.state.firstRequestExecuted
+  ) {
     return {
       query,
       status: "loading",
@@ -377,7 +408,9 @@ function readCommerceSnapshot(bundle: CommerceControllerBundle): CommerceAdapter
   };
 }
 
-function buildSearchResponse(bundle: CommerceControllerBundle): ProductSearchResponse {
+function buildSearchResponse(
+  bundle: CommerceControllerBundle,
+): ProductSearchResponse {
   const products = bundle.search.state.products.map(mapHeadlessProduct);
   const pagination = mapHeadlessPagination(bundle.pagination.state);
   const didYouMeanState = bundle.didYouMean.state;
@@ -408,14 +441,18 @@ function toggleFacetValue(
   value: string,
   type: "regular" | "hierarchical",
 ) {
-  const facet = facets.find((item) => item.state.field === field && item.state.type === type);
+  const facet = facets.find(
+    (item) => item.state.field === field && item.state.type === type,
+  );
 
   if (!facet) {
     return;
   }
 
   if (type === "regular") {
-    const regularValue = (facet as RegularFacet).state.values.find((item) => item.value === value);
+    const regularValue = (facet as RegularFacet).state.values.find(
+      (item) => item.value === value,
+    );
 
     if (regularValue) {
       (facet as RegularFacet).toggleSelect(regularValue);
@@ -423,22 +460,37 @@ function toggleFacetValue(
     return;
   }
 
-  const categoryValue = (facet as CategoryFacet).state.values.find((item) => item.value === value);
+  const categoryValue = (facet as CategoryFacet).state.values.find(
+    (item) => item.value === value,
+  );
 
   if (categoryValue) {
     (facet as CategoryFacet).toggleSelect(categoryValue);
   }
 }
 
-function toggleRangeValue(facets: FacetGenerator["facets"], field: string, start: number, end: number) {
-  const facet = facets.find((item) => item.state.field === field && item.state.type === "numericalRange");
+function toggleRangeValue(
+  facets: FacetGenerator["facets"],
+  field: string,
+  start: number,
+  end: number,
+) {
+  const facet = facets.find(
+    (item) =>
+      item.state.field === field && item.state.type === "numericalRange",
+  );
 
   // Dynamic facets (price slider, star rating) apply an arbitrary continuous range rather than
   // toggling one of Coveo's server-generated buckets, so this always replaces the current range.
-  (facet as NumericFacet | undefined)?.setRanges([{ end, endInclusive: true, start, state: "selected" }]);
+  (facet as NumericFacet | undefined)?.setRanges([
+    { end, endInclusive: true, start, state: "selected" },
+  ]);
 }
 
-function waitForSuggestions(searchBox: SearchBox, signal?: AbortSignal): Promise<SearchSuggestion[]> {
+function waitForSuggestions(
+  searchBox: SearchBox,
+  signal?: AbortSignal,
+): Promise<SearchSuggestion[]> {
   return new Promise((resolve) => {
     const timers: { timeout?: number } = {};
     let hasFinished = false;

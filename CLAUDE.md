@@ -22,7 +22,7 @@ Start at `outputs/architecture/README.md` for routing, component wiring, and dat
 
 ## Workflow
 
-Use `docs/agent-workflow.md` for independent task lanes: repo stewardship, Coveo auth, Headless engine, UI, and assessment narrative.
+Use `docs/additional/agent-workflow.md` for independent task lanes: repo stewardship, Coveo auth, Headless engine, UI, and assessment narrative.
 
 This repo also defines Claude subagents at `.claude/agents/*.md` (gitignored, local-only), adapted from the report-only Codex role prompts at `.codex/agents/*.md` but able to act:
 

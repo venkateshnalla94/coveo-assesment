@@ -29,7 +29,7 @@ This repository is a Coveo TME take-home assessment: a secured Coveo Headless se
 
 ## Workflow
 
-Use `docs/agent-workflow.md` for independent task lanes and `docs/agent-workflows.md` for Phase 7 hooks, CI, PR automation, and report-only agent workflows.
+Use `docs/additional/agent-workflow.md` for independent task lanes and `docs/additional/agent-workflows.md` for Phase 7 hooks, CI, PR automation, and report-only agent workflows.
 
 Repo-local agent prompts live in `.codex/agents/`:
 

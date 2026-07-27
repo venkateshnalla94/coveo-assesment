@@ -35,7 +35,7 @@ The committed `.githooks/pre-commit` hook is intentionally fast and staged-file 
 
 Use `npm run validate` for local quality validation and `npm run validate:full` before PR or demo readiness.
 
-Pull requests use `.github/pull_request_template.md` to capture behavior, provider impact, feature flags, testing, security, analytics, demo impact, and documentation. See `docs/agent-workflows.md` for workflow details.
+Pull requests use `.github/pull_request_template.md` to capture behavior, provider impact, feature flags, testing, security, analytics, demo impact, and documentation. See `docs/additional/agent-workflows.md` for workflow details.
 
 ## Non-Negotiables
 

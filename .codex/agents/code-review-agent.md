@@ -17,7 +17,7 @@ Find issues that matter. Prioritize correctness, security, architecture fit, acc
 
 - Current user request or PR summary.
 - Changed files and diff.
-- `README.md`, `docs/architecture.md`, `docs/current-state.md`, and `.github/agents/guardrails.md`.
+- `README.md`, `docs/architecture.md`, `docs/additional/current-state.md`, and `.github/agents/guardrails.md`.
 
 ## Responsibilities
 

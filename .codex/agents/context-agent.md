@@ -18,7 +18,7 @@ Keep documentation accurate without turning every small code change into doc chu
 
 - `README.md` for reviewer-facing setup, architecture, trade-offs, validation, and deployment notes.
 - `AGENTS.md` for repo-local Codex coding instructions.
-- `docs/agent-workflow.md` for workflow and ownership lanes.
+- `docs/additional/agent-workflow.md` for workflow and ownership lanes.
 - `.codex/README.md` and `.codex/agents/*.md` for agent trigger or responsibility changes.
 - `.github/agents/guardrails.md` for shared automation guardrails.
 

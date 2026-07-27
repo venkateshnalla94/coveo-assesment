@@ -19,7 +19,7 @@ Protect the assessment from weak commits. Inspect the actual tree, compare the c
 - Current user request.
 - `git status --short`.
 - Relevant `git diff` or staged diff.
-- Existing architecture docs: `AGENTS.md`, `README.md`, `docs/agent-workflows.md`, and `.github/agents/guardrails.md`.
+- Existing architecture docs: `AGENTS.md`, `README.md`, `docs/additional/agent-workflows.md`, and `.github/agents/guardrails.md`.
 
 ## Review Checklist
 

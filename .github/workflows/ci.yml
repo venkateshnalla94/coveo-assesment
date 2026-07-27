@@ -52,9 +52,25 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
+    # E2E drives the real Headless Commerce + RGA + Search Agent paths against a live Coveo
+    # org (see docs/testing-strategy.md) — there is no mock/sample-response mode in the app
+    # itself, so credentials must come from repo secrets. NEXT_PUBLIC_* must be set here (not
+    # only at runtime) since Next.js inlines it into the client bundle at build time.
     env:
-      COVEO_DEVELOPMENT_QUERY_OVERRIDES: "true"
-      COVEO_FEATURE_SAMPLE_SEARCH_RESPONSE: "true"
+      COVEO_ORGANIZATION_ID: ${{ secrets.COVEO_ORGANIZATION_ID }}
+      NEXT_PUBLIC_COVEO_ANONYMOUS_SEARCH_API_KEY: ${{ secrets.COVEO_ANONYMOUS_SEARCH_API_KEY }}
+      COVEO_PLATFORM_API_KEY: ${{ secrets.COVEO_PLATFORM_API_KEY }}
+      COVEO_SEARCH_AGENT_ID: ${{ secrets.COVEO_SEARCH_AGENT_ID }}
+      COVEO_AUTH_MODE: anonymous-api-key
+      COVEO_SEARCH_API_BASE_URL: https://platform-eu.cloud.coveo.com/rest/search/v2
+      COVEO_FEATURE_ANALYTICS: "true"
+      COVEO_FEATURE_GENERATIVE_ENABLED: "true"
+      COVEO_FEATURE_GENERATIVE_CITATIONS: "true"
+      COVEO_FEATURE_GENERATIVE_FEEDBACK: "true"
+      COVEO_FEATURE_GENERATIVE_DISCLAIMER: "true"
+      COVEO_FEATURE_GENERATIVE_STREAMING: "true"
+      COVEO_FEATURE_TRENDING_ENABLED: "true"
+      COVEO_FEATURE_CONVERSATION_ENABLED: "true"
 
     steps:
       - name: Checkout

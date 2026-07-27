@@ -10,7 +10,9 @@ import { ProductFacetPanel } from "@/components/commerce/ProductFacetPanel";
 import { ProductDetailsDrawer } from "@/components/commerce/ProductDetailsDrawer";
 import { ProductGrid } from "@/components/commerce/ProductGrid";
 import { ProductRightRail } from "@/components/commerce/ProductRightRail";
+import { ProductSortControl } from "@/components/commerce/ProductSortControl";
 import { ProductStatus } from "@/components/commerce/ProductStatus";
+import { useProductComparison } from "@/components/commerce/use-product-comparison";
 import { GenerativeAnswer } from "@/components/generative/GenerativeAnswer";
 import { usePublishHeaderSearch } from "@/components/layout/header-search-context";
 import { Pagination } from "@/components/search/Pagination";
@@ -63,8 +65,15 @@ function HeadlessProductDiscoveryContent({
   const analytics = useAnalytics();
   const router = useRouter();
   const commerce = useHeadlessCommerce({ analytics, authConfig, enabled: true, initialQuery });
-  const [comparedProducts, setComparedProducts] = useState<ProductResult[]>([]);
-  const [comparisonOpen, setComparisonOpen] = useState(false);
+  const {
+    comparedProducts,
+    comparisonOpen,
+    toggleCompare,
+    removeComparedProduct,
+    openComparison,
+    closeComparison,
+    clearComparison,
+  } = useProductComparison(analytics);
   const [detailsProduct, setDetailsProduct] = useState<ProductResult | null>(null);
   // Tracks the last *submitted* query. Drives the Header nav links (`?q=` on Products/Blog) and
   // gates the RGA / Trending Content fetches so they run once per search submission instead of
@@ -88,27 +97,6 @@ function HeadlessProductDiscoveryContent({
     commerce.submitSearch(trimmedQuery);
     setCommittedQuery(trimmedQuery);
     router.replace(`/catalog?q=${encodeURIComponent(trimmedQuery)}`, { scroll: false });
-  }
-
-  function toggleCompare(product: ProductResult) {
-    setComparedProducts((current) => {
-      if (current.some((item) => item.id === product.id)) {
-        analytics.track("product_compare_removed", { productId: product.id });
-        return current.filter((item) => item.id !== product.id);
-      }
-
-      if (current.length >= 3) {
-        return current;
-      }
-
-      analytics.track("product_compare_added", { productId: product.id });
-      return [...current, product];
-    });
-  }
-
-  function removeComparedProduct(productId: string) {
-    analytics.track("product_compare_removed", { productId });
-    setComparedProducts((current) => current.filter((product) => product.id !== productId));
   }
 
   function openDetails(product: ProductResult) {
@@ -169,30 +157,14 @@ function HeadlessProductDiscoveryContent({
                 pagination={pagination}
                 query={commerce.query}
               />
-              {response && response.availableSorts.length > 1 ? (
-                <div className="sort-control">
-                  <label htmlFor="commerce-sort-select">Sort by</label>
-                  <select
-                    id="commerce-sort-select"
-                    onChange={(event) => {
-                      analytics.track("commerce_sort_changed", { query: commerce.query, sort: event.target.value });
-                      commerce.updateSort(event.target.value);
-                    }}
-                    value={response.appliedSort}
-                  >
-                    {response.availableSorts.map((option) => (
-                      <option key={option.id} value={option.id}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ) : (
-                <div className="sort-control">
-                  <span>Sort by</span>
-                  <span className="sort-readonly">{response?.availableSorts[0]?.label ?? "Relevance"}</span>
-                </div>
-              )}
+              <ProductSortControl
+                appliedSort={response?.appliedSort ?? ""}
+                availableSorts={response?.availableSorts ?? []}
+                onSortChange={(sortId) => {
+                  analytics.track("commerce_sort_changed", { query: commerce.query, sort: sortId });
+                  commerce.updateSort(sortId);
+                }}
+              />
             </div>
 
             {commerce.status === "error" ? (
@@ -263,17 +235,14 @@ function HeadlessProductDiscoveryContent({
       </main>
 
       <ComparisonBar
-        onClear={() => setComparedProducts([])}
-        onOpen={() => {
-          analytics.track("product_compare_opened", { count: comparedProducts.length });
-          setComparisonOpen(true);
-        }}
+        onClear={clearComparison}
+        onOpen={openComparison}
         onRemove={removeComparedProduct}
         products={comparedProducts}
       />
 
       {comparisonOpen ? (
-        <ComparisonDrawer onClose={() => setComparisonOpen(false)} products={comparedProducts} />
+        <ComparisonDrawer onClose={closeComparison} products={comparedProducts} />
       ) : null}
 
       {detailsProduct ? (

@@ -39,6 +39,7 @@ Retained coverage includes:
 - RGA answer rendering, citations, feedback, errors, and no-answer states
 - Technical Resources rendering and provider behavior
 - Coveo content mapping and HTML sanitization for article bodies (`src/lib/coveo/content-search.ts`)
+- `/api/coveo/content/search` route hardening: per-IP rate limiting, request body normalization (query trim/default, result-count clamping), and upstream error mapping (502/504/500)
 - conversational agent AG-UI-to-app SSE contract transform (`src/lib/coveo/ag-ui-stream.ts`), Search Agent URL builders, and the `/api/coveo/conversation` route
 - error isolation
 - security boundaries

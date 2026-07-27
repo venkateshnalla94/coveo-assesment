@@ -19,6 +19,7 @@ export default defineConfig({
         "src/components/search/use-search-suggestions.ts",
         "src/components/content/TrendingContent.tsx",
         "src/components/commerce/ProductDiscoveryExperience.tsx",
+        "src/components/commerce/ProductResultsColumn.tsx",
         "src/components/layout/Header.tsx",
         "src/components/generative/GenerativeAnswer.tsx",
         "src/components/generative/GenerativeAnswerSkeleton.tsx",

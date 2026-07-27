@@ -1,5 +1,7 @@
 # Submission Checklist
 
+See `README.md`'s Documentation section for the reviewer's read-through (architecture, security review, testing strategy, ADR 0010 PDP rationale) and the `## Validation` section for the exact command sequence below.
+
 ## Repository
 
 - [ ] Git status is clean.

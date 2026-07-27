@@ -77,6 +77,7 @@ Responsive E2E checks passed at:
 - No privileged Coveo credential is exposed through `NEXT_PUBLIC_`.
 - Anonymous and search-token modes are explicitly separated.
 - `npm audit` reports zero vulnerabilities.
+- Rate limiting on the four privileged Coveo-calling routes is an in-memory, per-instance sliding window (`src/lib/http/rate-limit.ts`) — assessment-grade, sufficient for this single-instance demo. A production, multi-instance deployment needs a shared store (Redis) or edge-level limiting (CDN/WAF) instead, since in-memory state doesn't survive a restart or coordinate across instances.
 
 ## Test Results
 

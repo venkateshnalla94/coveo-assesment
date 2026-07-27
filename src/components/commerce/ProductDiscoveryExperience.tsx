@@ -1,6 +1,5 @@
 "use client";
 
-import { AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
@@ -8,14 +7,10 @@ import { ComparisonBar } from "@/components/commerce/ComparisonBar";
 import { ComparisonDrawer } from "@/components/commerce/ComparisonDrawer";
 import { ProductFacetPanel } from "@/components/commerce/ProductFacetPanel";
 import { ProductDetailsDrawer } from "@/components/commerce/ProductDetailsDrawer";
-import { ProductGrid } from "@/components/commerce/ProductGrid";
+import { ProductResultsColumn } from "@/components/commerce/ProductResultsColumn";
 import { ProductRightRail } from "@/components/commerce/ProductRightRail";
-import { ProductSortControl } from "@/components/commerce/ProductSortControl";
-import { ProductStatus } from "@/components/commerce/ProductStatus";
 import { useProductComparison } from "@/components/commerce/use-product-comparison";
-import { GenerativeAnswer } from "@/components/generative/GenerativeAnswer";
 import { usePublishHeaderSearch } from "@/components/layout/header-search-context";
-import { Pagination } from "@/components/search/Pagination";
 import {
   AnalyticsProviderRoot,
   CoveoAnalyticsProvider,
@@ -142,93 +137,38 @@ function HeadlessProductDiscoveryContent({
             }}
           />
 
-          <section className="results-column product-results-column" aria-busy={commerce.status === "loading"} tabIndex={-1}>
-            <GenerativeAnswer
-              feedbackProvider={feedbackProvider}
-              featureFlags={featureFlags}
-              provider={generativeProvider}
-              query={committedQuery}
-            />
-
-            <div className="results-toolbar">
-              <ProductStatus
-                didYouMean={response?.didYouMean}
-                isLoading={commerce.status === "loading"}
-                pagination={pagination}
-                query={commerce.query}
-              />
-              <ProductSortControl
-                appliedSort={response?.appliedSort ?? ""}
-                availableSorts={response?.availableSorts ?? []}
-                onSortChange={(sortId) => {
-                  analytics.track("commerce_sort_changed", { query: commerce.query, sort: sortId });
-                  commerce.updateSort(sortId);
-                }}
-              />
-            </div>
-
-            {commerce.status === "error" ? (
-              <div className="inline-error" role="alert">
-                <AlertCircle aria-hidden="true" size={18} />
-                <span>{commerce.message}</span>
-                <button
-                  className="secondary-button"
-                  onClick={() => {
-                    analytics.track("commerce_search_submitted", { mode: "retry", query: commerce.query });
-                    commerce.retry();
-                  }}
-                  type="button"
-                >
-                  Retry
-                </button>
-              </div>
-            ) : null}
-
-            {commerce.status === "loading" && !response ? (
-              <div className="product-grid" role="status" aria-live="polite" aria-label="Loading products">
-                {Array.from({ length: 6 }, (_, index) => (
-                  <div className="product-skeleton" key={index} />
-                ))}
-              </div>
-            ) : null}
-
-            {response && response.products.length > 0 ? (
-              <ProductGrid
-                comparedProducts={comparedProducts}
-                onCompare={toggleCompare}
-                onOpenDetails={openDetails}
-                onProductClick={(product) => commerce.trackProductClick(product.id)}
-                products={response.products}
-              />
-            ) : null}
-
-            {response && response.products.length === 0 ? (
-              <div className="empty-state">
-                <h2>No products found for {commerce.query}</h2>
-                <p>Try a broader query or clear filters.</p>
-                <button className="secondary-button" onClick={commerce.clearAllFacets} type="button">
-                  Clear filters
-                </button>
-              </div>
-            ) : null}
-
-            {pagination && pagination.totalPages > 1 ? (
-              <Pagination
-                onSelectPage={(page) => {
-                  analytics.track("commerce_page_changed", { page, query: commerce.query });
-                  commerce.selectPage(page - 1);
-                }}
-                pagination={{
-                  currentPage: pagination.page + 1,
-                  firstResult: pagination.page * pagination.perPage + 1,
-                  lastResult: Math.min((pagination.page + 1) * pagination.perPage, pagination.totalProducts),
-                  pageSize: pagination.perPage,
-                  totalCount: pagination.totalProducts,
-                  totalPages: pagination.totalPages,
-                }}
-              />
-            ) : null}
-          </section>
+          <ProductResultsColumn
+            appliedSort={response?.appliedSort ?? ""}
+            availableSorts={response?.availableSorts ?? []}
+            comparedProducts={comparedProducts}
+            committedQuery={committedQuery}
+            didYouMean={response?.didYouMean}
+            errorMessage={commerce.status === "error" ? commerce.message : undefined}
+            featureFlags={featureFlags}
+            feedbackProvider={feedbackProvider}
+            generativeProvider={generativeProvider}
+            isLoading={commerce.status === "loading"}
+            onClearAllFacets={commerce.clearAllFacets}
+            onCompare={toggleCompare}
+            onOpenDetails={openDetails}
+            onProductClick={(product) => commerce.trackProductClick(product.id)}
+            onRetry={() => {
+              analytics.track("commerce_search_submitted", { mode: "retry", query: commerce.query });
+              commerce.retry();
+            }}
+            onSelectPage={(page) => {
+              analytics.track("commerce_page_changed", { page, query: commerce.query });
+              commerce.selectPage(page - 1);
+            }}
+            onSortChange={(sortId) => {
+              analytics.track("commerce_sort_changed", { query: commerce.query, sort: sortId });
+              commerce.updateSort(sortId);
+            }}
+            pagination={pagination}
+            products={response?.products}
+            query={commerce.query}
+            status={commerce.status}
+          />
 
           <ProductRightRail featureFlags={featureFlags} query={rightRailQuery} />
         </div>

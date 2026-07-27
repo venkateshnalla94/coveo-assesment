@@ -165,10 +165,19 @@ npm audit
 
 ## Documentation
 
-- `docs/architecture.md`
+Start here for a reviewer's read-through:
+
+- [`docs/architecture.md`](docs/architecture.md) — routing, component wiring, data flow.
+- [`docs/security-review.md`](docs/security-review.md) — key isolation, rate limiting, and boundary review.
+- [`docs/testing-strategy.md`](docs/testing-strategy.md) — Vitest/Playwright/axe coverage approach.
+- [`docs/decisions/0010-product-detail-page-sessionstorage-handoff.md`](docs/decisions/0010-product-detail-page-sessionstorage-handoff.md) — why `/products/[id]` uses a sessionStorage handoff instead of a server fetch.
+- [`## Validation`](#validation) above — the exact command sequence to run before submission.
+
+Additional docs:
+
 - `docs/demo-script.md`
 - `docs/interview-notes.md`
 - `docs/demo-readiness-report.md`
 - `docs/submission-checklist.md`
-- `docs/testing-strategy.md`
-- `docs/security-review.md`
+- `docs/runtime-flow.md`
+- `docs/decisions/` (ADRs 0001–0013)

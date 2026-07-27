@@ -144,13 +144,15 @@ function baseSearchRequest(overrides: Record<string, unknown>) {
 
 export class CoveoContentRequestError extends Error {}
 
-async function performCoveoSearch(requestBody: Record<string, unknown>) {
+async function performCoveoSearch(requestBody: Record<string, unknown>, revalidateSeconds?: number) {
   const organizationId = requiredServerEnv("COVEO_ORGANIZATION_ID");
   const apiKey = requiredServerEnv("COVEO_PLATFORM_API_KEY");
 
   const response = await fetch(withOrganizationId(COVEO_SEARCH_API_BASE_URL, organizationId), {
     body: JSON.stringify(requestBody),
-    cache: "no-store",
+    ...(revalidateSeconds === undefined
+      ? { cache: "no-store" as const }
+      : { next: { revalidate: revalidateSeconds } }),
     headers: {
       Accept: "application/json",
       Authorization: `Bearer ${apiKey}`,
@@ -166,20 +168,27 @@ async function performCoveoSearch(requestBody: Record<string, unknown>) {
   return response.json();
 }
 
-export async function searchTrendingContent(query: string, numberOfResults: number): Promise<TrendingItem[]> {
-  const data = await performCoveoSearch(baseSearchRequest({ numberOfResults, q: query }));
+// revalidateSeconds is only passed by the /blog pages (see their `export const revalidate`) so
+// the interactive trending widget's own live route (/api/coveo/content/search) keeps no-store.
+export async function searchTrendingContent(
+  query: string,
+  numberOfResults: number,
+  revalidateSeconds?: number,
+): Promise<TrendingItem[]> {
+  const data = await performCoveoSearch(baseSearchRequest({ numberOfResults, q: query }), revalidateSeconds);
 
   return resultsFrom(data)
     .map((result, index) => mapResultToTrendingItem(result, index, { includeBody: false }))
     .filter((item): item is TrendingItem => Boolean(item));
 }
 
-export async function fetchTrendingArticle(id: string): Promise<TrendingItem | undefined> {
+export async function fetchTrendingArticle(id: string, revalidateSeconds?: number): Promise<TrendingItem | undefined> {
   // permanentid is a Coveo-generated hash, but it arrives via a client-controlled route
   // param — escape it before interpolating into the query expression.
   const escapedId = id.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
   const data = await performCoveoSearch(
     baseSearchRequest({ aq: `@permanentid=="${escapedId}"`, numberOfResults: 1 }),
+    revalidateSeconds,
   );
   const [firstResult] = resultsFrom(data);
 

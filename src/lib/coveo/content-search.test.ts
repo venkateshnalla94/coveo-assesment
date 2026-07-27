@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CoveoContentRequestError, fetchTrendingArticle, searchTrendingContent } from "@/lib/coveo/content-search";
 
 function mockCoveoResponse(results: unknown[]) {
-  vi.spyOn(globalThis, "fetch").mockResolvedValue(
+  return vi.spyOn(globalThis, "fetch").mockResolvedValue(
     new Response(JSON.stringify({ results }), {
       headers: { "Content-Type": "application/json" },
       status: 200,
@@ -89,5 +89,15 @@ describe("content-search", () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 502 }));
 
     await expect(searchTrendingContent("robot arm", 1)).rejects.toThrow(CoveoContentRequestError);
+  });
+
+  it("uses next.revalidate instead of no-store when revalidateSeconds is provided", async () => {
+    const fetchMock = mockCoveoResponse([]);
+
+    await searchTrendingContent("robot arm", 1, 120);
+
+    const requestInit = fetchMock.mock.calls[0]?.[1] as RequestInit & { next?: { revalidate: number } };
+    expect(requestInit.next).toEqual({ revalidate: 120 });
+    expect(requestInit.cache).toBeUndefined();
   });
 });

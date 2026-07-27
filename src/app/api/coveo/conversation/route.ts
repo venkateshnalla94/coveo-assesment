@@ -3,11 +3,17 @@ import { NextResponse } from "next/server";
 import { createAgUiToContractTransformStream } from "@/lib/coveo/ag-ui-stream";
 import { requiredServerEnv } from "@/lib/coveo/server-api";
 import { getSearchAgentFollowUpUrl, getSearchAgentHeadAnswerUrl, getSearchAgentId } from "@/lib/coveo/search-agent-api";
+import { getClientIp, isRateLimited } from "@/lib/http/rate-limit";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const MAX_QUESTION_LENGTH = 300;
+const RATE_LIMIT_MAX_REQUESTS = 20;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+// Generous ceiling: this fetch's signal stays live for the whole streamed response, not just
+// the initial connection, so it must outlast a full generative answer stream.
+const UPSTREAM_TIMEOUT_MS = 45_000;
 
 const noStoreHeaders = {
   "Cache-Control": "no-store, max-age=0",
@@ -22,6 +28,13 @@ function parseRequestBody(value: unknown) {
 }
 
 export async function POST(request: Request) {
+  if (isRateLimited(getClientIp(request), RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_MS)) {
+    return NextResponse.json(
+      { error: "Too many requests." },
+      { headers: noStoreHeaders, status: 429 },
+    );
+  }
+
   let organizationId: string;
   let apiKey: string;
   let agentId: string;
@@ -58,6 +71,7 @@ export async function POST(request: Request) {
       "Content-Type": "application/json",
     },
     method: "POST",
+    signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
   }).catch(() => undefined);
 
   if (!upstreamResponse || !upstreamResponse.ok || !upstreamResponse.body) {

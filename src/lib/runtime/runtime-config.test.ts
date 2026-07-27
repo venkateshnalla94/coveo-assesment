@@ -17,7 +17,6 @@ describe("runtime config", () => {
         COVEO_PLATFORM_API_KEY: "secret",
         NODE_ENV: "production",
       },
-      searchParams: { profile: "ecommerce", scenario: "error" },
     });
 
     expect(config.environment).toBe("production");
@@ -25,8 +24,6 @@ describe("runtime config", () => {
     expect(config.coveo.tokenConfigured).toBe(true);
     expect(JSON.stringify(config)).not.toContain("secret");
     expect(JSON.stringify(config)).not.toContain("private-token-minting-key");
-    expect(JSON.stringify(config)).not.toContain("profile");
-    expect(JSON.stringify(config)).not.toContain("scenario");
   });
 
   it("resolves anonymous API key mode only from the explicit public variable", () => {
@@ -59,17 +56,12 @@ describe("runtime config", () => {
     ).toThrow("COVEO_AUTH_MODE must be either anonymous-api-key or search-token.");
   });
 
-  it("ignores obsolete query profile, scenario, and flag overrides", () => {
+  it("ignores obsolete demo profile, scenario, and flag overrides", () => {
     const config = resolveRuntimeConfig({
       environment: {
         COVEO_FEATURE_GENERATIVE_ENABLED: "false",
         COVEO_FEATURE_TRENDING_ENABLED: "false",
         NODE_ENV: "test",
-      },
-      searchParams: {
-        flags: "generative,trending,sample",
-        profile: "ecommerce",
-        scenario: "error",
       },
     });
 

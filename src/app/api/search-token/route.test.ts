@@ -36,6 +36,12 @@ async function responseBody(response: Response) {
   return (await response.json()) as SearchTokenResponse;
 }
 
+function buildRequest(clientIp?: string) {
+  return new Request("http://localhost/api/search-token", {
+    headers: clientIp ? { "x-forwarded-for": clientIp } : undefined,
+  });
+}
+
 function clearCoveoEnv() {
   for (const key of Object.keys(process.env)) {
     if (key.startsWith("COVEO_")) {
@@ -62,11 +68,30 @@ afterEach(() => {
 });
 
 describe("GET /api/search-token", () => {
+  it("returns a 429 rate-limit error once the per-IP request limit is exceeded", async () => {
+    const fetchMock = vi.fn<typeof fetch>();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const clientIp = "198.51.100.42";
+
+    for (let i = 0; i < 30; i += 1) {
+      const response = await GET(buildRequest(clientIp));
+      expect(response.status).not.toBe(429);
+    }
+
+    const limitedResponse = await GET(buildRequest(clientIp));
+    const body = await responseBody(limitedResponse);
+
+    expect(limitedResponse.status).toBe(429);
+    expect(body).toEqual({ code: "RATE_LIMITED", error: "Too many token requests." });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("returns a no-store 500 without calling Coveo when required environment is missing", async () => {
     const fetchMock = vi.fn<typeof fetch>();
     vi.stubGlobal("fetch", fetchMock);
 
-    const response = await GET();
+    const response = await GET(buildRequest());
     const body = await responseBody(response);
 
     expect(response.status).toBe(500);
@@ -81,7 +106,7 @@ describe("GET /api/search-token", () => {
     const fetchMock = vi.fn<typeof fetch>();
     vi.stubGlobal("fetch", fetchMock);
 
-    const response = await GET();
+    const response = await GET(buildRequest());
     const body = await responseBody(response);
 
     expect(response.status).toBe(400);
@@ -98,7 +123,7 @@ describe("GET /api/search-token", () => {
     const fetchMock = vi.fn<typeof fetch>();
     vi.stubGlobal("fetch", fetchMock);
 
-    const response = await GET();
+    const response = await GET(buildRequest());
     const body = await responseBody(response);
 
     expect(response.status).toBe(500);
@@ -123,7 +148,7 @@ describe("GET /api/search-token", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const response = await GET();
+    const response = await GET(buildRequest());
     const body = await responseBody(response);
 
     expect(response.status).toBe(200);
@@ -179,7 +204,7 @@ describe("GET /api/search-token", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const response = await GET();
+    const response = await GET(buildRequest());
     const body = await responseBody(response);
 
     expect(response.status).toBe(502);
@@ -210,7 +235,7 @@ describe("GET /api/search-token", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const response = await GET();
+    const response = await GET(buildRequest());
     const body = await responseBody(response);
 
     expect(response.status).toBe(200);
@@ -236,7 +261,7 @@ describe("GET /api/search-token", () => {
       );
     vi.stubGlobal("fetch", fetchMock);
 
-    const response = await GET();
+    const response = await GET(buildRequest());
     const body = await responseBody(response);
 
     expect(response.status).toBe(200);
@@ -264,7 +289,7 @@ describe("GET /api/search-token", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const response = await GET();
+    const response = await GET(buildRequest());
     const body = await responseBody(response);
 
     expect(response.status).toBe(502);

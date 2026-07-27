@@ -8,9 +8,14 @@ import {
   requiredServerEnv,
   withOrganizationId,
 } from "@/lib/coveo/server-api";
+import { getClientIp, isRateLimited } from "@/lib/http/rate-limit";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+
+const RATE_LIMIT_MAX_REQUESTS = 20;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const UPSTREAM_TIMEOUT_MS = 10_000;
 
 const noStoreHeaders = {
   "Cache-Control": "no-store, max-age=0",
@@ -105,6 +110,13 @@ function getPlatformBaseUrl() {
 }
 
 export async function POST(request: Request) {
+  if (isRateLimited(getClientIp(request), RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_MS)) {
+    return NextResponse.json(
+      { error: "Too many requests." },
+      { headers: noStoreHeaders, status: 429 },
+    );
+  }
+
   try {
     const organizationId = requiredServerEnv("COVEO_ORGANIZATION_ID");
     const apiKey = requiredServerEnv("COVEO_PLATFORM_API_KEY");
@@ -138,6 +150,7 @@ export async function POST(request: Request) {
         "Content-Type": "application/json",
       },
       method: "POST",
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     });
 
     if (!searchResponse.ok) {
@@ -161,6 +174,7 @@ export async function POST(request: Request) {
           Authorization: `Bearer ${apiKey}`,
         },
         method: "GET",
+        signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
       },
     );
 

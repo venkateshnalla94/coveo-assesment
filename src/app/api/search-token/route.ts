@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 
+import { getClientIp, isRateLimited } from "@/lib/http/rate-limit";
+
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+
+const RATE_LIMIT_MAX_REQUESTS = 30;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const UPSTREAM_TIMEOUT_MS = 10_000;
 
 type SearchTokenSuccess = {
   token: string;
@@ -100,10 +106,18 @@ async function requestSearchToken(endpoint: string, apiKey: string, payload: Sea
     },
     body: JSON.stringify(payload),
     cache: "no-store",
+    signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
   });
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  if (isRateLimited(getClientIp(request), RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_MS)) {
+    return NextResponse.json(
+      { code: "RATE_LIMITED", error: "Too many token requests." },
+      { status: 429, headers: noStoreHeaders },
+    );
+  }
+
   try {
     const authMode = requiredEnv("COVEO_AUTH_MODE");
 

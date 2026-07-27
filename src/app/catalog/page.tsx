@@ -10,7 +10,7 @@ export default async function CatalogPage({
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const resolvedSearchParams = await searchParams;
-  const runtimeConfig = resolveRuntimeConfig({ searchParams: resolvedSearchParams });
+  const runtimeConfig = resolveRuntimeConfig();
   const featureFlags = toSearchFeatureFlags(runtimeConfig.featureFlags);
   const commerceAuthConfig = resolveHeadlessCommerceAuthConfig(runtimeConfig);
   const initialQuery = resolveInitialCatalogQuery(resolvedSearchParams?.q);

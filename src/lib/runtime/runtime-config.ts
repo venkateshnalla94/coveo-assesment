@@ -38,7 +38,6 @@ export function resolveRuntimeConfig({
   environment = process.env,
 }: {
   environment?: Record<string, string | undefined>;
-  searchParams?: Record<string, string | string[] | undefined>;
 } = {}): RuntimeConfig {
   const runtimeEnvironment = normalizeEnvironment(environment.NODE_ENV);
   const authMode = resolveCoveoAuthMode(environment.COVEO_AUTH_MODE);

@@ -1,9 +1,36 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 
 import { BlogArticleActions } from "@/components/content/BlogArticleActions";
 import { fetchTrendingArticle } from "@/lib/coveo/content-search";
+import { BLOG_REVALIDATE_SECONDS } from "@/lib/coveo/blog-index-query";
 
-export const dynamic = "force-dynamic";
+// Next's route-segment config must be a literal, not an import — keep in sync with
+// BLOG_REVALIDATE_SECONDS below, which the fetch call uses.
+export const revalidate = 300;
+
+// generateMetadata and the page body both need this article; React's cache() dedupes the
+// upstream fetch to one call per request instead of two.
+const loadArticle = cache((id: string) => fetchTrendingArticle(id, BLOG_REVALIDATE_SECONDS).catch(() => undefined));
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const item = await loadArticle(decodeURIComponent(id));
+
+  if (!item) {
+    return { title: "Article not found | RoboMotion Industries" };
+  }
+
+  return {
+    title: `${item.title} | RoboMotion Industries`,
+    description: [item.category, item.author].filter(Boolean).join(" · ") || item.title,
+  };
+}
 
 function formatPublishedAt(publishedAt: string | undefined) {
   if (!publishedAt) {
@@ -31,7 +58,7 @@ export default async function BlogArticlePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const item = await fetchTrendingArticle(decodeURIComponent(id)).catch(() => undefined);
+  const item = await loadArticle(decodeURIComponent(id));
 
   if (!item) {
     notFound();

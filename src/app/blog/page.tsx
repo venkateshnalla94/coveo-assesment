@@ -1,15 +1,21 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import {
   CoveoContentRequestError,
   searchTrendingContent,
 } from "@/lib/coveo/content-search";
+import { BLOG_INDEX_QUERY, BLOG_INDEX_RESULT_COUNT, BLOG_REVALIDATE_SECONDS } from "@/lib/coveo/blog-index-query";
 import type { TrendingItem } from "@/features/trending/models/trending-models";
 
-export const dynamic = "force-dynamic";
+// Next's route-segment config must be a literal, not an import — keep in sync with
+// BLOG_REVALIDATE_SECONDS below, which the fetch call uses.
+export const revalidate = 300;
 
-const BLOG_INDEX_QUERY = "robotics";
-const BLOG_INDEX_RESULT_COUNT = 12;
+export const metadata: Metadata = {
+  title: "Robotics Blog | RoboMotion Industries",
+  description: "Trending robotics articles and technical resources from RoboMotion Industries.",
+};
 
 function formatPublishedAt(publishedAt: string | undefined) {
   if (!publishedAt) {
@@ -30,7 +36,7 @@ async function loadBlogIndex(
   | { status: "error" }
 > {
   try {
-    const items = await searchTrendingContent(query, BLOG_INDEX_RESULT_COUNT);
+    const items = await searchTrendingContent(query, BLOG_INDEX_RESULT_COUNT, BLOG_REVALIDATE_SECONDS);
     return items.length > 0
       ? { status: "success", items }
       : { status: "empty" };

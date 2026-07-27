@@ -18,9 +18,10 @@ function setRequiredEnv() {
   process.env.COVEO_SEARCH_AGENT_ID = "agent-1";
 }
 
-function jsonRequest(body: unknown) {
+function jsonRequest(body: unknown, clientIp?: string) {
   return new Request("http://localhost/api/coveo/conversation", {
     body: JSON.stringify(body),
+    headers: clientIp ? { "x-forwarded-for": clientIp } : undefined,
     method: "POST",
   });
 }
@@ -50,6 +51,31 @@ afterEach(() => {
 });
 
 describe("POST /api/coveo/conversation", () => {
+  it("returns a 429 rate-limit error once the per-IP request limit is exceeded", async () => {
+    setRequiredEnv();
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockImplementation(async () =>
+        sseUpstream([{ result: { completionReason: "ANSWERED" }, type: "RUN_FINISHED" }]),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const clientIp = "198.51.100.77";
+
+    for (let i = 0; i < 20; i += 1) {
+      const response = await POST(jsonRequest({ q: "hello" }, clientIp));
+      expect(response.status).not.toBe(429);
+    }
+
+    fetchMock.mockClear();
+    const limitedResponse = await POST(jsonRequest({ q: "hello" }, clientIp));
+    const body = (await limitedResponse.json()) as { error?: string };
+
+    expect(limitedResponse.status).toBe(429);
+    expect(body).toEqual({ error: "Too many requests." });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("returns a no-store 500 without calling Coveo when required environment is missing", async () => {
     const fetchMock = vi.fn<typeof fetch>();
     vi.stubGlobal("fetch", fetchMock);

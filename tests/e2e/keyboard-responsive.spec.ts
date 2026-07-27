@@ -12,6 +12,23 @@ async function openProductDiscovery(page: import("@playwright/test").Page) {
   await expect(page.locator(".search-box-wrap[data-search-ready='true']")).toBeVisible();
 }
 
+// Coveo's did-you-mean auto-correction ("wel" -> "welding") can re-run the search and replace
+// the facet panel's DOM shortly after the first product card renders. That follow-up isn't a
+// guaranteed signal to wait on (it doesn't always fire, and `waitForLoadState("networkidle")`
+// hangs past it because the page keeps a persistent analytics/SSE connection open), so poll the
+// facet panel's own markup until two reads apart are identical instead. Without this, focusing a
+// facet button can land on one that gets swapped out before the Enter keypress registers (WebKit
+// is the most sensitive to this race).
+async function waitForFacetsToSettle(page: import("@playwright/test").Page) {
+  const panel = page.getByLabel("Product filters");
+  await expect(async () => {
+    const before = await panel.innerHTML();
+    await page.waitForTimeout(250);
+    const after = await panel.innerHTML();
+    expect(after).toBe(before);
+  }).toPass({ timeout: 10_000 });
+}
+
 async function search(page: import("@playwright/test").Page, query: string) {
   await expect(page.locator(".search-box-wrap[data-search-ready='true']")).toBeVisible();
   const input = page.getByRole("combobox", { name: "Search" });
@@ -43,6 +60,8 @@ test("keyboard interactions cover suggestions, facets, comparison, product detai
   await input.press("ArrowDown");
   await input.press("Enter");
   await expect(page.locator(".product-card").first()).toBeVisible();
+
+  await waitForFacetsToSettle(page);
 
   const firstFacet = page.getByLabel("Product filters").locator(".facet-value").first();
   await firstFacet.focus();

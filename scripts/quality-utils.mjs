@@ -44,7 +44,15 @@ export function readTextIfSmall(file) {
     return "";
   }
 
-  return readFileSync(file, "utf8");
+  const buffer = readFileSync(file);
+
+  // Skip binary files (e.g. PNGs) — a null byte anywhere in the content is
+  // git's own heuristic for "not text" and whitespace checks don't apply.
+  if (buffer.includes(0)) {
+    return "";
+  }
+
+  return buffer.toString("utf8");
 }
 
 export function fail(message, prefix = "check failed") {

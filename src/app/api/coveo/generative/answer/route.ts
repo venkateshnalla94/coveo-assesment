@@ -197,7 +197,11 @@ export async function POST(request: Request) {
     };
 
     return NextResponse.json({ answer }, { headers: noStoreHeaders });
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.name === "TimeoutError") {
+      return NextResponse.json({ error: "Generated answer timed out." }, { headers: noStoreHeaders, status: 504 });
+    }
+
     return NextResponse.json({ error: "Generated answers are not configured." }, { headers: noStoreHeaders, status: 500 });
   }
 }

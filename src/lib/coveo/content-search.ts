@@ -11,6 +11,7 @@ import {
 
 const REASON_SENTENCE_PREVIEW_COUNT = 1;
 const REASON_MAX_LENGTH = 160;
+const UPSTREAM_TIMEOUT_MS = 10_000;
 
 const ARTICLE_SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
   allowedAttributes: {
@@ -159,6 +160,7 @@ async function performCoveoSearch(requestBody: Record<string, unknown>, revalida
       "Content-Type": "application/json",
     },
     method: "POST",
+    signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
   });
 
   if (!response.ok) {

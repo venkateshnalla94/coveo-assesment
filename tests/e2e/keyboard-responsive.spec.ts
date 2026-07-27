@@ -34,6 +34,10 @@ test("keyboard interactions cover suggestions, facets, comparison, product detai
   await input.press("Escape");
   await expect(page.getByRole("option")).toHaveCount(0);
 
+  // Escape only closes suggestions; reopening depends on the input's onChange firing again.
+  // Refilling with the identical string is not guaranteed to produce a real value transition
+  // in every browser engine (WebKit in particular), so clear first to force one.
+  await input.fill("");
   await input.fill("wel");
   await expect(page.getByRole("option").first()).toBeVisible();
   await input.press("ArrowDown");

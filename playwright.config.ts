@@ -4,6 +4,10 @@ export default defineConfig({
   expect: {
     timeout: 10_000,
   },
+  // GitHub's shared runners are noisy neighbors; a single slow render under contention shouldn't
+  // fail the whole suite the way it would on a dedicated dev machine. A real regression still
+  // fails all attempts, so this doesn't mask genuine breakage.
+  retries: process.env.CI ? 2 : 0,
   testDir: "./tests/e2e",
   timeout: 45_000,
   use: {

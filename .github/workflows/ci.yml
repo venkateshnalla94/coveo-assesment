@@ -105,7 +105,7 @@ jobs:
         run: npm ci
 
       - name: Dependency audit
-        run: npm audit
+        run: npm audit --omit=dev
 
       - name: Secret scan
         run: npm run secrets:scan

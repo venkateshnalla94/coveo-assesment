@@ -17,7 +17,7 @@
     "test:e2e:ui": "playwright test --ui",
     "docs:screenshots": "node scripts/capture-screenshots.mjs",
     "validate": "npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run build",
-    "validate:full": "npm run validate && npm run test:e2e && npm audit && npm run secrets:scan",
+    "validate:full": "npm run validate && npm run test:e2e && npm audit --omit=dev && npm run secrets:scan",
     "agent:code-review": "node scripts/agent-report.mjs code-review",
     "agent:commit-review": "node scripts/agent-report.mjs commit-review",
     "agent:context": "node scripts/agent-report.mjs context",

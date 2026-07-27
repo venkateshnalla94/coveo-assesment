@@ -11,9 +11,12 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   webServer: {
-    command: "npm run dev -- -H localhost -p 3000",
+    // CI runs against a production build: `next dev`'s on-demand route compilation is too slow on
+    // GitHub's shared runners and causes cascading timeouts across the suite. Locally, dev mode's
+    // fast refresh is worth keeping.
+    command: process.env.CI ? "npm run start -- -H localhost -p 3000" : "npm run dev -- -H localhost -p 3000",
     env: {
-      NODE_ENV: "development",
+      NODE_ENV: process.env.CI ? "production" : "development",
     },
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

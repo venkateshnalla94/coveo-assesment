@@ -178,7 +178,6 @@ Start here for a reviewer's read-through:
 Additional docs:
 
 - `docs/demo-script.md`
-- `docs/interview-notes.md`
 - `docs/demo-readiness-report.md`
 - `docs/submission-checklist.md`
 - `docs/runtime-flow.md`

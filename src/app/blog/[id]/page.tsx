@@ -3,16 +3,32 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 
 import { BlogArticleActions } from "@/components/content/BlogArticleActions";
-import { fetchTrendingArticle } from "@/lib/coveo/content-search";
+import { CoveoContentRequestError, fetchTrendingArticle } from "@/lib/coveo/content-search";
 import { BLOG_REVALIDATE_SECONDS } from "@/lib/coveo/blog-index-query";
+import type { TrendingItem } from "@/features/trending/models/trending-models";
 
 // Next's route-segment config must be a literal, not an import — keep in sync with
 // BLOG_REVALIDATE_SECONDS below, which the fetch call uses.
 export const revalidate = 300;
 
+type ArticleLoadResult =
+  | { status: "found"; item: TrendingItem }
+  | { status: "not-found" }
+  | { status: "error" };
+
 // generateMetadata and the page body both need this article; React's cache() dedupes the
 // upstream fetch to one call per request instead of two.
-const loadArticle = cache((id: string) => fetchTrendingArticle(id, BLOG_REVALIDATE_SECONDS).catch(() => undefined));
+const loadArticle = cache(async (id: string): Promise<ArticleLoadResult> => {
+  try {
+    const item = await fetchTrendingArticle(id, BLOG_REVALIDATE_SECONDS);
+    return item ? { status: "found", item } : { status: "not-found" };
+  } catch (error) {
+    if (error instanceof CoveoContentRequestError) {
+      return { status: "error" };
+    }
+    throw error;
+  }
+});
 
 export async function generateMetadata({
   params,
@@ -20,15 +36,15 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const item = await loadArticle(decodeURIComponent(id));
+  const result = await loadArticle(decodeURIComponent(id));
 
-  if (!item) {
+  if (result.status !== "found") {
     return { title: "Article not found | RoboMotion Industries" };
   }
 
   return {
-    title: `${item.title} | RoboMotion Industries`,
-    description: [item.category, item.author].filter(Boolean).join(" · ") || item.title,
+    title: `${result.item.title} | RoboMotion Industries`,
+    description: [result.item.category, result.item.author].filter(Boolean).join(" · ") || result.item.title,
   };
 }
 
@@ -58,12 +74,21 @@ export default async function BlogArticlePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const item = await loadArticle(decodeURIComponent(id));
+  const result = await loadArticle(decodeURIComponent(id));
 
-  if (!item) {
+  if (result.status === "not-found") {
     notFound();
   }
 
+  if (result.status === "error") {
+    return (
+      <main className="blog-page">
+        <p className="blog-body-fallback">Blog article could not be loaded.</p>
+      </main>
+    );
+  }
+
+  const { item } = result;
   const publishedLabel = formatPublishedAt(item.publishedAt);
   const readTimeLabel = estimateReadTime(item.wordCount);
 

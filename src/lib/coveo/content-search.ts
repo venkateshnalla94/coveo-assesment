@@ -146,8 +146,16 @@ function baseSearchRequest(overrides: Record<string, unknown>) {
 export class CoveoContentRequestError extends Error {}
 
 async function performCoveoSearch(requestBody: Record<string, unknown>, revalidateSeconds?: number) {
-  const organizationId = requiredServerEnv("COVEO_ORGANIZATION_ID");
-  const apiKey = requiredServerEnv("COVEO_PLATFORM_API_KEY");
+  let organizationId: string;
+  let apiKey: string;
+  try {
+    organizationId = requiredServerEnv("COVEO_ORGANIZATION_ID");
+    apiKey = requiredServerEnv("COVEO_PLATFORM_API_KEY");
+  } catch {
+    // Missing config is a content-search failure like any other upstream error, not an
+    // unhandled crash — callers (blog index/article pages) already render an error state for it.
+    throw new CoveoContentRequestError("Coveo content search is not configured");
+  }
 
   const response = await fetch(withOrganizationId(COVEO_SEARCH_API_BASE_URL, organizationId), {
     body: JSON.stringify(requestBody),

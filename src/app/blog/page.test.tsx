@@ -76,4 +76,14 @@ describe("BlogIndexPage", () => {
       expect.objectContaining({ body: expect.stringContaining('"q":"robotics"') }),
     );
   });
+
+  it("renders the error state instead of crashing when Coveo env vars are missing", async () => {
+    delete process.env.COVEO_ORGANIZATION_ID;
+    delete process.env.COVEO_PLATFORM_API_KEY;
+
+    const jsx = await BlogIndexPage({ searchParams: Promise.resolve({}) });
+    const { container } = render(jsx);
+
+    expect(container.textContent).toContain("Blog articles could not be loaded.");
+  });
 });

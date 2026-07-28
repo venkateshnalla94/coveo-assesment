@@ -6,6 +6,7 @@ import {
   mapHeadlessPagination,
   mapHeadlessProduct,
   mapHeadlessSort,
+  resolveProductId,
 } from "@/features/commerce/headless/headless-commerce-mappers";
 
 describe("headless commerce mappers", () => {
@@ -144,6 +145,77 @@ describe("headless commerce mappers", () => {
     });
   });
 
+  it("falls back to permanentid, then an additionalFields lookup, then a generated id", () => {
+    expect(resolveProductId({ permanentid: "sku-2" }, 0)).toBe("sku-2");
+    expect(
+      resolveProductId({ additionalFields: { ec_product_id: "sku-3" } }, 0),
+    ).toBe("sku-3");
+    expect(resolveProductId({}, 4)).toBe("commerce-product-5");
+  });
+
+  it("falls back through description sources and omits optional fields when absent", () => {
+    const mapped = mapHeadlessProduct(
+      {
+        additionalFields: {
+          ec_description: "Fallback full description.",
+          ec_name: "Fallback Name",
+        },
+      },
+      0,
+    );
+
+    expect(mapped).toMatchObject({
+      description: "Fallback full description.",
+      fullDescription: "Fallback full description.",
+      title: "Fallback Name",
+    });
+    expect(mapped.url).toBeUndefined();
+    expect(mapped.imageUrl).toBeUndefined();
+    expect(mapped.brand).toBeUndefined();
+    expect(mapped.price).toBeUndefined();
+    expect(mapped.promoPrice).toBeUndefined();
+    expect(mapped.rating).toBeUndefined();
+    expect(mapped.inStock).toBeUndefined();
+    expect(mapped.itemGroupId).toBeUndefined();
+    expect(mapped.excerpt).toBeUndefined();
+    expect(mapped.nameHighlights).toBeUndefined();
+    expect(mapped.excerptHighlights).toBeUndefined();
+    expect(mapped.providerMetadata?.permanentId).toBeUndefined();
+  });
+
+  it("uses the excerpt as description and falls back to the full image when no thumbnail exists", () => {
+    const mapped = mapHeadlessProduct(
+      {
+        ec_images: ["https://example.test/full.jpg"],
+        ec_item_group_id: "group-1",
+        excerpt: "Matched snippet.",
+      },
+      0,
+    );
+
+    expect(mapped.description).toBe("Matched snippet.");
+    expect(mapped.excerpt).toBe("Matched snippet.");
+    expect(mapped.imageUrl).toBe("https://example.test/full.jpg");
+    expect(mapped.itemGroupId).toBe("group-1");
+    expect(mapped.title).toBe("Untitled product");
+  });
+
+  it("defaults description to an empty string, and includes highlights and permanentId when present", () => {
+    const mapped = mapHeadlessProduct(
+      {
+        excerptHighlights: [{ offset: 0, length: 3 }],
+        nameHighlights: [{ offset: 0, length: 4 }],
+        permanentid: "sku-9",
+      },
+      0,
+    );
+
+    expect(mapped.description).toBe("");
+    expect(mapped.nameHighlights).toEqual([{ offset: 0, length: 4 }]);
+    expect(mapped.excerptHighlights).toEqual([{ offset: 0, length: 3 }]);
+    expect(mapped.providerMetadata?.permanentId).toBe("sku-9");
+  });
+
   it("drops facets with a type it does not recognize, such as location", () => {
     expect(
       mapHeadlessFacets([
@@ -157,6 +229,50 @@ describe("headless commerce mappers", () => {
         },
       ]),
     ).toEqual([]);
+  });
+
+  it("uses the facet id when provided and drops facet values missing a value or numeric bounds", () => {
+    expect(
+      mapHeadlessFacets([
+        {
+          state: {
+            displayName: "Brand",
+            facetId: "ec_brand_1",
+            field: "ec_brand",
+            type: "regular",
+            values: [{ numberOfResults: 2, state: "idle", value: undefined }],
+          },
+        },
+        {
+          state: {
+            displayName: "Category",
+            field: "ec_category",
+            type: "hierarchical",
+            values: [{ numberOfResults: 2, state: "idle", value: undefined }],
+          },
+        },
+        {
+          state: {
+            displayName: "Price",
+            field: "ec_price",
+            type: "numericalRange",
+            manualRange: { end: 100, endInclusive: true, start: 0 },
+            values: [{ numberOfResults: 2, state: "idle" }],
+          },
+        },
+      ]),
+    ).toEqual([
+      { field: "ec_brand", id: "ec_brand_1", label: "Brand", type: "regular", values: [] },
+      { field: "ec_category", id: "ec_category", label: "Category", type: "hierarchical", values: [] },
+      {
+        field: "ec_price",
+        id: "ec_price",
+        label: "Price",
+        selectedRange: { end: 100, endInclusive: true, start: 0 },
+        type: "numericalRange",
+        values: [],
+      },
+    ]);
   });
 
   it("derives a stable id for the relevance sort criterion", () => {

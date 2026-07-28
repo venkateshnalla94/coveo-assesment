@@ -48,4 +48,16 @@ describe("BlogArticlePage", () => {
 
     expect(screen.getByRole("heading", { name: "Robot Arm Maintenance" })).not.toBeNull();
   });
+
+  it("renders an error state instead of a 404 when Coveo env vars are missing", async () => {
+    delete process.env.COVEO_ORGANIZATION_ID;
+    delete process.env.COVEO_PLATFORM_API_KEY;
+
+    const jsx = await BlogArticlePage({
+      params: Promise.resolve({ id: "article-1" }),
+    });
+    const { container } = render(jsx);
+
+    expect(container.textContent).toContain("Blog article could not be loaded.");
+  });
 });

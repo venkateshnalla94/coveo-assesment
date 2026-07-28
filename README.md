@@ -110,6 +110,8 @@ npm run dev
 
 Open `http://localhost:3000` for the search entry page or `http://localhost:3000/catalog` for the full product catalog.
 
+`.env.example` ships with empty Coveo values (no credentials can be committed to a public repo). The search entry page (`/`) renders fine at that point, but `/catalog`, RGA, and Technical Resources need real values filled into `.env.local` for `COVEO_ORGANIZATION_ID`, `NEXT_PUBLIC_COVEO_ANONYMOUS_SEARCH_API_KEY`, and `COVEO_PLATFORM_API_KEY` before they'll return live data — without them you'll see "No products found" and generative/trending error states rather than a crash.
+
 Required baseline environment:
 
 ```bash

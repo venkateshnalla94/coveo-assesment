@@ -305,4 +305,154 @@ describe("GET /api/search-token", () => {
       },
     });
   });
+
+  it("extracts a nested error.code when Coveo's error body has no top-level code", async () => {
+    setRequiredEnv();
+
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify({ error: { code: "NESTED_CODE", message: "redacted" } }), {
+        headers: { "Content-Type": "application/json" },
+        status: 401,
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await GET(buildRequest());
+    const body = await responseBody(response);
+
+    expect(response.status).toBe(502);
+    expect(body.upstream).toEqual({
+      endpoint: "search-v2-token",
+      errorCode: "NESTED_CODE",
+      responseShape: "object:error",
+      service: "search-token",
+      status: 401,
+    });
+  });
+
+  it("omits errorCode when the nested error object has no string code", async () => {
+    setRequiredEnv();
+
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify({ error: { message: "boom" } }), {
+        headers: { "Content-Type": "application/json" },
+        status: 500,
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await GET(buildRequest());
+    const body = await responseBody(response);
+
+    expect(response.status).toBe(502);
+    expect(body.upstream).toEqual({
+      endpoint: "search-v2-token",
+      responseShape: "object:error",
+      service: "search-token",
+      status: 500,
+    });
+  });
+
+  it("reports an 'array' response shape when Coveo's error body is a JSON array", async () => {
+    setRequiredEnv();
+
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify([{ unexpected: true }]), {
+        headers: { "Content-Type": "application/json" },
+        status: 403,
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await GET(buildRequest());
+    const body = await responseBody(response);
+
+    expect(response.status).toBe(502);
+    expect(body.upstream).toEqual({
+      endpoint: "search-v2-token",
+      responseShape: "array",
+      service: "search-token",
+      status: 403,
+    });
+  });
+
+  it("falls back to a 'text' response shape when the error body claims JSON but fails to parse", async () => {
+    setRequiredEnv();
+
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response("not actually json{", {
+        headers: { "Content-Type": "application/json" },
+        status: 500,
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await GET(buildRequest());
+    const body = await responseBody(response);
+
+    expect(response.status).toBe(502);
+    expect(body.upstream).toEqual({
+      endpoint: "search-v2-token",
+      responseShape: "text",
+      service: "search-token",
+      status: 500,
+    });
+  });
+
+  it("reports the primitive typeof as the response shape when Coveo's error body is a bare JSON value", async () => {
+    setRequiredEnv();
+
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify("oops"), {
+        headers: { "Content-Type": "application/json" },
+        status: 500,
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await GET(buildRequest());
+    const body = await responseBody(response);
+
+    expect(response.status).toBe(502);
+    expect(body.upstream).toEqual({
+      endpoint: "search-v2-token",
+      responseShape: "string",
+      service: "search-token",
+      status: 500,
+    });
+  });
+
+  it("reports an 'empty' response shape when the upstream error body has no Content-Type and fails to read", async () => {
+    setRequiredEnv();
+
+    const errorResponse = new Response(null, { status: 503 });
+    vi.spyOn(errorResponse, "text").mockRejectedValue(new Error("stream closed"));
+
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(errorResponse);
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await GET(buildRequest());
+    const body = await responseBody(response);
+
+    expect(response.status).toBe(502);
+    expect(body.upstream).toEqual({
+      endpoint: "search-v2-token",
+      responseShape: "empty",
+      service: "search-token",
+      status: 503,
+    });
+  });
+
+  it("falls back to a generic message when a non-Error value is thrown", async () => {
+    setRequiredEnv();
+
+    const fetchMock = vi.fn<typeof fetch>().mockRejectedValue("not an Error instance");
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await GET(buildRequest());
+    const body = await responseBody(response);
+
+    expect(response.status).toBe(500);
+    expect(body).toEqual({ code: "CONFIGURATION_ERROR", error: "Unknown token error." });
+  });
 });

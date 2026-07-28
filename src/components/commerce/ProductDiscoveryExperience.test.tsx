@@ -6,7 +6,16 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const replaceMock = vi.fn();
 const submitSearchSpy = vi.fn();
 const updateSortSpy = vi.fn();
+const clearAllFacetsSpy = vi.fn();
+const clearFacetSpy = vi.fn();
+const toggleFacetValueSpy = vi.fn();
+const toggleRangeSpy = vi.fn();
+const retrySpy = vi.fn();
+const selectPageSpy = vi.fn();
+const trackProductClickSpy = vi.fn();
 let mockResponse: unknown;
+let mockStatus: "loading" | "success" | "empty" | "error" = "success";
+let mockMessage: string | undefined;
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: replaceMock }),
@@ -20,23 +29,23 @@ vi.mock("@/features/commerce/headless/use-headless-commerce", () => ({
     const [query, setQuery] = useState(initialQuery);
 
     return {
-      clearAllFacets: vi.fn(),
-      clearFacet: vi.fn(),
+      clearAllFacets: clearAllFacetsSpy,
+      clearFacet: clearFacetSpy,
       clearQuery: () => setQuery(""),
-      message: undefined,
+      message: mockMessage,
       query,
       response: mockResponse,
-      retry: vi.fn(),
-      selectPage: vi.fn(),
-      status: "success" as const,
+      retry: retrySpy,
+      selectPage: selectPageSpy,
+      status: mockStatus,
       submitSearch: (nextQuery: string) => {
         submitSearchSpy(nextQuery);
         setQuery(nextQuery);
       },
       suggestionsProvider: { getSuggestions: vi.fn().mockResolvedValue([]) },
-      toggleFacetValue: vi.fn(),
-      toggleRange: vi.fn(),
-      trackProductClick: vi.fn(),
+      toggleFacetValue: toggleFacetValueSpy,
+      toggleRange: toggleRangeSpy,
+      trackProductClick: trackProductClickSpy,
       updateQuery: (nextQuery: string) => setQuery(nextQuery),
       updateSort: updateSortSpy,
     };
@@ -107,7 +116,16 @@ afterEach(() => {
   replaceMock.mockClear();
   submitSearchSpy.mockClear();
   updateSortSpy.mockClear();
+  clearAllFacetsSpy.mockClear();
+  clearFacetSpy.mockClear();
+  toggleFacetValueSpy.mockClear();
+  toggleRangeSpy.mockClear();
+  retrySpy.mockClear();
+  selectPageSpy.mockClear();
+  trackProductClickSpy.mockClear();
   mockResponse = undefined;
+  mockStatus = "success";
+  mockMessage = undefined;
   vi.restoreAllMocks();
 });
 
@@ -233,5 +251,245 @@ describe("ProductDiscoveryExperience", () => {
     // Submitting advances committedQuery, so both should now reflect the new query.
     expect(screen.getByTestId("right-rail-query").textContent).toBe("gripper arm");
     expect(screen.getByTestId("generative-answer-query").textContent).toBe("gripper arm");
+  });
+
+  it("wires facet panel callbacks through to the commerce engine with analytics", async () => {
+    mockTrendingFetch();
+    const trackSpy = vi.spyOn(CoveoAnalyticsProvider.prototype, "track");
+    mockResponse = {
+      appliedSort: "relevance",
+      availableSorts: [{ id: "relevance", label: "Relevance" }],
+      facets: [
+        {
+          field: "brand",
+          id: "brand-facet",
+          label: "Brand",
+          type: "regular" as const,
+          values: [{ count: 5, label: "Acme", selected: true, value: "Acme" }],
+        },
+        {
+          field: "ec_weight",
+          id: "weight-facet",
+          label: "Weight",
+          type: "numericalRange" as const,
+          values: [{ count: 3, end: 10, endInclusive: true, selected: false, start: 0 }],
+        },
+      ],
+      pagination: { page: 0, perPage: 24, totalEntries: 0, totalPages: 0, totalProducts: 0 },
+      products: [],
+      totalCount: 0,
+    };
+
+    renderProductDiscoveryExperience({
+      commerceAuthConfig: configurationErrorAuthConfig,
+      featureFlags: defaultSearchFeatureFlags,
+      initialQuery: "welding arm",
+    });
+
+    // Selected regular facet value renders an active-filter chip; removing it toggles the value.
+    await userEvent.click(screen.getByRole("button", { name: /Brand: Acme/ }));
+    expect(toggleFacetValueSpy).toHaveBeenCalledWith("brand", "Acme", "regular");
+    expect(trackSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "commerce_facet_selected" }),
+    );
+
+    // Numeric range facet value (non ec_price/ec_rating) toggles a range.
+    await userEvent.click(screen.getByRole("button", { name: /^0-10/ }));
+    expect(toggleRangeSpy).toHaveBeenCalledWith("ec_weight", 0, 10);
+
+    // Clearing the brand facet only clears that field.
+    await userEvent.click(screen.getByRole("button", { name: "Clear" }));
+    expect(clearFacetSpy).toHaveBeenCalledWith("brand");
+    expect(trackSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "commerce_facet_removed", payload: { field: "brand", query: "welding arm" } }),
+    );
+
+    // Clear all wipes every facet selection.
+    await userEvent.click(screen.getByRole("button", { name: "Clear all" }));
+    expect(clearAllFacetsSpy).toHaveBeenCalled();
+    expect(trackSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "filters_cleared" }),
+    );
+  });
+
+  it("opens product details from Quick View, and drawer actions call through with analytics", async () => {
+    mockTrendingFetch();
+    const trackSpy = vi.spyOn(CoveoAnalyticsProvider.prototype, "track");
+    mockResponse = {
+      appliedSort: "relevance",
+      availableSorts: [{ id: "relevance", label: "Relevance" }],
+      facets: [],
+      pagination: { page: 0, perPage: 24, totalEntries: 1, totalPages: 1, totalProducts: 1 },
+      products: [
+        {
+          categories: [],
+          compatibleJoints: [],
+          compatiblePartsSkus: [],
+          compatibleRobotSeries: [],
+          compatibleRobots: [],
+          description: "A precision gripper arm.",
+          id: "product-1",
+          images: [],
+          title: "Gripper Arm",
+          url: "https://example.test/products/product-1",
+        },
+      ],
+      totalCount: 1,
+    };
+
+    renderProductDiscoveryExperience({
+      commerceAuthConfig: configurationErrorAuthConfig,
+      featureFlags: defaultSearchFeatureFlags,
+      initialQuery: "welding arm",
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: "Quick view product" }));
+    expect(trackSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "product_details_opened", payload: { productId: "product-1" } }),
+    );
+    expect(trackProductClickSpy).toHaveBeenCalledWith("product-1");
+
+    const dialog = screen.getByRole("dialog", { name: "Product details" });
+    expect(dialog).not.toBeNull();
+
+    await userEvent.click(screen.getByRole("link", { name: "View Product" }));
+    expect(trackProductClickSpy).toHaveBeenCalledWith("product-1");
+
+    await userEvent.click(screen.getByRole("button", { name: "Contact Sales" }));
+    expect(trackSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "contact_sales_clicked", payload: { productId: "product-1" } }),
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Request Quote" }));
+    expect(trackSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "request_quote_clicked", payload: { productId: "product-1" } }),
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Close product details" }));
+    expect(screen.queryByRole("dialog", { name: "Product details" })).toBeNull();
+  });
+
+  it("retries a failed search and paginates results, both with analytics", async () => {
+    mockTrendingFetch();
+    const trackSpy = vi.spyOn(CoveoAnalyticsProvider.prototype, "track");
+    mockStatus = "error";
+    mockMessage = "Something went wrong.";
+    mockResponse = {
+      appliedSort: "relevance",
+      availableSorts: [{ id: "relevance", label: "Relevance" }],
+      facets: [],
+      pagination: { page: 0, perPage: 10, totalEntries: 15, totalPages: 2, totalProducts: 15 },
+      products: [],
+      totalCount: 15,
+    };
+
+    renderProductDiscoveryExperience({
+      commerceAuthConfig: configurationErrorAuthConfig,
+      featureFlags: defaultSearchFeatureFlags,
+      initialQuery: "welding arm",
+    });
+
+    expect(screen.getByRole("alert").textContent).toContain("Something went wrong.");
+    await userEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(retrySpy).toHaveBeenCalled();
+    expect(trackSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "commerce_search_submitted", payload: { mode: "retry", query: "welding arm" } }),
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Next page" }));
+    expect(selectPageSpy).toHaveBeenCalledWith(1);
+    expect(trackSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "commerce_page_changed", payload: { page: 2, query: "welding arm" } }),
+    );
+  });
+
+  it("falls back the right rail query to the default when no query has ever been committed", async () => {
+    mockTrendingFetch();
+
+    renderProductDiscoveryExperience({
+      commerceAuthConfig: configurationErrorAuthConfig,
+      featureFlags: defaultSearchFeatureFlags,
+      initialQuery: "",
+    });
+
+    expect(screen.getByTestId("right-rail-query").textContent).toBe("welding arm");
+  });
+
+  it("tracks a product click when a result card's tile link is opened", async () => {
+    mockTrendingFetch();
+    mockResponse = {
+      appliedSort: "relevance",
+      availableSorts: [{ id: "relevance", label: "Relevance" }],
+      facets: [],
+      pagination: { page: 0, perPage: 24, totalEntries: 1, totalPages: 1, totalProducts: 1 },
+      products: [
+        {
+          categories: [],
+          compatibleJoints: [],
+          compatiblePartsSkus: [],
+          compatibleRobotSeries: [],
+          compatibleRobots: [],
+          description: "A precision gripper arm.",
+          id: "product-1",
+          images: [],
+          title: "Gripper Arm",
+          url: "https://example.test/products/product-1",
+        },
+      ],
+      totalCount: 1,
+    };
+
+    renderProductDiscoveryExperience({
+      commerceAuthConfig: configurationErrorAuthConfig,
+      featureFlags: defaultSearchFeatureFlags,
+      initialQuery: "welding arm",
+    });
+
+    await userEvent.click(
+      screen.getByRole("link", { name: "Open Gripper Arm product page in a new tab" }),
+    );
+
+    expect(trackProductClickSpy).toHaveBeenCalledWith("product-1");
+  });
+
+  it("opens and closes the comparison drawer after adding a product to compare", async () => {
+    mockTrendingFetch();
+    mockResponse = {
+      appliedSort: "relevance",
+      availableSorts: [{ id: "relevance", label: "Relevance" }],
+      facets: [],
+      pagination: { page: 0, perPage: 24, totalEntries: 1, totalPages: 1, totalProducts: 1 },
+      products: [
+        {
+          categories: [],
+          compatibleJoints: [],
+          compatiblePartsSkus: [],
+          compatibleRobotSeries: [],
+          compatibleRobots: [],
+          description: "A precision gripper arm.",
+          id: "product-1",
+          images: [],
+          title: "Gripper Arm",
+        },
+      ],
+      totalCount: 1,
+    };
+
+    renderProductDiscoveryExperience({
+      commerceAuthConfig: configurationErrorAuthConfig,
+      featureFlags: defaultSearchFeatureFlags,
+      initialQuery: "welding arm",
+    });
+
+    expect(screen.queryByRole("dialog", { name: "Compare products" })).toBeNull();
+
+    await userEvent.click(screen.getByRole("button", { name: "Compare" }));
+    await userEvent.click(screen.getByRole("button", { name: "Compare (1)" }));
+
+    const dialog = screen.getByRole("dialog", { name: "Compare products" });
+    expect(dialog).not.toBeNull();
+
+    await userEvent.click(screen.getByRole("button", { name: "Close comparison" }));
+    expect(screen.queryByRole("dialog", { name: "Compare products" })).toBeNull();
   });
 });

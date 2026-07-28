@@ -82,7 +82,7 @@ Responsive E2E checks passed at:
 
 ## Test Results
 
-- Unit/component tests: 52 files passed, 232 tests passed.
+- Unit/component tests: 52 files passed, 245 tests passed.
 - E2E tests: 28 passed (14 chromium + 14 webkit).
 - `npm run validate`: passed.
 
@@ -90,10 +90,10 @@ Responsive E2E checks passed at:
 
 Latest coverage:
 
-- Statements: 90.81%
-- Branches: 81.63%
-- Functions: 88.67%
-- Lines: 91.27%
+- Statements: 94.17%
+- Branches: 84.09%
+- Functions: 93.58%
+- Lines: 94.6%
 
 ## Audit Result
 

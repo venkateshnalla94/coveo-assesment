@@ -51,7 +51,7 @@ Status snapshot of each module, kept aligned with `docs/demo-readiness-report.md
 | Accessibility | ✅ Complete | Playwright axe checks pass with no serious/critical violations. |
 | Responsive layouts | ✅ Complete | Verified at 375×812, 768×1024, 1024×768, 1440×900. |
 | Security (token minting, key isolation, secret scanning) | ✅ Complete | No privileged key exposed via `NEXT_PUBLIC_`; secret scan and `npm audit` clean. |
-| Test automation (Vitest, Playwright, axe, coverage) | ✅ Complete | 30 unit/component files (78 tests) + 11 E2E passed; coverage ≥87% on all metrics. |
+| Test automation (Vitest, Playwright, axe, coverage) | ✅ Complete | 53 unit/component files (281 tests) + 4 E2E spec files (18 tests, run across chromium/webkit); coverage ≥89% on all metrics. |
 | Sorting | ⚠️ Partial | Relevance-only; frontend is data-driven and would render additional criteria automatically once the Merchandising Hub interface config exposes them (ADR 0011). |
 | Conversational agent (floating widget) | ⚠️ Partial | Feature-flagged off by default (`COVEO_FEATURE_CONVERSATION_ENABLED`); has Vitest coverage for stream transform/provider/route but no Playwright E2E coverage yet. |
 | Contact Sales / Request Quote | ⚠️ Partial | Demo interactions only; not wired to a production CRM or commerce workflow. |

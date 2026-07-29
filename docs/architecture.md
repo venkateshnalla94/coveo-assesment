@@ -6,7 +6,7 @@
 Next.js UI
 ├── Headless Commerce
 │   ├── Coveo Commerce API
-│   └── /products/[id] (product detail page, sessionStorage handoff)
+│   └── /products/[id] (product detail page, server-rendered by-id lookup)
 ├── Generative Provider
 │   └── RGA
 ├── Content Provider
@@ -89,9 +89,9 @@ The product details drawer also uses local state. It exposes deeper descriptions
 
 ## Product Detail Page
 
-`/products/[id]` (`src/app/products/[id]/page.tsx`) is a Server Component shell — route resolution only, no `Header`/`Footer` (those are rendered once, globally, by `src/app/layout.tsx`; see ADR 0013) — that renders `ProductDetailClient`, a Client Component, with no server-side Coveo fetch. This differs from `/blog/[id]`, which fetches its content server-side: there is deliberately no product-detail API route (per this repo's architecture, Commerce product search stays client-side against Coveo directly), so the page instead reads the `ProductResult` the result tile already held in memory from the live Commerce search response.
+`/products/[id]` (`src/app/products/[id]/page.tsx`) is a `force-dynamic` Server Component — no `Header`/`Footer` (those are rendered once, globally, by `src/app/layout.tsx`; see ADR 0013) — that resolves the product server-side via `fetchProductDetail(id)` (`src/lib/coveo/product-detail.ts`) and passes the resolved `ProductDetail` into `ProductDetailClient`. This follows `/blog/[id]`'s pattern: a narrow single-document lookup by exact id (`(@permanentid=="<id>") OR (@ec_product_id=="<id>")`) against the Coveo Search API with the server-only `COVEO_PLATFORM_API_KEY` — not a general search proxy. The client-controlled id is escaped before interpolation, and the lookup returns `undefined` (never throws) on a miss or failure. This makes the PDP linkable, refreshable, and crawlable, and lets it surface the richer indexed fields (specifications, availability, review count, cross-sell SKUs) the Commerce listing payload omits. See ADR 0014 (superseding ADR 0010).
 
-`ProductResultCard` writes that `ProductResult` into `sessionStorage` (`src/lib/commerce/product-session-cache.ts`, keyed by product id) and opens `/products/<id>` with `window.open()` rather than a plain link click, so the new tab reliably inherits an opener relationship and, with it, same-origin `sessionStorage`. `ProductDetailClient` reads it back via `useSyncExternalStore`, memoizing the parsed snapshot per id in a module-level cache so the store returns a stable reference across renders. A direct visit, an expired tab, or an untouched `sessionStorage` origin renders the client component's own "Product details unavailable" empty state rather than failing silently. See ADR 0010.
+`ProductDetailClient` is server-first: it uses the server-resolved product when present, and otherwise falls back to the `sessionStorage` handoff (`ProductResultCard` writes the `ProductResult` it already holds into `src/lib/commerce/product-session-cache.ts`, keyed by product id, and opens `/products/<id>` with `window.open()` so the new tab inherits same-origin `sessionStorage`; read back via `useSyncExternalStore` with a per-id module-level snapshot cache). When neither the server nor the session cache has the product, it renders the "Product details unavailable" empty state rather than failing silently. A `ProductViewAnalytics` component emits a single `product_view` event on mount through the existing analytics bus, gated by the analytics feature flag.
 
 ## Authentication
 

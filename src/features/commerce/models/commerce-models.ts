@@ -53,6 +53,27 @@ export interface ProductResult {
   };
 }
 
+export interface ProductSpec {
+  label: string;
+  value: string;
+}
+
+// A ProductResult enriched with the fields the Commerce listing payload does not carry but the
+// full indexed record (Search API, by permanentid) does — engineering specs, per-region stock,
+// review counts, and cross-sell SKUs. Every rich field is optional so a plain ProductResult
+// (e.g. the sessionStorage hand-off) is still a valid ProductDetail with those sections absent.
+export interface ProductDetail extends ProductResult {
+  sku?: string;
+  countryOfOrigin?: string;
+  reviewCount?: number;
+  isNew?: boolean;
+  isDiscontinued?: boolean;
+  specifications?: ProductSpec[];
+  availabilityRegions?: string[];
+  recommendedSkus?: string[];
+  fitmentParentSkus?: string[];
+}
+
 export interface ProductPagination {
   page: number;
   perPage: number;

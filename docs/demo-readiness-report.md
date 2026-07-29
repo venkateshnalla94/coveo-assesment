@@ -119,7 +119,7 @@ None.
 | `/catalog` | 200, handled "No products found" / error banners (as documented) |
 | `/blog` | **200**, "Blog articles could not be loaded." — fixed this pass (was an unhandled 500) |
 | `/blog/[id]` (any id) | **200**, "Blog article could not be loaded." for config/upstream failures; genuinely-missing articles still correctly 404 via `notFound()` — fixed this pass (previously collapsed both cases into a 404) |
-| `/products/[id]` | 200 (no Coveo dependency) |
+| `/products/[id]` | 200, server-rendered by-id lookup; handled "Product details unavailable" empty state when the lookup misses or Coveo config is absent |
 | `/sitemap.xml`, `/robots.txt` | 200 |
 | `/api/coveo/generative/answer` | 500 with JSON error body, consumed by client error UI (not a crash) |
 

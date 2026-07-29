@@ -177,4 +177,86 @@ describe("ProductDetailView", () => {
     const link = screen.getByRole("link", { name: /View Product/i });
     expect(link.getAttribute("href")).toBe("https://example.com/product");
   });
+
+  it("renders the Specifications section from the server-fetched spec list", () => {
+    render(
+      <ProductDetailView
+        product={{
+          ...baseProduct,
+          specifications: [
+            { label: "Payload", value: "50 kg" },
+            { label: "IP Rating", value: "IP67" },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByText("Specifications")).toBeTruthy();
+    expect(screen.getByText("Payload")).toBeTruthy();
+    expect(screen.getByText("50 kg")).toBeTruthy();
+    expect(screen.getByText("IP67")).toBeTruthy();
+  });
+
+  it("renders availability regions and the review count when supplied", () => {
+    render(
+      <ProductDetailView
+        product={{
+          ...baseProduct,
+          rating: 4,
+          reviewCount: 3,
+          availabilityRegions: ["US-MIDWEST", "EU-CENTRAL"],
+        }}
+      />,
+    );
+
+    expect(screen.getByText("Availability")).toBeTruthy();
+    expect(screen.getByText("US-MIDWEST")).toBeTruthy();
+    expect(screen.getByText("EU-CENTRAL")).toBeTruthy();
+    expect(screen.getByText("3 reviews")).toBeTruthy();
+  });
+
+  it("uses the singular 'review' label when there is exactly one review", () => {
+    render(<ProductDetailView product={{ ...baseProduct, reviewCount: 1 }} />);
+
+    expect(screen.getByText("1 review")).toBeTruthy();
+  });
+
+  it("renders recommended and fitment SKUs, and hides the section when both are empty", () => {
+    const { rerender } = render(<ProductDetailView product={baseProduct} />);
+
+    expect(screen.queryByText("Recommended & compatible parts")).toBeNull();
+
+    rerender(
+      <ProductDetailView
+        product={{
+          ...baseProduct,
+          recommendedSkus: ["SKU-A", "SKU-B"],
+          fitmentParentSkus: ["PARENT-1"],
+        }}
+      />,
+    );
+
+    expect(screen.getByText("Recommended & compatible parts")).toBeTruthy();
+    expect(screen.getByText("SKU-A, SKU-B")).toBeTruthy();
+    expect(screen.getByText("PARENT-1")).toBeTruthy();
+  });
+
+  it("omits all rich sections for a plain ProductResult (sessionStorage hand-off)", () => {
+    render(<ProductDetailView product={baseProduct} />);
+
+    expect(screen.queryByText("Specifications")).toBeNull();
+    expect(screen.queryByText("Availability")).toBeNull();
+    expect(screen.queryByText("Recommended & compatible parts")).toBeNull();
+  });
+
+  it("shows SKU and Country of Origin specs only when present", () => {
+    render(
+      <ProductDetailView product={{ ...baseProduct, sku: "SKU-9", countryOfOrigin: "JP" }} />,
+    );
+
+    expect(screen.getByText("SKU")).toBeTruthy();
+    expect(screen.getByText("SKU-9")).toBeTruthy();
+    expect(screen.getByText("Country of Origin")).toBeTruthy();
+    expect(screen.getByText("JP")).toBeTruthy();
+  });
 });

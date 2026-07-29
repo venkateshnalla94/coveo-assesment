@@ -22,7 +22,7 @@ Industrial robotics buyers rarely know the exact SKU they need at the start of d
 - Product cards with image, price, rating, stock, brand, category, and compatibility
 - Local comparison for up to three products
 - Product detail drawer with descriptions, images, compatibility, and next actions
-- Product detail page (`/products/[id]`, opened in a new tab from a result tile) with gallery, buybox, specs, and compatibility
+- Product detail page (`/products/[id]`, server-rendered and directly linkable) with gallery, buybox, specifications, availability, reviews, compatibility, and cross-sell
 - AI Product Guidance through RGA
 - RGA citations and feedback
 - Search API Technical Resources, with an internal `/blog` index page and `/blog/[id]` article detail pages (sanitized full article body, author/date/category/tags, link out to the original source)
@@ -45,7 +45,7 @@ Status snapshot of each module, kept aligned with `docs/demo-readiness-report.md
 | Result summary | ✅ Complete | |
 | Comparison (up to 3 products) | ✅ Complete | Local UI state. |
 | Product details drawer | ✅ Complete | Descriptions, images, compatibility, next actions; no fabricated spec fields. |
-| Product detail page (`/products/[id]`) | ✅ Complete | Gallery, buybox, specs, compatibility; sessionStorage handoff, no server fetch (ADR 0010). |
+| Product detail page (`/products/[id]`) | ✅ Complete | Gallery, buybox, specifications, availability, reviews, compatibility, cross-sell; server-rendered by-id lookup, linkable/refreshable, with a sessionStorage fallback (ADR 0014). |
 | AI Product Guidance (RGA) | ✅ Complete | Server-side generated-answer route; positioned as content guidance, not product recommendation. |
 | Technical Resources (`/blog`, `/blog/[id]`) | ✅ Complete | Separate Search API route; failures isolated from product discovery; unknown id renders 404. |
 | Accessibility | ✅ Complete | Playwright axe checks pass with no serious/critical violations. |
@@ -65,7 +65,7 @@ Status snapshot of each module, kept aligned with `docs/demo-readiness-report.md
 Next.js UI
 ├── Headless Commerce
 │   ├── Coveo Commerce API
-│   └── /products/[id] (product detail page, sessionStorage handoff)
+│   └── /products/[id] (product detail page, server-rendered by-id lookup)
 ├── Generative Provider
 │   └── RGA
 ├── Content Provider
@@ -76,7 +76,7 @@ Next.js UI
     └── Coveo Search Agent API (agentic RAG, AG-UI protocol)
 ```
 
-The `/` route uses Headless Commerce query suggestions and sends buyers into `/catalog?q=<query>`. Live product search, facets, pagination, summaries, and relevance sorting are handled by Headless Commerce in the browser on `/catalog`. AI Product Guidance and Technical Resources are isolated server-backed paths, not Commerce product recommendation paths. The header's Blog nav link opens `/blog`, a server-rendered index of Technical Resources content reusing the same `searchTrendingContent` provider as the right-rail cards. Clicking a Technical Resources card, or an article on `/blog`, opens `/blog/<id>`, a server-rendered article page built from the same Coveo content result — the external source link moves there instead of leaving the catalog page directly. Clicking a product tile on `/catalog` opens `/products/<id>` in a new tab; unlike `/blog/[id]`, this page has no server-side data fetch — there is deliberately no product-detail API route, so the tile hands the `ProductResult` it already has in memory to the new tab via sessionStorage. See ADR 0010.
+The `/` route uses Headless Commerce query suggestions and sends buyers into `/catalog?q=<query>`. Live product search, facets, pagination, summaries, and relevance sorting are handled by Headless Commerce in the browser on `/catalog`. AI Product Guidance and Technical Resources are isolated server-backed paths, not Commerce product recommendation paths. The header's Blog nav link opens `/blog`, a server-rendered index of Technical Resources content reusing the same `searchTrendingContent` provider as the right-rail cards. Clicking a Technical Resources card, or an article on `/blog`, opens `/blog/<id>`, a server-rendered article page built from the same Coveo content result — the external source link moves there instead of leaving the catalog page directly. Clicking a product tile on `/catalog` opens `/products/<id>` in a new tab; like `/blog/[id]`, this page resolves its data server-side — a narrow single-document lookup by exact id against the Coveo Search API with the server-only `COVEO_PLATFORM_API_KEY` (not a general search proxy), which makes the PDP directly linkable, refreshable, and richer than the listing payload. The tile still hands off the `ProductResult` it already holds via sessionStorage, now used only as a fallback when the server lookup can't resolve the id. See ADR 0014.
 
 A floating chat widget is mounted globally in `src/app/layout.tsx` (sibling of the page tree, not inside any one route) and talks to `/api/coveo/conversation`, which calls Coveo's Search Agent API — a distinct upstream from the Search API used by RGA and Technical Resources. It is feature-flagged off by default (`COVEO_FEATURE_CONVERSATION_ENABLED`). See ADR 0012.
 
@@ -172,7 +172,7 @@ Start here for a reviewer's read-through:
 - [`docs/architecture.md`](docs/architecture.md) — routing, component wiring, data flow.
 - [`docs/security-review.md`](docs/security-review.md) — key isolation, rate limiting, and boundary review.
 - [`docs/testing-strategy.md`](docs/testing-strategy.md) — Vitest/Playwright/axe coverage approach.
-- [`docs/decisions/0010-product-detail-page-sessionstorage-handoff.md`](docs/decisions/0010-product-detail-page-sessionstorage-handoff.md) — why `/products/[id]` uses a sessionStorage handoff instead of a server fetch.
+- [`docs/decisions/0014-server-rendered-product-detail-page.md`](docs/decisions/0014-server-rendered-product-detail-page.md) — why `/products/[id]` is server-rendered via a narrow single-document lookup (superseding the ADR 0010 sessionStorage handoff, now a fallback).
 - [`## Validation`](#validation) above — the exact command sequence to run before submission.
 
 Additional docs:

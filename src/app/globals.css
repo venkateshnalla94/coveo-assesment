@@ -2174,6 +2174,9 @@ p {
 
 .pdp-rating-row {
   margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .pdp-rating {
@@ -2182,6 +2185,28 @@ p {
   gap: 5px;
   color: var(--text);
   font-weight: 750;
+}
+
+.pdp-review-count {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.pdp-region-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pdp-region-list li {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.82rem;
+  color: var(--text);
 }
 
 .pdp-price-row {

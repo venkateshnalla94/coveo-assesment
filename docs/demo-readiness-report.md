@@ -11,7 +11,8 @@ Ready-with-notes. Every surface is genuinely demo-ready once real Coveo credenti
 - `welding arm` product search returns live Commerce products.
 - Result summary, product cards, relevance sorting, and pagination are covered.
 - Comparison supports up to three products.
-- Product details drawer is covered.
+- Product details drawer (catalog quick view) is covered.
+- Product detail page `/products/[id]` is server-rendered by a by-id Coveo lookup — linkable, refreshable, and crawlable — surfacing indexed spec/availability/review/cross-sell fields the Commerce listing payload omits, with a handled empty state on a miss. Covered by a dedicated E2E spec (direct-URL navigation, comprehensive fields, refresh survival, unknown-id empty state).
 - Generative answer loading/streaming, citations, feedback, no-answer, and error states are exercised, including isolation from Technical Resources failures.
 - Trending content panel and `/blog/[id]` article detail confirmed server-rendered (`notFound()` for a genuinely missing article, a handled error state for config/upstream failures, sanitized full-body render, "View original source" external link).
 
@@ -49,7 +50,10 @@ Comparison is local UI state and supports a maximum of three selected products. 
 
 ## Product Details
 
-The details drawer shows available product descriptions, images, compatibility, and demo next actions. It does not fabricate datasheet or manufacturing spec fields.
+Two surfaces, two data depths:
+
+- **Catalog quick-view drawer** — shows the listing-level fields already in hand (description, images, compatibility, price/rating) plus demo next actions. It does not fabricate datasheet or manufacturing spec fields.
+- **Product detail page `/products/[id]`** — server-rendered from a narrow single-document Coveo Search API lookup by `permanentid`/`ec_product_id` (server-only `COVEO_PLATFORM_API_KEY`, same boundary as the blog article page). Because it reads the full indexed record rather than the Commerce listing payload, it surfaces **real** datasheet fields the listing omits: a Specifications table (payload, reach, IP rating, material, weight, axes, protocol, repeatability), per-region availability, review count, SKU, country of origin, and recommended/fitment cross-sell SKUs — none fabricated, all pulled from the index. The page is linkable, refreshable, and crawlable; the earlier `sessionStorage` hand-off is retained only as an in-session fallback, and a miss or absent Coveo config degrades to the handled "Product details unavailable" empty state. A `product_view` analytics event is emitted once on mount through the app analytics bus (feature-flag gated). See ADR 0014.
 
 ## RGA
 
@@ -82,17 +86,17 @@ Responsive E2E checks passed at:
 
 ## Test Results
 
-- Unit/component tests: 52 files passed, 257 tests passed (up from 245 — two test-only files added to close branch-coverage gaps in `analytics.tsx` and `headless-commerce-mappers.ts`, plus two regression tests for the `/blog` and `/blog/[id]` zero-config crash fix).
-- E2E tests: 28 passed (14 chromium + 14 webkit), re-run live against real credentials this pass.
+- Unit/component tests: 53 files passed, 281 tests passed (up from 257 — added `product-detail.ts` mapper/fetch tests, rich-section `ProductDetailView` tests, server-first `ProductDetailClient` tests, and `product_view` analytics tests for the server-rendered PDP).
+- E2E tests: 36 passed (18 chromium + 18 webkit), re-run live against real credentials this pass — includes the new `product-detail.spec.ts` (direct-URL linkability, comprehensive server-rendered fields, refresh survival, unknown-id empty state).
 - `npm run validate`: passed.
 
 ## Coverage
 
 Latest coverage:
 
-- Statements: 95.52%
-- Branches: 88.46% (up from 84.09%)
-- Functions: 95.09%
+- Statements: 95.47%
+- Branches: 89.44% (up from 88.46% — the new server-rendered PDP files are gated and well-covered)
+- Functions: 94.93%
 - Lines: 95.86%
 
 ## Audit Result
@@ -119,7 +123,7 @@ None.
 | `/catalog` | 200, handled "No products found" / error banners (as documented) |
 | `/blog` | **200**, "Blog articles could not be loaded." — fixed this pass (was an unhandled 500) |
 | `/blog/[id]` (any id) | **200**, "Blog article could not be loaded." for config/upstream failures; genuinely-missing articles still correctly 404 via `notFound()` — fixed this pass (previously collapsed both cases into a 404) |
-| `/products/[id]` | 200 (no Coveo dependency) |
+| `/products/[id]` | 200, server-rendered by-id lookup; handled "Product details unavailable" empty state when the lookup misses or Coveo config is absent |
 | `/sitemap.xml`, `/robots.txt` | 200 |
 | `/api/coveo/generative/answer` | 500 with JSON error body, consumed by client error UI (not a crash) |
 

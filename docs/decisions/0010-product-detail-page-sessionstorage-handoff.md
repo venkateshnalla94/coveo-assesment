@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Superseded by ADR 0014 (the PDP is now server-rendered via a narrow single-document lookup; the `sessionStorage` handoff described here is retained only as a fallback).
 
 ## Context
 

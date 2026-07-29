@@ -121,11 +121,15 @@ tracking fix made earlier in this thread):
   opens the PDP.
 - The details drawer's "View Product" external link also fires `trackProductClick` on click.
 
-`/products/[id]` (`src/app/products/[id]/page.tsx` + `ProductDetailClient`) **builds no engine at
-all**. It reads the product back out of `sessionStorage` written in the step above. There is no
-server fetch and no Coveo call on this route — if the tab is opened without that sessionStorage
-entry (e.g. a bookmarked/shared link), the client component shows a "not found" fallback instead of
-re-querying Coveo.
+`/products/[id]` (`src/app/products/[id]/page.tsx` + `ProductDetailClient`) **builds no Headless
+engine**. It resolves the product server-side via `fetchProductDetail(id)`
+(`src/lib/coveo/product-detail.ts`) — a narrow single-document Search API lookup by exact
+`@permanentid`/`@ec_product_id` using the server-only `COVEO_PLATFORM_API_KEY`, escaping the
+client-controlled id and returning `undefined` on any miss/failure. `ProductDetailClient` is
+server-first, falling back to the `sessionStorage` entry written in the step above when the server
+lookup can't resolve the id, and to a "Product details unavailable" empty state when neither has it.
+This makes the PDP linkable and refreshable (a bookmarked/shared link now renders the real product
+via the server lookup rather than the empty state). See ADR 0014.
 
 ## 6. Generative Answer banner (on `/catalog`, alongside the product grid)
 

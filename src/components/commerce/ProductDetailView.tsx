@@ -5,11 +5,13 @@ import { ExternalLink, Star } from "lucide-react";
 import { useState } from "react";
 
 import { formatPrice, formatRating, getSafeProductUrl } from "@/components/commerce/product-formatters";
-import type { ProductResult } from "@/features/commerce/models/commerce-models";
+import type { ProductDetail } from "@/features/commerce/models/commerce-models";
 
-// Pure presentational PDP: renders whatever the passed-in ProductResult already has and
-// compromises on sections it can't fill — no fetching, no Coveo dependency.
-export function ProductDetailView({ product }: { product: ProductResult }) {
+// Pure presentational PDP: renders whatever the passed-in product already has and compromises on
+// sections it can't fill — no fetching, no Coveo dependency. Rich fields (specs, availability,
+// reviews, cross-sell) render only when the server-fetched detail supplies them; a plain
+// ProductResult (sessionStorage hand-off) simply omits those sections.
+export function ProductDetailView({ product }: { product: ProductDetail }) {
   const gallery = product.images.length > 0 ? product.images : product.imageUrl ? [product.imageUrl] : [];
   const [activeImage, setActiveImage] = useState(gallery[0]);
   const safeUrl = getSafeProductUrl(product);
@@ -22,11 +24,18 @@ export function ProductDetailView({ product }: { product: ProductResult }) {
 
   const specs = [
     product.brand ? { label: "Brand", value: product.brand } : undefined,
+    product.sku ? { label: "SKU", value: product.sku } : undefined,
+    product.countryOfOrigin ? { label: "Country of Origin", value: product.countryOfOrigin } : undefined,
     product.itemGroupId ? { label: "Item Group", value: product.itemGroupId } : undefined,
     product.providerMetadata?.permanentId
       ? { label: "Product ID", value: product.providerMetadata.permanentId }
       : { label: "Product ID", value: product.id },
   ].filter((spec): spec is { label: string; value: string } => Boolean(spec));
+
+  const specifications = product.specifications ?? [];
+  const availabilityRegions = product.availabilityRegions ?? [];
+  const recommendedSkus = product.recommendedSkus ?? [];
+  const fitmentParentSkus = product.fitmentParentSkus ?? [];
 
   const compatibility = [
     product.compatibleRobotSeries.length > 0 ? { label: "Robot Series", values: product.compatibleRobotSeries } : undefined,
@@ -82,6 +91,11 @@ export function ProductDetailView({ product }: { product: ProductResult }) {
             <Star aria-hidden="true" size={16} />
             {formatRating(product.rating)}
           </span>
+          {product.reviewCount !== undefined ? (
+            <span className="pdp-review-count">
+              {product.reviewCount} {product.reviewCount === 1 ? "review" : "reviews"}
+            </span>
+          ) : null}
         </div>
 
         <div className="pdp-price-row">
@@ -115,6 +129,20 @@ export function ProductDetailView({ product }: { product: ProductResult }) {
         </section>
       ) : null}
 
+      {specifications.length > 0 ? (
+        <section className="pdp-section pdp-specifications">
+          <h2>Specifications</h2>
+          <dl className="details-list">
+            {specifications.map((spec) => (
+              <div key={spec.label}>
+                <dt>{spec.label}</dt>
+                <dd>{spec.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      ) : null}
+
       {compatibility.length > 0 ? (
         <section className="pdp-section pdp-compatibility">
           <h2>Compatibility</h2>
@@ -125,6 +153,37 @@ export function ProductDetailView({ product }: { product: ProductResult }) {
                 <dd>{row.values.join(", ")}</dd>
               </div>
             ))}
+          </dl>
+        </section>
+      ) : null}
+
+      {availabilityRegions.length > 0 ? (
+        <section className="pdp-section pdp-availability">
+          <h2>Availability</h2>
+          <ul className="pdp-region-list">
+            {availabilityRegions.map((region) => (
+              <li key={region}>{region}</li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {recommendedSkus.length > 0 || fitmentParentSkus.length > 0 ? (
+        <section className="pdp-section pdp-recommended">
+          <h2>Recommended &amp; compatible parts</h2>
+          <dl className="details-list">
+            {recommendedSkus.length > 0 ? (
+              <div>
+                <dt>Frequently paired</dt>
+                <dd>{recommendedSkus.join(", ")}</dd>
+              </div>
+            ) : null}
+            {fitmentParentSkus.length > 0 ? (
+              <div>
+                <dt>Fits parent assemblies</dt>
+                <dd>{fitmentParentSkus.join(", ")}</dd>
+              </div>
+            ) : null}
           </dl>
         </section>
       ) : null}

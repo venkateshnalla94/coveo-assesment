@@ -58,6 +58,7 @@ The Playwright suite covers:
 - pagination when available
 - comparison drawer
 - product details drawer
+- server-rendered product detail page (direct-URL linkability, comprehensive fields, refresh survival, unknown-id empty state)
 - isolated RGA and Technical Resources failures
 - keyboard navigation
 - responsive layouts at `375x812`, `768x1024`, `1024x768`, and `1440x900`

@@ -9,6 +9,15 @@ if (!messagePath) {
 
 const message = readFileSync(messagePath, "utf8").trim();
 const firstLine = message.split("\n")[0]?.trim() ?? "";
+
+// Merge commits (git merge / a non-fast-forward git pull) carry an auto-generated "Merge ..."
+// subject that can't follow Conventional Commits. Exempt them so integrating a diverged branch
+// isn't blocked; the same applies to git revert's "Revert ..." subject.
+if (/^(Merge|Revert) /.test(firstLine)) {
+  console.log("Commit message check passed (merge/revert commit).");
+  process.exit(0);
+}
+
 const validTypes = ["feat", "fix", "docs", "test", "refactor", "perf", "build", "ci", "chore", "revert"];
 const pattern = new RegExp(`^(${validTypes.join("|")})(\\([a-z0-9][a-z0-9-]*\\))?: .+`);
 

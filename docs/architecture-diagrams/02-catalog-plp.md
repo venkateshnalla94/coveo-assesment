@@ -93,14 +93,16 @@ query change, now including the updated facet selection state.
 
 ## Product details / sort / pagination
 
-- **Product details**: clicking a `ProductResultCard` tile/title does not call Coveo again. The
-  card already holds the full `ProductResult` from the list response; it writes that object to
-  `sessionStorage["pdp-product:<id>"]` via `storeProductForPdp()`
+- **Product details**: clicking a `ProductResultCard` tile/title writes the full `ProductResult`
+  the card already holds to `sessionStorage["pdp-product:<id>"]` via `storeProductForPdp()`
   (`src/lib/commerce/product-session-cache.ts`) and opens `/products/<id>` in a new tab with
-  `window.open()`. The `/products/[id]` server shell performs no fetch; `ProductDetailClient`
-  reads the same-origin `sessionStorage` entry to render. "Quick View" instead opens an in-page
-  `ProductDetailsDrawer` from React-owned state — also no new Coveo call. **There is no
-  product-detail API route or Coveo call in this path.**
+  `window.open()`. The `/products/[id]` **server component resolves the product itself** via
+  `fetchProductDetail(id)` (`src/lib/coveo/product-detail.ts`) — a narrow single-document Search
+  API lookup by exact `@permanentid`/`@ec_product_id` with the server-only
+  `COVEO_PLATFORM_API_KEY`, not a general search proxy. `ProductDetailClient` is server-first and
+  falls back to the same-origin `sessionStorage` entry only when the server lookup misses. "Quick
+  View" instead opens an in-page `ProductDetailsDrawer` from React-owned state — no Coveo call.
+  See ADR 0014.
 - **Sort**: `search.sort()` is initialized with `buildRelevanceSortCriterion()`. If more than one
   criterion is configured, the UI exposes `commerce.updateSort(id)`; otherwise it renders a
   read-only "Relevance" label.

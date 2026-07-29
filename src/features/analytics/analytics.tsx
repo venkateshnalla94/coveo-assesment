@@ -41,6 +41,7 @@ export type AnalyticsEventName =
   | "product_compare_removed"
   | "product_compare_opened"
   | "product_details_opened"
+  | "product_view"
   | "contact_sales_clicked"
   | "request_quote_clicked";
 
